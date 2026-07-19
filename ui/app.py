@@ -95,14 +95,14 @@ class App:
 
         # Group 3: Display
         control_bg_elements += draw_group_container(self.fig, ax_bg, 0.49, grp_y, 0.22, grp_h, "Display")
-        ax_chk_tails = self.fig.add_axes([0.495, 0.040, 0.06, 0.035])
+        ax_chk_tails = self.fig.add_axes([0.495, 0.045, 0.10, 0.035])
         self.chk_tails = self._style_check(ax_chk_tails, ('Show Tails',), (True,))
-        ax_chk_labels = self.fig.add_axes([0.565, 0.040, 0.07, 0.035])
+        ax_chk_labels = self.fig.add_axes([0.605, 0.045, 0.10, 0.035])
         self.chk_labels = self._style_check(ax_chk_labels, ('Show Labels',), (True,))
-        ax_chk_market = self.fig.add_axes([0.640, 0.040, 0.07, 0.035])
+        ax_chk_forecast = self.fig.add_axes([0.495, 0.020, 0.10, 0.035])
+        self.chk_forecast = self._style_check(ax_chk_forecast, ('Show Forecast',), (True,))
+        ax_chk_market = self.fig.add_axes([0.605, 0.020, 0.10, 0.035])
         self.chk_market = self._style_check(ax_chk_market, ('Market Context',), (True,))
-        ax_chk_forecast = self.fig.add_axes([0.565, 0.018, 0.08, 0.035])
-        self.chk_forecast = self._style_check(ax_chk_forecast, ('Show Forecast',), (False,))
 
         # Group 4: Tools
         control_bg_elements += draw_group_container(self.fig, ax_bg, 0.72, grp_y, 0.12, grp_h, "Tools")
