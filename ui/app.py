@@ -304,7 +304,7 @@ class App:
             pe['current_label'].set_text('')
 
         pe['info_date'].set_text(f"Date:\n{date_str}")
-        pe['info_val'].set_text(f"Value:\n{curr_row['PMI']:.2f}")
+        pe['info_val'].set_text(f"Value:\n{curr_row['CLI_Raw']:.2f}")
 
         quad_color = {"Expansion": "darkgreen", "Slowdown": "darkgoldenrod",
                       "Contraction": "darkred", "Recovery": "darkblue"}[curr_row['Quadrant']]
@@ -328,7 +328,7 @@ class App:
         pe['stat_prev'].set_text(f"Previous Phase:\n{prev_quad}")
 
         import matplotlib.dates as mdates
-        pe['spark_pt'].set_offsets(np.c_[mdates.date2num(curr_row.name), curr_row['PMI']])
+        pe['spark_pt'].set_offsets(np.c_[mdates.date2num(curr_row.name), curr_row['CLI_Raw']])
 
         # Right Sidebar
         c = config['center']

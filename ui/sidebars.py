@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 def create_sparkline_axes(fig: plt.Figure, df) -> tuple:
     """Create the sparkline axes on the right sidebar. Returns (ax, scatter_point)."""
     ax_spark = fig.add_axes([0.84, 0.84, 0.14, 0.10])
-    ax_spark.plot(df.index, df['PMI'], color='#1f497d', linewidth=1.5)
+    ax_spark.plot(df.index, df['CLI_Raw'], color='#1f497d', linewidth=1.5)
     ax_spark.axis('off')
     ax_spark.set_title("Historical Trend", fontsize=10, color='gray', pad=5, fontweight='bold')
     spark_pt = ax_spark.scatter([], [], color='red', s=40, zorder=5)
@@ -51,70 +51,70 @@ def create_right_sidebar(fig: plt.Figure) -> dict:
     """Create right sidebar text elements. Returns dict of text objects."""
     texts = {}
 
-    texts['right_header1'] = fig.text(0.84, 0.77, "MARKET INTERPRETATION",
-                                      fontsize=11, fontweight='bold', color='#1f497d')
-    texts['interp_phase'] = fig.text(0.84, 0.72, "Current Phase:\n--",
-                                     fontsize=10, linespacing=1.5, color='#333333')
-    texts['interp_trend'] = fig.text(0.84, 0.66, "Trend:\n--",
-                                     fontsize=10, linespacing=1.5, color='#333333')
-    texts['interp_signal'] = fig.text(0.84, 0.60, "Signal:\n--",
-                                      fontsize=10, linespacing=1.5, color='#333333')
-    texts['interp_mom'] = fig.text(0.84, 0.54, "Momentum:\n--",
-                                   fontsize=10, linespacing=1.5, color='#333333')
-    texts['interp_overall'] = fig.text(0.84, 0.48, "Overall:\n--",
-                                       fontsize=10, linespacing=1.5, color='#333333')
+    texts['right_header1'] = fig.text(0.845, 0.83, "MARKET INTERPRETATION",
+                                      fontsize=9.5, fontweight='bold', color='#1f497d')
+    texts['interp_phase'] = fig.text(0.845, 0.79, "Current Phase:\n--",
+                                     fontsize=8.5, linespacing=1.1, color='#333333')
+    texts['interp_trend'] = fig.text(0.845, 0.75, "Trend:\n--",
+                                     fontsize=8.5, linespacing=1.1, color='#333333')
+    texts['interp_signal'] = fig.text(0.845, 0.71, "Signal:\n--",
+                                      fontsize=8.5, linespacing=1.1, color='#333333')
+    texts['interp_mom'] = fig.text(0.845, 0.67, "Momentum:\n--",
+                                   fontsize=8.5, linespacing=1.1, color='#333333')
+    texts['interp_overall'] = fig.text(0.845, 0.63, "Overall:\n--",
+                                       fontsize=8.5, linespacing=1.1, color='#333333')
 
     # Separator
     texts['right_sep'] = fig.add_artist(
-        plt.Line2D([0.84, 0.98], [0.45, 0.45], color='lightgray', linewidth=1,
+        plt.Line2D([0.845, 0.985], [0.60, 0.60], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
 
-    texts['right_header2'] = fig.text(0.84, 0.42, "CURRENT READING",
-                                      fontsize=11, fontweight='bold', color='#1f497d')
-    texts['read_health'] = fig.text(0.84, 0.39, "Health:\n--",
-                                    fontsize=10, linespacing=1.2, color='#333333')
-    texts['read_mom'] = fig.text(0.84, 0.35, "Momentum:\n--",
-                                 fontsize=10, linespacing=1.2, color='#333333')
-    texts['read_dist'] = fig.text(0.84, 0.31, "Distance from Center:\n--",
-                                  fontsize=10, linespacing=1.2, color='#333333')
-    texts['read_dir'] = fig.text(0.84, 0.27, "Direction:\n--",
-                                 fontsize=10, linespacing=1.2, color='#333333')
+    texts['right_header2'] = fig.text(0.845, 0.58, "CURRENT READING",
+                                      fontsize=9.5, fontweight='bold', color='#1f497d')
+    texts['read_health'] = fig.text(0.845, 0.54, "Health:\n--",
+                                    fontsize=8.5, linespacing=1.1, color='#333333')
+    texts['read_mom'] = fig.text(0.845, 0.50, "Momentum:\n--",
+                                 fontsize=8.5, linespacing=1.1, color='#333333')
+    texts['read_dist'] = fig.text(0.845, 0.46, "Distance from Center:\n--",
+                                  fontsize=8.5, linespacing=1.1, color='#333333')
+    texts['read_dir'] = fig.text(0.845, 0.42, "Direction:\n--",
+                                 fontsize=8.5, linespacing=1.1, color='#333333')
 
     # Macro Drivers Separator
     texts['right_sep2'] = fig.add_artist(
-        plt.Line2D([0.84, 0.98], [0.24, 0.24], color='lightgray', linewidth=1,
+        plt.Line2D([0.845, 0.985], [0.38, 0.38], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
     
-    texts['right_header3'] = fig.text(0.84, 0.22, "MACRO DRIVERS",
-                                      fontsize=10, fontweight='bold', color='#1f497d')
+    texts['right_header3'] = fig.text(0.845, 0.36, "MACRO DRIVERS",
+                                      fontsize=9.5, fontweight='bold', color='#1f497d')
                                       
     try:
         from ..config import MACRO_SERIES
     except ImportError:
         from config import MACRO_SERIES
-    y_pos = 0.19
+    y_pos = 0.33
     for name in MACRO_SERIES.keys():
         if name in ['Yield 10Y', 'Yield Short']:
             continue
         display_name = name if name != 'Yield Spread' else 'Yield Curve'
-        texts[f'driver_{name}_line1'] = fig.text(0.84, y_pos, f"{display_name}", fontsize=8.5, fontweight='bold', color='#333333')
-        texts[f'driver_{name}_val'] = fig.text(0.98, y_pos, "--", fontsize=8.5, fontweight='bold', color='#333333', ha='right')
-        texts[f'driver_{name}_line2'] = fig.text(0.84, y_pos-0.014, "--", fontsize=8.0, color='#666666')
-        texts[f'driver_{name}_pct'] = fig.text(0.98, y_pos-0.014, "--", fontsize=7.5, color='#666666', ha='right')
-        y_pos -= 0.033
+        texts[f'driver_{name}_line1'] = fig.text(0.845, y_pos, f"{display_name}", fontsize=8.0, fontweight='bold', color='#333333')
+        texts[f'driver_{name}_val'] = fig.text(0.985, y_pos, "--", fontsize=8.0, fontweight='bold', color='#333333', ha='right')
+        texts[f'driver_{name}_line2'] = fig.text(0.845, y_pos-0.014, "--", fontsize=7.5, color='#666666')
+        texts[f'driver_{name}_pct'] = fig.text(0.985, y_pos-0.014, "--", fontsize=7.0, color='#666666', ha='right')
+        y_pos -= 0.04
 
     # Forecast Separator
     texts['right_sep3'] = fig.add_artist(
-        plt.Line2D([0.84, 0.98], [0.065, 0.065], color='lightgray', linewidth=1,
+        plt.Line2D([0.845, 0.985], [0.14, 0.14], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
-    texts['right_header4'] = fig.text(0.84, 0.045, "FORECAST (6M)",
-                                      fontsize=10, fontweight='bold', color='#1f497d')
-    texts['fc_base'] = fig.text(0.84, 0.025, "Base: --", fontsize=8.5, color='#333333')
-    texts['fc_bull'] = fig.text(0.84, 0.010, "Bull: --", fontsize=8.5, color='#333333')
-    texts['fc_bear'] = fig.text(0.98, 0.010, "Bear: --", fontsize=8.5, color='#333333', ha='right')
+    texts['right_header4'] = fig.text(0.845, 0.12, "FORECAST (6M)",
+                                      fontsize=9.5, fontweight='bold', color='#1f497d')
+    texts['fc_base'] = fig.text(0.845, 0.09, "Base: --", fontsize=8.5, color='#333333')
+    texts['fc_bull'] = fig.text(0.845, 0.06, "Bull: --", fontsize=8.5, color='#333333')
+    texts['fc_bear'] = fig.text(0.985, 0.06, "Bear: --", fontsize=8.5, color='#333333', ha='right')
 
     return texts
 
