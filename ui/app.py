@@ -163,6 +163,7 @@ class App:
         for name in MACRO_SERIES.keys():
             if name in ['Yield 10Y', 'Yield Short']: continue
             right_texts.extend([right[f'driver_{name}_line1'], right[f'driver_{name}_val'], right[f'driver_{name}_line2'], right[f'driver_{name}_pct']])
+        right_texts.extend([right['right_header4'], right['fc_base'], right['fc_bull'], right['fc_bear']])
 
         # Assemble plot_elements dict (same structure as original)
         self.plot_elements = {
@@ -178,6 +179,7 @@ class App:
             'interp_overall': right['interp_overall'],
             'read_health': right['read_health'], 'read_mom': right['read_mom'],
             'read_dist': right['read_dist'], 'read_dir': right['read_dir'],
+            'fc_base': right['fc_base'], 'fc_bull': right['fc_bull'], 'fc_bear': right['fc_bear'],
             'status_label': status_label, 'default_status': default_status,
             'ax_open': ax_open,
             'ax_market': self.ax_market, 'ax_market_cfg': ax_market_cfg,
