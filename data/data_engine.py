@@ -145,6 +145,11 @@ class DataEngine:
                     info = self.macro_series.get(col)
                     if info and info.transformation == 'yoy':
                         display_series = cached[col].dropna().pct_change(12) * 100
+                    elif info and info.transformation == 'real_rate' and 'CPI' in df.columns:
+                        cpi_yoy = df['CPI'].dropna().pct_change(12) * 100
+                        repo_rate = cached[col].dropna()
+                        cpi_yoy_aligned = cpi_yoy.reindex(repo_rate.index).ffill()
+                        display_series = repo_rate - cpi_yoy_aligned
                     else:
                         display_series = cached[col]
                         
@@ -171,6 +176,11 @@ class DataEngine:
                 # Transform for metadata display if needed
                 if info.transformation == 'yoy':
                     display_series = series.dropna().pct_change(12) * 100
+                elif info.transformation == 'real_rate' and 'CPI' in df.columns:
+                    cpi_yoy = df['CPI'].dropna().pct_change(12) * 100
+                    repo_rate = series.dropna()
+                    cpi_yoy_aligned = cpi_yoy.reindex(repo_rate.index).ffill()
+                    display_series = repo_rate - cpi_yoy_aligned
                 else:
                     display_series = series
                     
