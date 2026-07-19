@@ -63,7 +63,7 @@ class App:
 
         # Slider
         ax_slider = self.fig.add_axes([0.16, 0.10, 0.68, 0.02])
-        self.slider = Slider(ax_slider, 'Timeline', 0, self.max_frames,
+        self.slider = Slider(ax_slider, '', 0, self.max_frames,
                              valinit=0, valstep=1, color='#1f497d', initcolor='none')
         self.slider.valtext.set_visible(False)
 
