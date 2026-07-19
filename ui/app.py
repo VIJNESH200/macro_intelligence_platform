@@ -625,9 +625,15 @@ class App:
         def set_speed(label):
             speed_map = {'1x': 200, '2x': 100, '3x': 50}
             self.anim.event_source.interval = speed_map[label]
-            self.btn_1x.label.set_color('#1f497d' if label == '1x' else '#495057')
-            self.btn_2x.label.set_color('#1f497d' if label == '2x' else '#495057')
-            self.btn_3x.label.set_color('#1f497d' if label == '3x' else '#495057')
+            for l, btn in [('1x', self.btn_1x), ('2x', self.btn_2x), ('3x', self.btn_3x)]:
+                if label == l:
+                    btn.color = '#1f497d'
+                    btn.ax.set_facecolor('#1f497d')
+                    btn.label.set_color('#ffffff')
+                else:
+                    btn.color = '#ffffff'
+                    btn.ax.set_facecolor('#ffffff')
+                    btn.label.set_color('#495057')
             fig.canvas.draw_idle()
 
         def toggle_tails(label):
@@ -662,6 +668,7 @@ class App:
         self.btn_1x.on_clicked(lambda e: set_speed('1x'))
         self.btn_2x.on_clicked(lambda e: set_speed('2x'))
         self.btn_3x.on_clicked(lambda e: set_speed('3x'))
+        set_speed('1x')  # Initialize active visual state
 
         self.chk_tails.on_clicked(toggle_tails)
         self.chk_labels.on_clicked(toggle_labels)
