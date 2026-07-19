@@ -26,12 +26,12 @@ The **Macro Intelligence Platform** is an academically-validated quantitative fo
 The system is highly modularized, strictly separating data ingestion, feature engineering, and UI:
 
 ```mermaid
-graph TD;
-    DataEngine[Data Engine] --> FeatureEngine[Feature Engine];
-    FeatureEngine --> MacroIntelligenceEngine[Macro Intelligence Engine];
-    MacroIntelligenceEngine --> ForecastingEngine[Forecasting Engine];
-    ForecastingEngine --> UI[Graphical Interface];
-    ForecastingEngine --> ResearchEngine[PDF Report Generator];
+flowchart TD
+    DataEngine[Data Engine] --> FeatureEngine[Feature Engine]
+    FeatureEngine --> MacroIntelligenceEngine[Macro Intelligence Engine]
+    MacroIntelligenceEngine --> ForecastingEngine[Forecasting Engine]
+    ForecastingEngine --> UI[Graphical Interface]
+    ForecastingEngine --> ResearchEngine[PDF Report Generator]
 ```
 
 - `data/`: Orchestrates fetching from providers (FRED, Yahoo Finance) with smart local caching.
