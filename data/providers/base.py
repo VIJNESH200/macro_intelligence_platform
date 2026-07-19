@@ -1,5 +1,6 @@
 """Abstract base class for data providers."""
 from abc import ABC, abstractmethod
+from typing import Optional
 import pandas as pd
 
 
@@ -10,7 +11,7 @@ class BaseProvider(ABC):
         self.last_source_used = None
 
     @abstractmethod
-    def fetch(self, symbol: str, start_date: str, end_date: str | None = None) -> pd.Series:
+    def fetch(self, symbol: str, start_date: str, end_date: Optional[str] = None) -> pd.Series:
         """Fetch a single data series by symbol.
 
         Returns a DatetimeIndex-ed Series resampled to month-start.
