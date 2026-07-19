@@ -92,7 +92,7 @@ class DataEngine:
                 self.data_metadata[self.config['name']] = {
                     'value': round(cached.iloc[-1, 0], 2) if not cached.empty else 'N/A',
                     'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
-                    'source': 'Local Cache',
+                    'source': f"{self.config['source']} (Cached)",
                     'last_updated': 'N/A',
                     'cache_status': f"{indicator} {status}"
                 }
@@ -153,7 +153,7 @@ class DataEngine:
                     self.data_metadata[col] = {
                         'value': round(display_series.dropna().iloc[-1], 2) if not display_series.dropna().empty else 'N/A',
                         'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
-                        'source': 'Local Cache',
+                        'source': f"{info.source} (Cached)" if info else "Unknown (Cached)",
                         'last_updated': 'N/A',
                         'cache_status': f"{indicator} {status}"
                     }

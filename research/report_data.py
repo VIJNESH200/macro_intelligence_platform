@@ -75,7 +75,7 @@ def extract_report_data(df, config: dict, plot_elements: dict,
     data = {
         'date': curr_row.name.strftime('%b %Y'),
         'indicator': config.get('name', 'N/A'),
-        'source': config.get('source', 'N/A'),
+        'source': f"{config.get('source', 'N/A')}, Yahoo Finance",
         'window': f"{config.get('window', 'N/A')} Months",
         'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'center': c,

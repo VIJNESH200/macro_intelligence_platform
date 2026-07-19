@@ -122,8 +122,8 @@ class App:
         # Status bar
         last_update = df.index[-1].strftime('%b %Y')
         default_status = (
-            f"Source: {config['source']} | Indicator: {config['name']} | "
-            f"Frequency: {config['frequency']} | Window: {config['window']} Months | "
+            f"Sources: {config['source']}, Yahoo Finance | Indicator: {config['name']} | "
+            f"Frequency: {config['frequency'].title()} | Window: {config['window']} Months | "
             f"Last Updated: {last_update} | Macro Intelligence Platform v{config['version']}"
         )
         self.fig.add_artist(plt.Line2D([0.01, 0.99], [0.02, 0.02],
