@@ -254,7 +254,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
             
             if pd.isna(raw_val):
                 raw_disp = "N/A"
-            elif name in ['CPI'] and not pd.isna(yoy_val):
+            elif not pd.isna(yoy_val):
                 raw_disp = f"{yoy_val:.2f}%\n({pct_str})"
             elif name in ['Yield 10Y', 'Yield Short', 'Yield Spread', 'Real Policy Rate']:
                 raw_disp = f"{raw_val:.2f}%\n({pct_str})"

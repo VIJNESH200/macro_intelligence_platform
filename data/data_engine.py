@@ -148,8 +148,8 @@ class DataEngine:
                     elif info and info.transformation == 'real_rate' and 'CPI' in df.columns:
                         cpi_yoy = df['CPI'].dropna().pct_change(12) * 100
                         repo_rate = cached[col].dropna()
-                        cpi_yoy_aligned = cpi_yoy.reindex(repo_rate.index).ffill()
-                        display_series = repo_rate - cpi_yoy_aligned
+                        combined_index = repo_rate.index.union(cpi_yoy.index)
+                        display_series = (repo_rate.reindex(combined_index).ffill() - cpi_yoy.reindex(combined_index).ffill()).dropna()
                     else:
                         display_series = cached[col]
                         
@@ -179,8 +179,8 @@ class DataEngine:
                 elif info.transformation == 'real_rate' and 'CPI' in df.columns:
                     cpi_yoy = df['CPI'].dropna().pct_change(12) * 100
                     repo_rate = series.dropna()
-                    cpi_yoy_aligned = cpi_yoy.reindex(repo_rate.index).ffill()
-                    display_series = repo_rate - cpi_yoy_aligned
+                    combined_index = repo_rate.index.union(cpi_yoy.index)
+                    display_series = (repo_rate.reindex(combined_index).ffill() - cpi_yoy.reindex(combined_index).ffill()).dropna()
                 else:
                     display_series = series
                     

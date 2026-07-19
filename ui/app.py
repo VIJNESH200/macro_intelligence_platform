@@ -404,7 +404,7 @@ class App:
                 display_name = name if name != 'Yield Spread' else 'Yield Curve'
                 if d['state'] != 'Unknown':
                     yoy_val = d.get('yoy_value', np.nan)
-                    if name in ['CPI'] and not pd.isna(yoy_val):
+                    if not pd.isna(yoy_val):
                         raw_str = f"{yoy_val:.2f}%"
                     elif name in ['Yield 10Y', 'Yield Short', 'Yield Spread', 'Real Policy Rate']:
                         raw_str = f"{d['raw_value']:.2f}%"
