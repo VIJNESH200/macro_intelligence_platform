@@ -114,7 +114,7 @@ def create_right_sidebar(fig: plt.Figure) -> dict:
                                       fontsize=9.5, fontweight='bold', color='#1f497d')
     texts['fc_base'] = fig.text(0.845, 0.09, "Base: --", fontsize=8.5, color='#333333')
     texts['fc_bull'] = fig.text(0.845, 0.06, "Bull: --", fontsize=8.5, color='#333333')
-    texts['fc_bear'] = fig.text(0.985, 0.06, "Bear: --", fontsize=8.5, color='#333333', ha='right')
+    texts['fc_bear'] = fig.text(0.845, 0.03, "Bear: --", fontsize=8.5, color='#333333')
 
     return texts
 
