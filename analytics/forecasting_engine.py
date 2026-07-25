@@ -225,17 +225,26 @@ class ForecastingEngine:
 
         evals = macro_contrib['evaluations']
         
-        # Calculate quantitative driver score weighting
+        # Calculate quantitative driver score weighting using real keys ('score', 'level', 'trend')
         score_sum = 0.0
         weight_sum = 0.0
         for name, ev in evals.items():
-            z_val = ev.get('z_score', 0.0) or 0.0
-            impact = ev.get('impact', 'Neutral')
+            score_val = ev.get('score', 0.0) or 0.0
+            level_val = ev.get('level', ev.get('state', 'Neutral'))
+            trend_val = ev.get('trend', 'Flat')
             w = 1.5 if name == 'ICI' else 1.0
-            if impact == 'Positive':
-                score_sum += w * abs(z_val)
-            elif impact == 'Negative':
-                score_sum -= w * abs(z_val)
+
+            if level_val == 'Positive':
+                score_sum += w * max(abs(score_val), 0.5)
+            elif level_val == 'Negative':
+                score_sum -= w * max(abs(score_val), 0.5)
+            else:  # Neutral level: use score value or trend direction
+                if score_val != 0.0:
+                    score_sum += w * score_val
+                elif trend_val == 'Improving':
+                    score_sum += w * 0.3
+                elif trend_val == 'Weakening':
+                    score_sum -= w * 0.3
             weight_sum += w
 
         net_z = (score_sum / weight_sum) if weight_sum > 0 else 0.0
@@ -246,8 +255,8 @@ class ForecastingEngine:
         magnitude = min(abs(macro_score) / 3.0, 1.0)
 
         # Monthly trajectory shift
-        dx_per_month = net_direction * (0.2 + 0.1 * magnitude)
-        dy_per_month = net_direction * (0.15 + 0.1 * magnitude)
+        dx_per_month = net_direction * (0.15 + 0.1 * magnitude)
+        dy_per_month = net_direction * (0.10 + 0.1 * magnitude)
 
         path = []
         x_proj, y_proj = x_now, y_now
