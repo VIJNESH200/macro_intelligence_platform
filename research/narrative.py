@@ -1,3 +1,4 @@
+from __future__ import annotations
 # report_narrative.py
 import pandas as pd
 

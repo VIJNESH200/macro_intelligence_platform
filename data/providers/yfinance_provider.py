@@ -1,3 +1,4 @@
+from __future__ import annotations
 """yfinance data provider — wraps yfinance for market data."""
 import pandas as pd
 import yfinance as yf

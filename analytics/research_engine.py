@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pandas as pd
 from .macro_intelligence_engine import MacroIntelligenceEngine
 

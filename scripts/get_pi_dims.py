@@ -1,3 +1,4 @@
+from __future__ import annotations
 import requests
 BASE = 'https://api.imf.org/external/sdmx/3.0'
 r = requests.get(f'{BASE}/structure/dataflow/IMF.STA/PI/+', params={'detail': 'full', 'references': 'all'})

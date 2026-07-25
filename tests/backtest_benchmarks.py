@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Rigorous validation and benchmarking of the Forecasting Engine.
 ================================================================

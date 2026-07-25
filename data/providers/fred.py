@@ -1,3 +1,4 @@
+from __future__ import annotations
 """FRED data provider — wraps pandas-datareader for FRED API access."""
 import pandas as pd
 import pandas_datareader.data as web

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Data Engine — Orchestrates data loading across all providers.
 =============================================================

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Insights — Analytical flags, risk levels, confidence scores, alerts.
 ====================================================================

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Feature Engine — Standardized feature computation for macro indicators.
 =======================================================================

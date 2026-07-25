@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 UI Layout — Figure and axes creation.
 ======================================

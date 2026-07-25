@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Scenario Engine — Bull, Base, Bear scenario analysis.
 =====================================================

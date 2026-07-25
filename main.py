@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Economic Regime Intelligence Platform v2.5 — Entry Point
 ================================================

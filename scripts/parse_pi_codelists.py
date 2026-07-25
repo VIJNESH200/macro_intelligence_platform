@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 with open('pi_codelists.json', 'r') as f:
     pi = json.load(f)

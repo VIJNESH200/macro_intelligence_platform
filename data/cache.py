@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Local CSV cache with staleness checks and graceful fallback."""
 import os
 import hashlib

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Stub providers for future macro indicators (PMI, CPI, Yield Curve, Credit)."""
 from .base import BaseProvider
 import pandas as pd

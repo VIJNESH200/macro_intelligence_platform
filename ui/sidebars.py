@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 UI Sidebars — Left and right sidebar text element creation.
 ============================================================

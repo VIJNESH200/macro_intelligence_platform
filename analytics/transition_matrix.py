@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Transition Matrix — Full 4×4 Markov transition probability matrix.
 ===================================================================

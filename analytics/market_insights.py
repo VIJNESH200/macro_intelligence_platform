@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Market Insights — Deterministic rule-based market commentary.
 ==============================================================

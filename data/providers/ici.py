@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 ICI Provider — Direct fetcher for India's Index of Eight Core Industries (ICI).
 ==============================================================================

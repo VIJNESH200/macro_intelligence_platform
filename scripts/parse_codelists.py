@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 with open('cpi_codelists.json', 'r') as f:
     cpi = json.load(f)

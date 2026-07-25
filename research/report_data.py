@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Report Data — Extracts structured data from the DataFrame for report consumption.
 ==================================================================================

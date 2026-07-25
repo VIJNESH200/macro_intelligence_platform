@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 App — Main GUI orchestrator for the Macro Intelligence Platform.
 =================================================================

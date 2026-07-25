@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Forecasting Engine — Projects business cycle trajectory forward.
 ================================================================

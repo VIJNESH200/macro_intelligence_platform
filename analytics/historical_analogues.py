@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Historical Analogues — Euclidean distance-based analogue matching.
 ==================================================================

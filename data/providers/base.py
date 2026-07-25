@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Abstract base class for data providers."""
 from abc import ABC, abstractmethod
 from typing import Optional
