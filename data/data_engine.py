@@ -59,10 +59,13 @@ class DataEngine:
                 return 'Stale', '🔴'
 
     def __init__(self, config: dict, market_series: dict,
-                 macro_series: dict = None, cache_dir: str | None = None):
+                 macro_series: dict = None, cache_dir: str | None = None,
+                 offline: bool = False):
+        import os
         self.config = config
         self.market_series = market_series
         self.macro_series = macro_series or {}
+        self.offline = offline or bool(os.environ.get("CI")) or bool(os.environ.get("OFFLINE"))
         
         self.providers = {
             'fred': FREDProvider(),
@@ -86,6 +89,22 @@ class DataEngine:
         cache_key = f"indicator_{ticker}"
 
         print(f"Fetching {self.config['name']} ({ticker}) from {source}...")
+
+        import os
+        local_path = os.path.join(os.path.dirname(__file__), 'local_data', f"{ticker}.csv")
+
+        if self.offline and os.path.exists(local_path):
+            print("  (using offline bundled indicator data)")
+            local_df = pd.read_csv(local_path, index_col=0, parse_dates=True)
+            rel_date = local_df.dropna().index[-1] if not local_df.dropna().empty else None
+            self.data_metadata[self.config['name']] = {
+                'value': round(local_df.iloc[-1, 0], 2) if not local_df.empty else 'N/A',
+                'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
+                'source': f"{self.config['source']} (Offline Bundled)",
+                'last_updated': 'N/A',
+                'cache_status': 'Offline 🟢'
+            }
+            return local_df
 
         if self.cache.is_fresh(cache_key):
             cached = self.cache.get(cache_key)
@@ -147,6 +166,14 @@ class DataEngine:
             
         print("Fetching Macro Driver series...")
         cache_key = "macro_series_all"
+
+        import os
+        local_macro_path = os.path.join(os.path.dirname(__file__), 'local_data', 'macro_series_fallback.csv')
+
+        if self.offline and os.path.exists(local_macro_path):
+            print("  (using offline bundled macro data)")
+            local_df = pd.read_csv(local_macro_path, index_col=0, parse_dates=True)
+            return df.join(local_df, how='outer')
 
         if self.cache.is_fresh(cache_key):
             cached = self.cache.get(cache_key)
@@ -241,6 +268,16 @@ class DataEngine:
         """Load all market context series and merge into the indicator DataFrame."""
         print("Fetching Market Context series...")
         cache_key = "market_series_all"
+
+        import os
+        local_market_path = os.path.join(os.path.dirname(__file__), 'local_data', 'market_series_fallback.csv')
+
+        if self.offline and os.path.exists(local_market_path):
+            print("  (using offline bundled market data)")
+            local_df = pd.read_csv(local_market_path, index_col=0, parse_dates=True)
+            for col in local_df.columns:
+                df[col] = local_df[col]
+            return df
 
         if self.cache.is_fresh(cache_key):
             cached = self.cache.get(cache_key)

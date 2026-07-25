@@ -27,11 +27,7 @@ class CreditProvider(BaseProvider):
         self.last_source_used = self._source
         
         if not self.raw_credit.empty:
-            # We return raw credit. Feature Engine will do YoY transformation.
-            # But the user asked: "Calculate YoY growth if only raw credit outstanding is available." 
-            # In Macro Intelligence Platform, Feature Engine does YoY calculation based on config transformation='yoy'.
-            # It's better to just return raw and let the engine do it, OR pre-calculate if we want to expose raw values directly in the metadata.
-            # We will return the raw series here and let the DataEngine track the raw value in metadata.
+            # Returns raw credit outstanding series; FeatureEngine performs YoY transformation
             return self.raw_credit
             
         self.last_source_used = "Unavailable"

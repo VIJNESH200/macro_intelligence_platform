@@ -20,12 +20,9 @@ class IMFProvider(BaseProvider):
         return 'monthly'
     
     def fetch(self, symbol: str, start_date: str = '2010', end_date: str = None) -> pd.Series:
-        """
-        Fetch data from api.imf.org using sdmx1 library.
-        symbol format is the SDMX key, e.g., 'IND.CPI._T.IX.M' or 'IND.IND.IX.M'.
-        Wait, CPI dataflow is 'CPI', IIP (PI) dataflow is 'PI'. We can parse this from the symbol structure or
-        we can assume the symbol holds a prefix for the dataflow or we just figure it out.
-        If symbol contains CPI, it's CPI dataflow, else PI.
+        """Fetch macroeconomic series from api.imf.org using SDMX.
+
+        Determines the appropriate SDMX dataflow ('CPI' or 'PI') based on the symbol key.
         """
         try:
             client = sdmx.Client('IMF_DATA')

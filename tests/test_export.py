@@ -1,4 +1,8 @@
 from __future__ import annotations
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from data.data_engine import DataEngine
 from features.feature_engine import FeatureEngine
 from analytics.macro_intelligence_engine import MacroIntelligenceEngine
@@ -41,9 +45,20 @@ data = {
 }
 
 import os
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 if not os.path.exists('exports'):
     os.makedirs('exports')
 
+fig, ax = plt.subplots()
+ax.plot([0, 1], [0, 1])
+temp_fig = "temp_fig.png"
+fig.savefig(temp_fig)
+plt.close(fig)
+
+out_pdf = 'exports/test_report.pdf'
 build_pdf_report(
     data=data,
     analysis={},
@@ -52,8 +67,13 @@ build_pdf_report(
     narrative={'executive_summary': 'test', 'takeaways': [], 'interpretation': 'test', 'risks': [], 'methodology': 'test'},
     analogues={},
     deltas=[],
-    chart_path='temp_fig.png',
-    output_path='exports/test_report.pdf',
+    chart_path=temp_fig,
+    output_path=out_pdf,
     data_metadata=engine.get_metadata
 )
 print("PDF Exported Successfully!")
+
+if os.path.exists(temp_fig):
+    os.remove(temp_fig)
+if os.path.exists(out_pdf):
+    os.remove(out_pdf)

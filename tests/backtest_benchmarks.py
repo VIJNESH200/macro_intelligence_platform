@@ -23,7 +23,8 @@ from analytics.transition_matrix import compute_transition_matrix, get_transitio
 
 def run_benchmarks():
     print("Loading historical data...")
-    engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES)
+    # Use offline mode for deterministic, fast CI & test runs
+    engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES, offline=True)
     df = engine.load_all()
     df, _ = FeatureEngine.compute_all(df, CONFIG)
     
@@ -199,6 +200,18 @@ def run_benchmarks():
     cal_df = pd.DataFrame(calibration_data)
     print(cal_df.to_string(index=False))
     print("==================================================================")
+
+    # ----------------------------------------------------
+    # CI Quality Gate Assertions
+    # ----------------------------------------------------
+    consensus_acc = (res_df['consensus_quad'] == res_df['real_6m_quad']).mean() * 100
+    persistence_acc = (res_df['curr_quad'] == res_df['real_6m_quad']).mean() * 100
+    dist_mae = np.sqrt((res_df['consensus_x'] - res_df['real_6m_x'])**2 + (res_df['consensus_y'] - res_df['real_6m_y'])**2).mean()
+
+    assert consensus_acc >= 60.0, f"CI REGRESSION: 6M Consensus Quadrant Accuracy drops below 60% threshold ({consensus_acc:.1f}%)"
+    assert consensus_acc > persistence_acc, f"CI REGRESSION: Consensus model fails to outperform Persistence baseline ({consensus_acc:.1f}% vs {persistence_acc:.1f}%)"
+    assert dist_mae <= 1.20, f"CI REGRESSION: Distance MAE exceeds 1.20 threshold ({dist_mae:.3f})"
+    print("\n[+] CI Benchmark Quality Gate: PASSED (All accuracy assertions satisfied)")
 
 
 if __name__ == "__main__":

@@ -57,10 +57,7 @@ for i, date in enumerate(iip_new_dates):
     if prev_year_date in iip_df.index:
         prev_val = iip_df.loc[prev_year_date, 'INDPROINDMISMEI']
     else:
-        # Check if it was already generated
-        if prev_year_date in cpi_new_dates:
-             # Wait, this is IIP not CPI!
-             pass
+        # Index lookup for previous year baseline
         prev_val = iip_df.loc[date - pd.DateOffset(years=1), 'INDPROINDMISMEI'] if (date - pd.DateOffset(years=1)) in iip_df.index else 130
     
     # approx 4% YoY growth with some noise

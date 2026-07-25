@@ -121,7 +121,11 @@ class FeatureEngine:
                 base_feature = series.dropna().pct_change(12) * 100
             elif info.transformation == 'real_rate':
                 # Repo rate level - CPI YoY rate
-                cpi_yoy = df['CPI_Base'] if 'CPI_Base' in df.columns else (df['CPI'].pct_change(12)*100)
+                if 'CPI_Base' in df.columns:
+                    cpi_yoy = df['CPI_Base']
+                else:
+                    print("  [!] Notice: CPI_Base not found for Real Policy Rate; computing CPI YoY directly from raw series.")
+                    cpi_yoy = df['CPI'].pct_change(12) * 100
                 repo_rate = series.reindex(df.index).ffill()
                 base_feature = repo_rate - cpi_yoy
             elif info.transformation == 'spread':
