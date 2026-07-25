@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: "Macro Intelligence Platform"
+message: "If you use this software in research or quantitative analysis, please cite it as below."
+type: software
+authors:
+  - name: "Vijnesh"
+repository-code: "https://github.com/VIJNESH200/macro_intelligence_platform"
+keywords:
+  - macroeconomics
+  - quantitative-finance
+  - business-cycle
+  - economic-forecasting
+  - python
+  - open-data
+license: MIT
+date-released: 2026-07-25
