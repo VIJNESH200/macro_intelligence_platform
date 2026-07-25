@@ -112,6 +112,16 @@ class DataEngine:
                 cached = self.cache.get(cache_key)
                 if cached is not None:
                     return cached
+            # Fall back to bundled local fallback CSV
+            import os
+            local_path = os.path.join(os.path.dirname(__file__), 'local_data', f"{ticker}.csv")
+            if os.path.exists(local_path):
+                print("  [!] Network and cache failed, using bundled local fallback data")
+                try:
+                    local_df = pd.read_csv(local_path, index_col=0, parse_dates=True)
+                    return local_df
+                except Exception:
+                    pass
             raise ValueError(f"No data returned for ticker {ticker} and no cache available.")
 
         df = series.to_frame(name=ticker)
@@ -209,7 +219,18 @@ class DataEngine:
 
         # Cache the macro columns
         macro_cols = list(self.macro_series.keys())
-        existing_cols = [c for c in macro_cols if c in df.columns]
+        existing_cols = [c for c in macro_cols if c in df.columns and not df[c].isna().all()]
+        if not existing_cols:
+            import os
+            local_macro_path = os.path.join(os.path.dirname(__file__), 'local_data', 'macro_series_fallback.csv')
+            if os.path.exists(local_macro_path):
+                try:
+                    local_df = pd.read_csv(local_macro_path, index_col=0, parse_dates=True)
+                    df = df.join(local_df, how='outer')
+                    existing_cols = [c for c in macro_cols if c in df.columns]
+                except Exception:
+                    pass
+
         if existing_cols:
             self.cache.put(cache_key, df[existing_cols])
 
@@ -257,7 +278,19 @@ class DataEngine:
 
         # Cache the market columns
         market_cols = list(self.market_series.keys())
-        existing_cols = [c for c in market_cols if c in df.columns]
+        existing_cols = [c for c in market_cols if c in df.columns and not df[c].isna().all()]
+        if not existing_cols:
+            import os
+            local_market_path = os.path.join(os.path.dirname(__file__), 'local_data', 'market_series_fallback.csv')
+            if os.path.exists(local_market_path):
+                try:
+                    local_df = pd.read_csv(local_market_path, index_col=0, parse_dates=True)
+                    for col in local_df.columns:
+                        df[col] = local_df[col]
+                    existing_cols = [c for c in market_cols if c in df.columns]
+                except Exception:
+                    pass
+
         if existing_cols:
             self.cache.put(cache_key, df[existing_cols])
 
