@@ -124,6 +124,10 @@ Unlike proprietary macro engines, this platform operates on 100% open public dat
 
 Clicking the **"Export PDF"** button in the dashboard generates a publication-ready macroeconomic brief in `exports/`:
 
+| Page 1: Executive Summary & Thesis | Page 2: Cycle Position & Dashboard |
+| :---: | :---: |
+| ![PDF Strategy Note Page 1](docs/assets/pdf_report_preview.png) | ![PDF Strategy Note Page 2](docs/assets/pdf_report_page2.png) |
+
 - **Executive Summary & Strategy Cards**: Stance classification (*Highly Constructive, Constructive, Cautious, Defensive, Highly Defensive*).
 - **Markov Transition Probabilities**: Empirical 4×4 regime transition probabilities and expected phase durations.
 - **Scenario Horizon Matrix**: 3M/6M/9M Bull, Base, and Bear probabilistic paths with expected asset returns.
