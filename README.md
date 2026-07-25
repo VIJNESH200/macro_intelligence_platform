@@ -114,7 +114,7 @@ Unlike proprietary macro engines, this platform operates on 100% open public dat
 
 - **OECD India CLI**: Sourced directly from FRED (`INDLOLITOAASTSAM`).
 - **Index of Eight Core Industries (ICI)**: Sourced live from the official DPIIT portal (`eaindustry.nic.in`), chain-linked across base years (2011-12 and 2022-23).
-- **Consumer Price Index (CPI)**: Sourced from FRED / Ministry of Statistics (`INDCPIALLMINMEI`).
+- **Consumer Price Index (CPI)**: Sourced via IMF SDMX (`IND.CPI._T.IX.M`) & official government statistics.
 - **Yield Curve & Real Rates**: 10Y India Government Bond Yield vs. 91D T-Bill Rate and RBI Policy Repo Rate.
 - **Market Context**: Live Yahoo Finance indices (Nifty 50, Sensex, Nifty Bank, S&P 500, Nasdaq 100, Brent Crude, USD/INR, VIX).
 
