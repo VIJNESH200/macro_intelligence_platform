@@ -100,7 +100,13 @@ class ForecastingEngine:
             if h in horizons:
                 quadrant = ForecastingEngine._get_quadrant(x_blend, y_blend, center)
                 conv = ForecastingEngine._compute_conviction(
-                    macro_contrib, analogues, h
+                    mom_proj['path'][h - 1],
+                    ana_proj['path'][h - 1],
+                    macro_proj['path'][h - 1],
+                    center,
+                    analogues,
+                    macro_contrib,
+                    h
                 )
                 forecasts[f'forecast_{h}m'] = {
                     'x': round(x_blend, 4),
@@ -210,7 +216,7 @@ class ForecastingEngine:
 
     @staticmethod
     def _macro_driver_signal(df, idx, center, macro_contrib, max_h):
-        """Signal 3: Directional bias from macro driver trends."""
+        """Signal 3: Quantitative multi-factor projection from macro driver Z-scores."""
         x_now = df['X'].iloc[idx]
         y_now = df['Y'].iloc[idx]
 
@@ -219,29 +225,29 @@ class ForecastingEngine:
 
         evals = macro_contrib['evaluations']
         
-        # Count improving vs weakening
-        improving = 0
-        weakening = 0
+        # Calculate quantitative driver score weighting
+        score_sum = 0.0
+        weight_sum = 0.0
         for name, ev in evals.items():
-            trend = ev.get('trend', 'Flat')
-            if trend == 'Improving':
-                improving += 1
-            elif trend == 'Weakening':
-                weakening += 1
+            z_val = ev.get('z_score', 0.0) or 0.0
+            impact = ev.get('impact', 'Neutral')
+            w = 1.5 if name == 'ICI' else 1.0
+            if impact == 'Positive':
+                score_sum += w * abs(z_val)
+            elif impact == 'Negative':
+                score_sum -= w * abs(z_val)
+            weight_sum += w
 
-        total = improving + weakening
-        if total == 0:
-            net_direction = 0.0
-        else:
-            net_direction = (improving - weakening) / total  # -1 to +1
+        net_z = (score_sum / weight_sum) if weight_sum > 0 else 0.0
+        net_direction = np.clip(net_z / 2.0, -1.0, 1.0)
 
         # Scale by macro score magnitude
         macro_score = macro_contrib.get('macro_score', 0) or 0
-        magnitude = min(abs(macro_score) / 3.0, 1.0)  # Normalize to 0-1
+        magnitude = min(abs(macro_score) / 3.0, 1.0)
 
-        # Directional shift per month
-        dx_per_month = net_direction * magnitude * 0.3  # scaled to reasonable units
-        dy_per_month = net_direction * magnitude * 0.2  # momentum shifts more slowly
+        # Monthly trajectory shift
+        dx_per_month = net_direction * (0.2 + 0.1 * magnitude)
+        dy_per_month = net_direction * (0.15 + 0.1 * magnitude)
 
         path = []
         x_proj, y_proj = x_now, y_now
@@ -253,41 +259,36 @@ class ForecastingEngine:
         return {'path': path}
 
     @staticmethod
-    def _compute_conviction(macro_contrib, analogues, horizon):
-        """Compute Forecast Conviction score (0-100%)."""
-        # Start from a high baseline conviction
-        conviction = 90.0
+    def _compute_conviction(mom_pt, ana_pt, macro_pt, center, analogues, macro_contrib, horizon):
+        """Compute Forecast Conviction score (0-100%) based on empirical signal consensus agreement."""
+        q_mom = ForecastingEngine._get_quadrant(mom_pt[0], mom_pt[1], center)
+        q_ana = ForecastingEngine._get_quadrant(ana_pt[0], ana_pt[1], center)
+        q_mac = ForecastingEngine._get_quadrant(macro_pt[0], macro_pt[1], center)
 
-        # 1. Penalize for trend disagreement (consistency)
-        if macro_contrib and macro_contrib.get('evaluations'):
-            evals = macro_contrib['evaluations']
-            trends = [ev.get('trend', 'Flat') for ev in evals.values() if ev.get('state') != 'Unknown']
-            if trends:
-                improving = trends.count('Improving')
-                weakening = trends.count('Weakening')
-                flat = trends.count('Flat')
-                consistency = max(improving, weakening, flat) / len(trends)
-                # Max penalty of 20% for complete disagreement
-                conviction -= (1.0 - consistency) * 20.0
+        quads = [q_mom, q_ana, q_mac]
+        from collections import Counter
+        most_common_count = Counter(quads).most_common(1)[0][1]
 
-        # 2. Penalize for analogue outcomes dispersion
+        # Base conviction calibrated directly by multi-signal agreement
+        if most_common_count == 3:
+            base_conv = 72.0  # Unanimous signal agreement
+        elif most_common_count == 2:
+            base_conv = 54.0  # Majority signal agreement
+        else:
+            base_conv = 32.0  # Split signal consensus
+
+        # Adjust for analogue similarity quality
         if analogues and analogues.get('matches'):
             matches = [m for m in analogues['matches'] if m.get('similarity_score') is not None]
             if matches:
                 sims = [m['similarity_score'] for m in matches]
                 avg_sim = sum(sims) / len(sims)
-                # Low similarity penalizes conviction
-                conviction -= (100.0 - avg_sim) * 0.5
+                base_conv += (avg_sim - 70.0) * 0.25
 
-        # 3. Penalize for missing data
-        if macro_contrib and 'all_drivers' in macro_contrib:
-            unknowns = sum(1 for d in macro_contrib['all_drivers'] if d.get('state') == 'Unknown')
-            conviction -= unknowns * 10.0
+        # Apply horizon uncertainty decay (3% per month)
+        base_conv -= (horizon - 1) * 3.0
 
-        # 4. Decay over the horizon (5% per month)
-        conviction -= (horizon - 1) * 5.0
-
-        return max(10.0, min(95.0, conviction))
+        return max(15.0, min(95.0, base_conv))
 
     @staticmethod
     def _estimate_residual_std(df, idx):
