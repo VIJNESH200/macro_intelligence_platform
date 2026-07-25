@@ -6,7 +6,7 @@
 
 ![Macro Intelligence Dashboard](docs/assets/dashboard_preview.png)
 
-The **Macro Intelligence Platform** is an academically-validated quantitative forecasting and reporting engine. It traces the business cycle using Composite Leading Indicators (CLI) and macroeconomic variables, providing scenario analysis and conviction scoring for the next 6-month horizon.
+The **Macro Intelligence Platform** is an academically-validated quantitative forecasting and reporting engine. It traces the business cycle using Composite Leading Indicators (CLI) and macroeconomic variables, providing scenario analysis and conviction scoring for the next 9-month horizon.
 
 ---
 
