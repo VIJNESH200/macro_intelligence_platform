@@ -84,35 +84,37 @@ class App:
         self.btn_reset = self._style_button(ax_reset, 'Reset')
 
         # Group 2: Animation
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.37, grp_y, 0.11, grp_h, "Animation")
-        ax_1x = self.fig.add_axes([0.376, 0.028, 0.028, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.33, grp_y, 0.11, grp_h, "Animation")
+        ax_1x = self.fig.add_axes([0.336, 0.028, 0.028, 0.035])
         self.btn_1x = self._style_button(ax_1x, '1x')
         self.btn_1x.label.set_color('#1f497d')
-        ax_2x = self.fig.add_axes([0.410, 0.028, 0.028, 0.035])
+        ax_2x = self.fig.add_axes([0.370, 0.028, 0.028, 0.035])
         self.btn_2x = self._style_button(ax_2x, '2x')
-        ax_3x = self.fig.add_axes([0.444, 0.028, 0.028, 0.035])
+        ax_3x = self.fig.add_axes([0.404, 0.028, 0.028, 0.035])
         self.btn_3x = self._style_button(ax_3x, '3x')
 
         # Group 3: Display
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.49, grp_y, 0.22, grp_h, "Display")
-        ax_chk_tails = self.fig.add_axes([0.495, 0.045, 0.10, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.45, grp_y, 0.22, grp_h, "Display")
+        ax_chk_tails = self.fig.add_axes([0.455, 0.045, 0.10, 0.035])
         self.chk_tails = self._style_check(ax_chk_tails, ('Show Tails',), (True,))
-        ax_chk_labels = self.fig.add_axes([0.605, 0.045, 0.10, 0.035])
+        ax_chk_labels = self.fig.add_axes([0.565, 0.045, 0.10, 0.035])
         self.chk_labels = self._style_check(ax_chk_labels, ('Show Labels',), (True,))
-        ax_chk_forecast = self.fig.add_axes([0.495, 0.020, 0.10, 0.035])
+        ax_chk_forecast = self.fig.add_axes([0.455, 0.020, 0.10, 0.035])
         self.chk_forecast = self._style_check(ax_chk_forecast, ('Show Forecast',), (True,))
-        ax_chk_market = self.fig.add_axes([0.605, 0.020, 0.10, 0.035])
+        ax_chk_market = self.fig.add_axes([0.565, 0.020, 0.10, 0.035])
         self.chk_market = self._style_check(ax_chk_market, ('Market Context',), (True,))
 
         # Group 4: Tools
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.72, grp_y, 0.12, grp_h, "Tools")
-        ax_export = self.fig.add_axes([0.73, 0.028, 0.045, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.68, grp_y, 0.16, grp_h, "Tools")
+        ax_export = self.fig.add_axes([0.685, 0.028, 0.045, 0.035])
         self.btn_export = self._style_button(ax_export, 'Export')
-        ax_help = self.fig.add_axes([0.785, 0.028, 0.045, 0.035])
+        ax_help = self.fig.add_axes([0.735, 0.028, 0.045, 0.035])
         self.btn_help = self._style_button(ax_help, 'Help')
+        ax_cache = self.fig.add_axes([0.785, 0.028, 0.050, 0.035])
+        self.btn_cache = self._style_button(ax_cache, 'Clr Cache')
 
         # Open Folder button (hidden)
-        ax_open = self.fig.add_axes([0.74, 0.002, 0.08, 0.016])
+        ax_open = self.fig.add_axes([0.70, 0.002, 0.08, 0.016])
         self.btn_open = Button(ax_open, 'Open Folder', color='#e9ecef', hovercolor='#dee2e6')
         self.btn_open.label.set_fontsize(8)
         self.btn_open.label.set_color('#1f497d')
@@ -194,7 +196,7 @@ class App:
             'control_axes': [ax_slider, ax_play, ax_pause, ax_reset,
                              ax_1x, ax_2x, ax_3x,
                              ax_chk_tails, ax_chk_labels, ax_chk_market, ax_chk_forecast,
-                             ax_export, ax_help, ax_open,
+                             ax_export, ax_help, ax_cache, ax_open,
                              ax_market_cfg, ax_market_mode],
             'control_bg_elements': control_bg_elements
         }
@@ -402,6 +404,15 @@ class App:
                 pct = pe[f'driver_{name}_pct']
                 
                 display_name = name if name != 'Yield Spread' else 'Yield Curve'
+                
+                meta = self.data_metadata.get(name, {})
+                if meta:
+                    cache_status = meta.get('cache_status', '')
+                    emoji = cache_status.split(' ')[0] if cache_status else ''
+                    rel_date = meta.get('release_date', '')
+                    if rel_date:
+                        display_name = f"{display_name} {emoji} ({rel_date})"
+
                 if d['state'] != 'Unknown':
                     yoy_val = d.get('yoy_value', np.nan)
                     if not pd.isna(yoy_val):
@@ -470,9 +481,9 @@ class App:
             bull_sc = next((s for s in scenarios if s['name'] == 'Bull'), None)
             bear_sc = next((s for s in scenarios if s['name'] == 'Bear'), None)
             
-            pe['fc_base'].set_text(f"Base: {base_sc['projected_quadrant_6m'] if base_sc else '--'} ({base_sc['probability'] if base_sc else 0:.0f}%)")
-            pe['fc_bull'].set_text(f"Bull: {bull_sc['projected_quadrant_6m'] if bull_sc else '--'} ({bull_sc['probability'] if bull_sc else 0:.0f}%)")
-            pe['fc_bear'].set_text(f"Bear: {bear_sc['projected_quadrant_6m'] if bear_sc else '--'} ({bear_sc['probability'] if bear_sc else 0:.0f}%)")
+            pe['fc_base'].set_text(f"Base: {base_sc['projected_quadrant_9m'] if base_sc else '--'} ({base_sc['probability'] if base_sc else 0:.0f}%)")
+            pe['fc_bull'].set_text(f"Bull: {bull_sc['projected_quadrant_9m'] if bull_sc else '--'} ({bull_sc['probability'] if bull_sc else 0:.0f}%)")
+            pe['fc_bear'].set_text(f"Bear: {bear_sc['projected_quadrant_9m'] if bear_sc else '--'} ({bear_sc['probability'] if bear_sc else 0:.0f}%)")
             
         # Draw Forecast Line Overlay
         if self.chk_forecast.get_status()[0] and 'projected_path' in forecast_result:
@@ -1048,7 +1059,7 @@ The path transitions through four phases:
 
                     export_csv = pd.DataFrame({
                         'Date': out_df.index.strftime('%Y-%m-%d'),
-                        'Raw Indicator Value': out_df['PMI'],
+                        'Raw Indicator Value': out_df['CLI_Raw'],
                         'Health (X)': out_df['X'].round(4),
                         'Momentum (Y)': out_df['Y'].round(4),
                         'Quadrant': out_df['Quadrant'],
@@ -1105,6 +1116,21 @@ The path transitions through four phases:
             plt.show(block=False)
 
         self.btn_export.on_clicked(show_export_menu)
+        
+        def on_clear_cache(e):
+            import shutil
+            import os
+            cache_dir = os.path.join(os.path.expanduser('~'), '.macro_intelligence_platform', 'cache')
+            if os.path.exists(cache_dir):
+                shutil.rmtree(cache_dir)
+            
+            pe['status_label'].set_text('Cache cleared! Restart app to apply.')
+            pe['status_label'].set_color('green')
+            pe['status_label'].set_fontweight('bold')
+            pe['status_label'].set_bbox(dict(facecolor='#d4edda', edgecolor='#c3e6cb'))
+            fig.canvas.draw_idle()
+            
+        self.btn_cache.on_clicked(on_clear_cache)
 
         # Initialize to latest frame
         self.slider.set_val(self.max_frames)

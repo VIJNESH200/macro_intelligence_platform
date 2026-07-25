@@ -12,7 +12,7 @@ def generate_market_insights(data: dict) -> dict:
     """
     market_data = data.get('market_data', [])
     if not market_data:
-        return []
+        return {'insights': [], 'market_score': 50, 'best_asset': None, 'worst_asset': None, 'spread': 0}
 
     insights = []
 
@@ -35,7 +35,7 @@ def generate_market_insights(data: dict) -> dict:
             all_1m_negative = False
 
     if not valid_assets:
-        return []
+        return {'insights': [], 'market_score': 50, 'best_asset': None, 'worst_asset': None, 'spread': 0}
 
     # Rule 1: Uniform positivity
     if all_positive:
@@ -105,6 +105,36 @@ def generate_market_insights(data: dict) -> dict:
     if best_asset and worst_asset and best_asset != worst_asset:
         spread = max_1m - min_1m
         insights.append(f"Relative Leadership: {best_asset} ({max_1m:+.1f}%) vs {worst_asset} ({min_1m:+.1f}%) over 1M. Spread: {spread:.1f} percentage points.")
+
+    # Rule 6: Cross-Asset Macro-Market Decoupling
+    health_val = data.get('health_val', 100)
+    mom_val = data.get('momentum_val', 100)
+    equity_12m = next((a['returns_raw'].get('12M', 0) for a in valid_assets if 'Nifty 50' in a['name'] or 'Sensex' in a['name']), 0)
+    if equity_12m > 5.0 and (mom_val < 100 or health_val < 100):
+        insights.append("Macro-Market Decoupling: Equity valuations are expanding despite underlying macroeconomic momentum operating below historical trend.")
+
+    # Rule 7: Volatility Regime & Risk Premium (India VIX)
+    vix_asset = next((a for a in valid_assets if 'VIX' in a['name']), None)
+    if vix_asset and 'latest_value' in vix_asset:
+        vix_val = vix_asset['latest_value']
+        if vix_val < 12.5:
+            insights.append(f"Volatility Regime: India VIX at {vix_val:.1f} signals extreme market complacency, suggesting potential asymmetric downside risk.")
+        elif vix_val > 20.0:
+            insights.append(f"Volatility Regime: India VIX at {vix_val:.1f} reflects elevated market risk-pricing and hedging demand.")
+
+    # Rule 8: Commodity Input-Cost Squeeze (Brent Crude)
+    crude_asset = next((a for a in valid_assets if 'Brent' in a['name'] or 'Crude' in a['name']), None)
+    if crude_asset:
+        c_12m = crude_asset['returns_raw'].get('12M', 0)
+        if not pd.isna(c_12m) and c_12m > 15.0:
+            insights.append(f"Commodity Squeeze: Brent Crude oil up {c_12m:+.1f}% YoY introduces input-cost inflation pressure for domestic margins.")
+
+    # Rule 9: FX Transmission & Currency Risk (USD/INR)
+    fx_asset = next((a for a in valid_assets if 'USD/INR' in a['name'] or 'INR' in a['name']), None)
+    if fx_asset:
+        fx_12m = fx_asset['returns_raw'].get('12M', 0)
+        if not pd.isna(fx_12m) and fx_12m > 3.0:
+            insights.append(f"FX Transmission: Trailing USD/INR depreciation ({fx_12m:+.1f}% YoY) increases imported inflation risk and capital flow headwinds.")
 
     # Ensure we have at least one highlight
     if not insights:

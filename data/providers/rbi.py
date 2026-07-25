@@ -37,5 +37,31 @@ class RBIProvider(BaseProvider):
         }
         
         fred_symbol = fred_proxy_map.get(symbol, symbol)
-        self.last_source_used = f'FRED Proxy ({fred_symbol})'
-        return self.proxy.fetch(fred_symbol, start_date, end_date)
+        
+        series = self.proxy.fetch(fred_symbol, start_date, end_date)
+        
+        if symbol == 'IRSTCB01INM156N':
+            try:
+                import requests
+                from bs4 import BeautifulSoup
+                import re
+                from datetime import datetime
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                res = requests.get('https://www.rbi.org.in/', headers=headers, timeout=10)
+                soup = BeautifulSoup(res.text, 'html.parser')
+                b = soup.find(string=re.compile('Policy Repo Rate'))
+                if b:
+                    text_val = b.parent.parent.text
+                    match = re.search(r'([0-9\.]+)\%', text_val)
+                    if match:
+                        val = float(match.group(1))
+                        series.loc[datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)] = val
+                        series = series.resample('MS').ffill()
+                        self.last_source_used = 'FRED + RBI Live'
+            except Exception as e:
+                print(f"Warning: Failed to fetch latest RBI Repo Rate: {e}")
+                self.last_source_used = f'FRED Proxy ({fred_symbol})'
+        else:
+            self.last_source_used = f'FRED Proxy ({fred_symbol})'
+            
+        return series

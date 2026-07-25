@@ -1,0 +1,58 @@
+{
+  "India CLI (OECD)": {
+    "value": 101.25,
+    "release_date": "Jun 2026",
+    "source": "FRED (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🟡 Delayed"
+  },
+  "PMI": {
+    "value": 57.02,
+    "release_date": "Dec 2023",
+    "source": "s_and_p (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🔴 Stale"
+  },
+  "CPI": {
+    "value": 2.95,
+    "release_date": "Mar 2025",
+    "source": "mospi (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🔴 Stale"
+  },
+  "IIP": {
+    "value": 5.55,
+    "release_date": "Jan 2023",
+    "source": "mospi (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🔴 Stale"
+  },
+  "Yield 10Y": {
+    "value": 7.02,
+    "release_date": "May 2026",
+    "source": "rbi (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🟡 Delayed"
+  },
+  "Yield Short": {
+    "value": 5.39,
+    "release_date": "May 2026",
+    "source": "rbi (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🟡 Delayed"
+  },
+  "Yield Spread": {
+    "value": 1.63,
+    "release_date": "May 2026",
+    "source": "yield (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🟡 Delayed"
+  },
+  "Real Policy Rate": {
+    "value": 3.8,
+    "release_date": "Dec 2023",
+    "source": "rbi (Cached)",
+    "last_updated": "N/A",
+    "cache_status": "🔴 Stale"
+  }
+}

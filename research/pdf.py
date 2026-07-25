@@ -96,14 +96,19 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     # MACRO SNAPSHOT
     conf_score = data.get('macro_contrib', {}).get('confidence_score', 0)
     primary_risk = "None identified"
-    if data.get('macro_contrib', {}).get('all_drivers'):
-        drivers = data['macro_contrib']['all_drivers']
-        worst_driver = min(drivers, key=lambda x: x['score'])
+    all_drivers = data.get('macro_contrib', {}).get('all_drivers', [])
+    valid_risk_drivers = [d for d in all_drivers if isinstance(d, dict) and d.get('score') is not None and not pd.isna(d.get('score'))]
+    if valid_risk_drivers:
+        worst_driver = min(valid_risk_drivers, key=lambda x: x['score'])
         if worst_driver['score'] < -0.5:
             primary_risk = f"{worst_driver['indicator']} {worst_driver['state'].lower()}"
             
     m_score = data.get('macro_contrib', {}).get('macro_score', 0)
-    highest_prob_phase = max(analysis.get('transition_probs', {'Unknown': 0}).items(), key=lambda x: x[1])[0]
+    trans_probs = analysis.get('transition_probs')
+    if trans_probs and len(trans_probs) > 0:
+        highest_prob_phase = max(trans_probs.items(), key=lambda x: x[1])[0]
+    else:
+        highest_prob_phase = "Unknown"
     
     conf_label = "Confidence:" if conf_score > 0 else "Data Coverage:"
     valid_count = len([d for d in data.get('macro_contrib', {}).get('all_drivers', []) if d.get('state') != 'Unknown'])
@@ -172,7 +177,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
         m_score_str = "Unavailable"
         m_interp = "Insufficient Data"
         
-    market_score = market_insights.get('market_score', 50)
+    market_score = market_insights.get('market_score', 50) if isinstance(market_insights, dict) else 50
     
     dash_data = [
         ['Macro Score', 'Market Score', 'Historical Similarity', 'Transition Risk'],
@@ -291,11 +296,28 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     narrative_list = data.get('research_narrative', [])
     if isinstance(narrative_list, list) and narrative_list:
         for item in narrative_list:
-            elements.append(Paragraph(f"<b>Observation:</b> {item.get('observation', '')}", body_style))
-            elements.append(Paragraph(f"<b>Evidence:</b> {item.get('evidence', '')}", body_style))
-            elements.append(Paragraph(f"<b>Interpretation:</b> {item.get('interpretation', '')}", body_style))
-            elements.append(Paragraph(f"<b>Implication:</b> {item.get('implication', '')}", body_style))
-            elements.append(Spacer(1, 0.1*inch))
+            if isinstance(item, dict):
+                title = item.get('title', 'Macroeconomic Synthesis')
+                narrative_text = item.get('narrative')
+                if not narrative_text:
+                    narrative_text = f"{item.get('observation', '')} {item.get('interpretation', '')} {item.get('implication', '')}"
+                
+                card_data = [
+                    [Paragraph(f"<b>{title}</b>", ParagraphStyle('ITitle', parent=body_style, textColor=navy, fontSize=9.5, fontName='Helvetica-Bold'))],
+                    [Paragraph(narrative_text, body_style)]
+                ]
+                card_table = Table(card_data, colWidths=[7.0*inch])
+                card_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (-1,-1), light_grey),
+                    ('BOX', (0,0), (-1,-1), 0.5, border_grey),
+                    ('LINELEFT', (0,0), (0,-1), 3.5, navy),
+                    ('TOPPADDING', (0,0), (-1,-1), 6),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+                    ('LEFTPADDING', (0,0), (-1,-1), 8),
+                    ('RIGHTPADDING', (0,0), (-1,-1), 8),
+                ]))
+                elements.append(card_table)
+                elements.append(Spacer(1, 0.1*inch))
     else:
         elements.append(Paragraph(str(narrative_list), body_style))
         
@@ -495,27 +517,34 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     # 12. Forward Outlook
     elements.append(Paragraph("<font color='#888888'>12.</font> Forward Outlook", h1_style))
     forecast = data.get('forecast')
-    if forecast and 'forecast_3m' in forecast and 'forecast_6m' in forecast:
-        f3m = forecast['forecast_3m']
-        f6m = forecast['forecast_6m']
-        
-        fc_data = [
-            ['Horizon', 'Proj. Phase', 'Conviction', 'Health (X)', 'Momentum (Y)'],
-            ['3-Month', f3m['quadrant'], f"{f3m.get('conviction', 0):.1f}%", f"{f3m['x']:.2f}", f"{f3m['y']:.2f}"],
-            ['6-Month', f6m['quadrant'], f"{f6m.get('conviction', 0):.1f}%", f"{f6m['x']:.2f}", f"{f6m['y']:.2f}"]
-        ]
-        fc_table = Table(fc_data, colWidths=[1.2*inch, 1.5*inch, 1.3*inch, 1.2*inch, 1.2*inch])
-        fc_style = [
-            ('BACKGROUND', (0,0), (-1,0), navy), ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,-1), 9),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 8), ('TOPPADDING', (0,0), (-1,-1), 8),
-            ('LINEBELOW', (0,0), (-1,-1), 0.5, border_grey),
-            ('BACKGROUND', (0,1), (-1,1), light_grey),
-        ]
-        fc_table.setStyle(TableStyle(fc_style))
-        elements.append(fc_table)
-        elements.append(Spacer(1, 0.2*inch))
+    if forecast:
+        fc_data = [['Horizon', 'Proj. Phase', 'Conviction', 'Health (X)', 'Momentum (Y)']]
+        try:
+            from ..config import FORECAST_CONFIG
+        except ImportError:
+            from config import FORECAST_CONFIG
+        horizons_list = FORECAST_CONFIG.get('horizons', [3, 6, 9])
+        for h in horizons_list:
+            key = f'forecast_{h}m'
+            if key in forecast:
+                fh = forecast[key]
+                fc_data.append([f'{h}-Month', fh['quadrant'], f"{fh.get('conviction', 0):.1f}%", f"{fh['x']:.2f}", f"{fh['y']:.2f}"])
+
+        if len(fc_data) > 1:
+            fc_table = Table(fc_data, colWidths=[1.2*inch, 1.5*inch, 1.3*inch, 1.2*inch, 1.2*inch])
+            fc_style = [
+                ('BACKGROUND', (0,0), (-1,0), navy), ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,-1), 9),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 8), ('TOPPADDING', (0,0), (-1,-1), 8),
+                ('LINEBELOW', (0,0), (-1,-1), 0.5, border_grey),
+            ]
+            for row_i in range(1, len(fc_data)):
+                if row_i % 2 == 1:
+                    fc_style.append(('BACKGROUND', (0, row_i), (-1, row_i), light_grey))
+            fc_table.setStyle(TableStyle(fc_style))
+            elements.append(fc_table)
+            elements.append(Spacer(1, 0.2*inch))
         
         # Method Contributions
         elements.append(Paragraph("<b>Signal Contributions (6M Horizon)</b>", body_style))

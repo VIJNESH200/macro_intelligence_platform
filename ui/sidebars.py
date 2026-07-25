@@ -110,7 +110,7 @@ def create_right_sidebar(fig: plt.Figure) -> dict:
         plt.Line2D([0.845, 0.985], [0.14, 0.14], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
-    texts['right_header4'] = fig.text(0.845, 0.12, "FORECAST (6M)",
+    texts['right_header4'] = fig.text(0.845, 0.12, "FORECAST (9M)",
                                       fontsize=9.5, fontweight='bold', color='#1f497d')
     texts['fc_base'] = fig.text(0.845, 0.09, "Base: --", fontsize=8.5, color='#333333')
     texts['fc_bull'] = fig.text(0.845, 0.06, "Bull: --", fontsize=8.5, color='#333333')

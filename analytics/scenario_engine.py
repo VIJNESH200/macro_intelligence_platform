@@ -117,6 +117,7 @@ class ScenarioEngine:
         horizons = FORECAST_CONFIG['horizons']
         h_idx_3m = min(3, len(base_path) - 1)
         h_idx_6m = min(6, len(base_path) - 1)
+        h_idx_9m = min(9, len(base_path) - 1)
         
         scenarios = []
         
@@ -134,10 +135,11 @@ class ScenarioEngine:
             'probability': probs['Bull'],
             'projected_quadrant_3m': _q(bull_path, h_idx_3m),
             'projected_quadrant_6m': _q(bull_path, h_idx_6m),
+            'projected_quadrant_9m': _q(bull_path, h_idx_9m),
             'expected_market_return_6m': bull_ret,
             'path': bull_path,
             'key_assumption': "Macro momentum accelerates faster than base expectations, driven by positive surprises in leading indicators.",
-            'trigger': "Upside breakout in PMI or rapid yield curve steepening."
+            'trigger': "Upside breakout in ICI or rapid yield curve steepening."
         })
         
         scenarios.append({
@@ -145,6 +147,7 @@ class ScenarioEngine:
             'probability': probs['Base'],
             'projected_quadrant_3m': _q(base_path, h_idx_3m),
             'projected_quadrant_6m': _q(base_path, h_idx_6m),
+            'projected_quadrant_9m': _q(base_path, h_idx_9m),
             'expected_market_return_6m': base_ret,
             'path': base_path,
             'key_assumption': "Current cyclical trajectory persists with standard mean-reversion as projected by the three-signal consensus.",
@@ -156,10 +159,11 @@ class ScenarioEngine:
             'probability': probs['Bear'],
             'projected_quadrant_3m': _q(bear_path, h_idx_3m),
             'projected_quadrant_6m': _q(bear_path, h_idx_6m),
+            'projected_quadrant_9m': _q(bear_path, h_idx_9m),
             'expected_market_return_6m': bear_ret,
             'path': bear_path,
             'key_assumption': "Macroeconomic health deteriorates significantly as underlying fundamentals crack.",
-            'trigger': "Systemic credit event, sharp CPI spike, or sustained PMI contraction."
+            'trigger': "Systemic credit event, sharp CPI spike, or sustained ICI contraction."
         })
 
         return scenarios

@@ -9,10 +9,10 @@ import pandas as pd
 import numpy as np
 from .providers.fred import FREDProvider
 from .providers.yfinance_provider import YFinanceProvider
-from .providers.mospi import MOSPIProvider
+from .providers.imf import IMFProvider
+from .providers.ici import ICIProvider
 from .providers.rbi import RBIProvider
 from .providers.oecd import OECDProvider
-from .providers.s_and_p import SAndPProvider
 from .providers.yield_provider import YieldProvider
 from .providers.credit_provider import CreditProvider
 from .cache import CacheManager
@@ -46,6 +46,9 @@ class DataEngine:
                 return 'Delayed', '🟡'
             else:
                 return 'Stale', '🔴'
+        elif frequency.lower() == 'manual':
+            # Manual inputs are updated whenever the user provides them
+            return 'Manual Input', '🟠'
         else: # Monthly data
             if delta_days <= 45:
                 return 'Fresh', '🟢'
@@ -63,10 +66,10 @@ class DataEngine:
         self.providers = {
             'fred': FREDProvider(),
             'yfinance': YFinanceProvider(),
-            'mospi': MOSPIProvider(),
+            'imf': IMFProvider(),
+            'ici': ICIProvider(),
             'rbi': RBIProvider(),
             'oecd': OECDProvider(),
-            's_and_p': SAndPProvider(),
             'yield': YieldProvider(),
             'credit': CreditProvider()
         }
@@ -138,9 +141,10 @@ class DataEngine:
             cached = self.cache.get(cache_key)
             if cached is not None:
                 print("  (using cached macro data)")
+                # Outer join the cached macro data to ensure newer dates are kept
+                df = df.join(cached, how='outer')
+                
                 for col in cached.columns:
-                    df[col] = cached[col]
-                    
                     # Transform for metadata display if needed
                     info = self.macro_series.get(col)
                     if info and info.transformation == 'yoy':
@@ -171,7 +175,7 @@ class DataEngine:
             
             series = provider.fetch(sym)
             if not series.empty:
-                df[name] = series
+                df = df.join(series.rename(name), how='outer')
                 
                 # Transform for metadata display if needed
                 if info.transformation == 'yoy':
@@ -184,7 +188,7 @@ class DataEngine:
                 else:
                     display_series = series
                     
-                rel_date = series.dropna().index[-1] if not series.dropna().empty else None
+                rel_date = display_series.index[-1] if not display_series.empty else None
                 status, indicator = self.classify_freshness(rel_date, 'monthly')
                 self.data_metadata[name] = {
                     'value': round(display_series.dropna().iloc[-1], 2) if not display_series.dropna().empty else 'N/A',

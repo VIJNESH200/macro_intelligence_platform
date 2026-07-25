@@ -248,14 +248,14 @@ class MacroIntelligenceEngine:
         if idx < 1:
             return shifts
             
-        # 1. PMI (Manufacturing)
-        if 'PMI' in df.columns:
-            prev_pmi = df['PMI'].iloc[idx-1]
-            curr_pmi = df['PMI'].iloc[idx]
-            if prev_pmi >= 50 > curr_pmi:
-                shifts.append("⚠ Manufacturing entered contraction")
-            elif prev_pmi < 50 <= curr_pmi:
-                shifts.append("↑ Manufacturing entered expansion")
+        # 1. ICI (Core Industries)
+        if 'ICI_Base' in df.columns:
+            prev_ici = df['ICI_Base'].iloc[idx-1]
+            curr_ici = df['ICI_Base'].iloc[idx]
+            if prev_ici >= 0 > curr_ici:
+                shifts.append("⚠ Core industries entered contraction (Negative YoY)")
+            elif prev_ici < 0 <= curr_ici:
+                shifts.append("↑ Core industries entered expansion (Positive YoY)")
                 
         # 2. CPI (Inflation)
         if 'CPI_Z' in df.columns:

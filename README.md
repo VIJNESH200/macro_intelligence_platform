@@ -4,6 +4,8 @@
 ![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![CI](https://github.com/VIJNESH200/macro_intelligence_platform/actions/workflows/ci.yml/badge.svg)
 
+![Macro Intelligence Dashboard](docs/assets/dashboard_preview.png)
+
 The **Macro Intelligence Platform** is an academically-validated quantitative forecasting and reporting engine. It traces the business cycle using Composite Leading Indicators (CLI) and macroeconomic variables, providing scenario analysis and conviction scoring for the next 6-month horizon.
 
 ---
@@ -14,10 +16,11 @@ The **Macro Intelligence Platform** is an academically-validated quantitative fo
 - **Three-Signal Consensus Forecasting**: Blends three distinct signals for robust forecasting:
   1. CLI Momentum (Z-Score)
   2. Multivariate Historical Analogues
-  3. Macro Driver Trajectories (e.g., Real Policy Rate, IIP, CPI)
+  3. Macro Driver Trajectories (e.g., Real Policy Rate, ICI, CPI)
 - **Probabilistic Calibration**: Maps historical hit-rates to conviction tiers, providing empirically validated probabilities for Bull, Base, and Bear scenarios.
 - **Automated Report Generation**: Exports comprehensive, presentation-ready PDF reports with dynamic narrative generation and chart layouts.
 - **Look-Ahead Bias Elimination**: The core engine is rigorously backtested to ensure no forward-leakage of data during historical analogue construction.
+- **100% Open-Source & Reproducible**: Fully automated pipeline relying strictly on public data sources, eliminating proprietary blockers (e.g., replacing PMI with the official Government of India Index of Eight Core Industries).
 
 ---
 
@@ -96,8 +99,13 @@ python tests/backtest_benchmarks.py
 ---
 
 ## ⚠️ Limitations
-- **Data Availability**: Relies heavily on the OECD and FRED publishing schedules. Series are forward-filled to handle publication lags.
-- **Scope**: Currently tuned primarily for the Indian macro environment (OECD India CLI, RBI repo rates).
+- **Data Availability**: Relies heavily on the OECD, FRED, and DPIIT publishing schedules. Series are forward-filled to handle publication lags.
+- **Scope**: Currently tuned primarily for the Indian macro environment (OECD India CLI, RBI repo rates, ICI).
+
+---
+
+## 🔄 Recent Updates
+- **Migrated to ICI (Index of Eight Core Industries)**: PMI was removed because it is a proprietary dataset that cannot be legally automated. It has been replaced by the official Government of India ICI dataset (sourced directly from DPIIT / `eaindustry.nic.in`), which serves as the platform's core industrial momentum indicator. This transition makes the platform 100% reproducible using publicly available data without requiring third-party API keys.
 
 ---
 
@@ -115,3 +123,4 @@ This project is licensed under the [MIT License](LICENSE).
 - **FRED**: Data sourced from the Federal Reserve Bank of St. Louis.
 - **OECD**: Composite Leading Indicator methodologies and datasets.
 - **RBI**: Base data proxies for India's policy rates and inflation expectations.
+- **DPIIT**: Office of the Economic Adviser (eaindustry.nic.in), Ministry of Commerce & Industry providing the Index of Eight Core Industries (ICI).

@@ -54,19 +54,45 @@ class ForecastingEngine:
         )
 
         # ---- Blend signals for each horizon ----
+        # Track which signals produced real projections vs. static fallbacks.
+        # Re-normalize weights among active signals to avoid dead-weight dampening.
+        w = dict(weights)  # copy
+        active_signals = {
+            'momentum': mom_proj,
+            'analogues': ana_proj,
+            'macro_drivers': macro_proj
+        }
+
+        # Detect fallback signals (all points identical to current position)
+        fallback_keys = []
+        for key, sig in active_signals.items():
+            path = sig['path']
+            if all(abs(p[0] - x_now) < 1e-6 and abs(p[1] - y_now) < 1e-6 for p in path):
+                fallback_keys.append(key)
+
+        # Re-normalize weights if some signals fell back
+        if fallback_keys and len(fallback_keys) < len(active_signals):
+            active_weight_sum = sum(w[k] for k in w if k not in fallback_keys)
+            if active_weight_sum > 0:
+                for k in fallback_keys:
+                    w[k] = 0.0
+                for k in w:
+                    if k not in fallback_keys:
+                        w[k] = w[k] / active_weight_sum
+
         forecasts = {}
         projected_path = [(x_now, y_now)]
         
         for h in range(1, max(horizons) + 1):
             x_blend = (
-                weights['momentum'] * mom_proj['path'][h - 1][0] +
-                weights['analogues'] * ana_proj['path'][h - 1][0] +
-                weights['macro_drivers'] * macro_proj['path'][h - 1][0]
+                w['momentum'] * mom_proj['path'][h - 1][0] +
+                w['analogues'] * ana_proj['path'][h - 1][0] +
+                w['macro_drivers'] * macro_proj['path'][h - 1][0]
             )
             y_blend = (
-                weights['momentum'] * mom_proj['path'][h - 1][1] +
-                weights['analogues'] * ana_proj['path'][h - 1][1] +
-                weights['macro_drivers'] * macro_proj['path'][h - 1][1]
+                w['momentum'] * mom_proj['path'][h - 1][1] +
+                w['analogues'] * ana_proj['path'][h - 1][1] +
+                w['macro_drivers'] * macro_proj['path'][h - 1][1]
             )
             projected_path.append((x_blend, y_blend))
 

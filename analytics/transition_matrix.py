@@ -26,7 +26,7 @@ def compute_transition_matrix(df: pd.DataFrame) -> dict:
 
     quads = df['Quadrant'].tolist()
 
-    # 1. Segment into consecutive phase runs
+    # 1. Segment into consecutive phase runs (for duration statistics only)
     phases = []
     current_phase = quads[0]
     count = 1
@@ -39,14 +39,16 @@ def compute_transition_matrix(df: pd.DataFrame) -> dict:
             count = 1
     phases.append((current_phase, count))
 
-    # 2. Build transition count matrix
+    # 2. Build transition count matrix — count EVERY month-to-month transition
+    #    (including staying in the same quadrant) to produce a proper Markov matrix
+    #    with non-zero diagonal entries.
     n = len(QUADRANT_ORDER)
     counts = np.zeros((n, n), dtype=int)
     idx_map = {q: i for i, q in enumerate(QUADRANT_ORDER)}
 
-    for i in range(len(phases) - 1):
-        from_q = phases[i][0]
-        to_q = phases[i + 1][0]
+    for i in range(len(quads) - 1):
+        from_q = quads[i]
+        to_q = quads[i + 1]
         if from_q in idx_map and to_q in idx_map:
             counts[idx_map[from_q], idx_map[to_q]] += 1
 

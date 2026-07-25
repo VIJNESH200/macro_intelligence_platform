@@ -21,6 +21,8 @@ class FeatureEngine:
         """
         rolling_mean = series.rolling(window=window, min_periods=window).mean()
         rolling_std = series.rolling(window=window, min_periods=window).std(ddof=0)
+        # Avoid division by zero for flat/pegged series
+        rolling_std = rolling_std.replace(0, np.nan)
         return center + (series - rolling_mean) / rolling_std
 
     @staticmethod
@@ -32,6 +34,8 @@ class FeatureEngine:
         diff = series.diff(1)
         rolling_mean = diff.rolling(window=window, min_periods=window).mean()
         rolling_std = diff.rolling(window=window, min_periods=window).std(ddof=0)
+        # Avoid division by zero for flat/pegged series
+        rolling_std = rolling_std.replace(0, np.nan)
         return center + (diff - rolling_mean) / rolling_std
 
     @staticmethod
@@ -155,6 +159,10 @@ class FeatureEngine:
         ticker = config['ticker']
         window = config['window']
         center = config['center']
+        
+        # Forward fill ONLY the main indicator so it doesn't drop latest rows 
+        # when other series have newer data
+        df[ticker] = df[ticker].ffill()
         cli = df[ticker]
 
         df['X'] = cls.compute_health(cli, window, center)

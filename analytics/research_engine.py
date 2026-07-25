@@ -2,94 +2,128 @@ import pandas as pd
 from .macro_intelligence_engine import MacroIntelligenceEngine
 
 class ResearchEngine:
-    """Deterministic Narrative Generation Engine for Macro Intelligence.
+    """Institutional Narrative Generation Engine for Macro Intelligence.
     
-    Translates quantitative states (Level, Trend, Percentiles) into 
-    structured institutional research insights.
+    Synthesizes quantitative metrics (Z-Scores, YoY variations, Percentiles) into 
+    fluid, professional macro research notes inspired by S&P Global Market Intelligence.
     """
 
     @staticmethod
     def generate_insights(df: pd.DataFrame, idx: int) -> list[dict]:
-        """Generate synthesized structured macro narratives based on current indicators.
-        
-        Returns a list of dictionaries with keys:
-        - observation
-        - evidence
-        - interpretation
-        - implication
-        """
         evals = MacroIntelligenceEngine.evaluate_indicators(df, idx)
-        
         insights = []
         
-        # 1. Manufacturing (PMI)
-        if 'PMI' in evals and evals['PMI']['state'] != 'Unknown':
-            pmi = evals['PMI']
-            insights.append({
-                "observation": f"Manufacturing Index is at {pmi['raw_value']:.1f}, placing it in the {pmi['percentile']}.",
-                "evidence": f"Z-score = {pmi['score']:+.2f}",
-                "interpretation": "Manufacturing activity is expanding above trend." if pmi['score'] > 0 else "Manufacturing activity remains below trend.",
-                "implication": "Positive contribution to cyclical acceleration." if pmi['score'] > 0 else "Drag on broader economic cycle."
-            })
-
-        # 2. Industrial Production (IIP)
-        if 'IIP' in evals and evals['IIP']['state'] != 'Unknown':
-            iip = evals['IIP']
-            yoy_str = f"{iip['yoy_value']:.1f}%" if not pd.isna(iip['yoy_value']) else "N/A"
-            z = iip['score']
-            if z > 1.0:
-                iip_interp = "Industrial output is strongly above its historical trend."
-            elif z > 0.5:
-                iip_interp = "Industrial output is above its historical trend."
+        # 1. Core Industries (ICI)
+        if 'ICI' in evals and evals['ICI']['state'] != 'Unknown':
+            ici = evals['ICI']
+            yoy_val = ici.get('yoy_value', 0)
+            yoy_str = f"{yoy_val:+.1f}%" if not pd.isna(yoy_val) else "N/A"
+            z = ici['score']
+            pct = ici.get('percentile', '50th percentile')
+            
+            if z > 0.5:
+                interp = f"Industrial activity demonstrates strong structural velocity, expanding at {yoy_str} YoY and tracking in the upper tier ({pct}) of historical expansion cycles."
+                imp = "Provides robust fundamental support for cyclical equity sectors, industrial capex, and macro momentum."
             elif z > -0.5:
-                iip_interp = "Industrial output is near its historical trend."
-            elif z > -1.0:
-                iip_interp = "Industrial output is below its historical trend."
+                interp = f"Industrial output reflects a mid-cycle consolidation phase, tracking near long-term trend at {yoy_str} YoY ({pct})."
+                imp = "Suggests steady underlying industrial demand without immediate supply-chain overheating or severe contractionary risks."
             else:
-                iip_interp = "Industrial output is significantly below its historical trend."
+                interp = f"Industrial momentum is experiencing cyclical drag, printing at {yoy_str} YoY ({pct}) and operating significantly below historical trend velocity."
+                imp = "Presents a headwind for broad GDP acceleration, warranting defensive positioning in heavy cyclical assets."
                 
             insights.append({
-                "observation": f"Industrial production stands at {iip['raw_value']:.1f} ({yoy_str} YoY).",
-                "evidence": f"Z-score = {iip['score']:+.2f}",
-                "interpretation": iip_interp,
-                "implication": "Supportive of underlying economic momentum." if iip['score'] > 0 else "Limited contribution to cyclical acceleration."
+                "title": "Industrial Infrastructure & Core Momentum",
+                "narrative": f"{interp} With a standardized Z-score of {z:+.2f}, this baseline momentum {imp.lower()}",
+                "observation": f"Core Industries momentum is tracking at {yoy_str} YoY ({pct}).",
+                "evidence": f"Z-score = {z:+.2f}",
+                "interpretation": interp,
+                "implication": imp
             })
 
-        # 3. Real Policy Rate
+        # 2. Real Policy Rate
         if 'Real Policy Rate' in evals and evals['Real Policy Rate']['state'] != 'Unknown':
             rpr = evals['Real Policy Rate']
-            val_str = f"{rpr['raw_value']:.2f}%"
+            val = rpr['raw_value']
+            z = rpr['score']
+            pct = rpr.get('percentile', '50th percentile')
+            
+            if val > 2.0:
+                interp = f"Real policy rates stand elevated at {val:.2f}% ({pct}), representing a restrictive monetary stance designed to anchor inflation expectations."
+                imp = "Acts as a financial headwind for highly leveraged balance sheets while incentivizing conservative corporate capital allocation."
+            elif val >= 0:
+                interp = f"Real policy rates reside in a neutral-to-supportive corridor at {val:.2f}% ({pct}), maintaining monetary equilibrium between growth and inflation."
+                imp = "Provides a balanced credit backdrop, supporting corporate borrowing and capital investment without destabilizing price stability."
+            else:
+                interp = f"Real policy rates remain deeply accommodative at {val:.2f}% ({pct}), creating highly favorable financial conditions."
+                imp = "Encourages risk-taking, corporate borrowing, and asset price expansion, though requiring vigilance for inflation resurgence."
+
             insights.append({
-                "observation": f"Real policy rate stands at {val_str} ({rpr['percentile']}).",
-                "evidence": f"Z-score = {rpr['score']:+.2f}",
-                "interpretation": "Accommodative real rates support capital investment and credit demand." if rpr['score'] > 0 else "High real rates act as a restrictive monetary headwind.",
-                "implication": "Supportive environment for borrowing and cyclical growth." if rpr['score'] > 0 else "Headwind for interest-sensitive sectors."
+                "title": "Monetary Transmission & Capital Cost Dynamics",
+                "narrative": f"{interp} Standardized financial conditions (Z-score: {z:+.2f}) {imp.lower()}",
+                "observation": f"Real policy rate stands at {val:.2f}% ({pct}).",
+                "evidence": f"Z-score = {z:+.2f}",
+                "interpretation": interp,
+                "implication": imp
             })
                 
-        # 4. Yield Curve (Yield Spread)
+        # 3. Yield Curve (Yield Spread)
         if 'Yield Spread' in evals and evals['Yield Spread']['state'] != 'Unknown':
             ys = evals['Yield Spread']
-            shape = "inverted" if ys['raw_value'] < 0 else ("steep" if ys['score'] > 0 else "flat")
+            val = ys['raw_value']
+            z = ys['score']
+            pct = ys.get('percentile', '50th percentile')
+            
+            if val < 0:
+                interp = f"The yield curve is inverted at {val:.2f}% spread ({pct}), reflecting bond market pricing of elevated late-cycle recessionary risks."
+                imp = "Historically favors high-quality fixed income over equities, suggesting defensive asset allocation."
+            elif z > 0.5:
+                interp = f"The yield curve displays healthy steepening at a +{val:.2f}% spread ({pct}), signaling robust forward-looking growth and credit demand."
+                imp = "Positive for commercial bank net interest margins (NIMs) and supportive of pro-cyclical risk assets."
+            else:
+                interp = f"The yield curve remains flat at a +{val:.2f}% spread ({pct}), indicating transitional growth expectations among fixed income participants."
+                imp = "Recommends neutral duration posture and balanced cross-asset allocation."
+
             insights.append({
-                "observation": f"The yield curve is {shape} with a spread of {ys['raw_value']:.2f}%.",
-                "evidence": f"Z-score = {ys['score']:+.2f}",
-                "interpretation": "Bond markets are signaling elevated recessionary risks." if ys['raw_value'] < 0 else ("Signals healthy forward-looking growth expectations." if ys['score'] > 0 else "Suggests a moderation in growth expectations."),
-                "implication": "Favors high-quality fixed income over equities." if ys['raw_value'] < 0 else "Positive for bank net interest margins." if ys['score'] > 0 else "Neutral signal for broad asset allocation."
+                "title": "Term Structure & Fixed Income Signals",
+                "narrative": f"{interp} Term premium dynamics (Z-score: {z:+.2f}) {imp.lower()}",
+                "observation": f"Yield spread stands at {val:.2f}% ({pct}).",
+                "evidence": f"Z-score = {z:+.2f}",
+                "interpretation": interp,
+                "implication": imp
             })
 
-        # 5. Inflation (CPI)
+        # 4. Inflation (CPI)
         if 'CPI' in evals and evals['CPI']['state'] != 'Unknown':
             cpi = evals['CPI']
-            yoy_str = f"{cpi['yoy_value']:.1f}%" if not pd.isna(cpi['yoy_value']) else "N/A (insufficient history)"
+            val = cpi['raw_value']
+            yoy = cpi.get('yoy_value', 0)
+            yoy_str = f"{yoy:+.1f}%" if not pd.isna(yoy) else "N/A"
+            z = cpi['score']
+            pct = cpi.get('percentile', '50th percentile')
+            
+            if z > 0.5:
+                interp = f"Consumer price pressures are tracking elevated at {yoy_str} YoY ({pct}), remaining above central bank target midpoints."
+                imp = "Constrains monetary policy easing space and poses input-cost headwinds for consumer discretionary margin expansion."
+            elif z > -0.5:
+                interp = f"Consumer inflation remains well-anchored at {yoy_str} YoY ({pct}), aligning with long-term target bands."
+                imp = "Provides essential policy flexibility for monetary authorities while preserving household purchasing power."
+            else:
+                interp = f"Inflation dynamics reflect benign price pressures at {yoy_str} YoY ({pct}), residing below historical average velocity."
+                imp = "Highly supportive of fixed income duration and provides expansionary runway for monetary stimulus."
+
             insights.append({
-                "observation": f"Consumer Price Index is at {cpi['raw_value']:.1f}, translating to {yoy_str} YoY inflation.",
-                "evidence": f"Z-score = {cpi['score']:+.2f}",
-                "interpretation": "Inflation remains above its long-run average." if cpi['score'] > 0 else "Inflation remains below its long-run average.",
-                "implication": "Potential headwind for policy easing." if cpi['score'] > 0 else "Supportive for duration and broad equity multiples."
+                "title": "Consumer Inflation & Purchasing Power",
+                "narrative": f"{interp} Inflation Z-score ({z:+.2f}) {imp.lower()}",
+                "observation": f"CPI stands at {val:.1f} ({yoy_str} YoY, {pct}).",
+                "evidence": f"Z-score = {z:+.2f}",
+                "interpretation": interp,
+                "implication": imp
             })
 
         if not insights:
             insights.append({
+                "title": "Macroeconomic Data Assessment",
+                "narrative": "Insufficient data available for full structural synthesis.",
                 "observation": "Insufficient data.",
                 "evidence": "N/A",
                 "interpretation": "Unable to generate a reliable macro synthesis.",

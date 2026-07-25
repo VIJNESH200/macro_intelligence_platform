@@ -41,6 +41,7 @@ exports/
 .cache/
 *.pdf
 *.png
+!docs/assets/*.png
 
 # IDE and OS files
 .vscode/
