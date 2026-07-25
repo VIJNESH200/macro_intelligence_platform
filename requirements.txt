@@ -6,3 +6,5 @@ yfinance>=0.2.18
 pandas-datareader>=0.10.0
 reportlab>=4.0.0
 flake8>=6.0.0
+sdmx1>=2.17.0
+beautifulsoup4>=4.12.0
