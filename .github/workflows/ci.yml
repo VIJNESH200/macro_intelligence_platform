@@ -32,6 +32,10 @@ jobs:
         # exit-zero treats all errors as warnings
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
         
+    - name: Run unit test suite
+      run: |
+        python -m unittest discover -s tests
+
     - name: Run backtest benchmark validation
       run: |
         # Ensure the quantitative engine operates correctly without GUI dependencies

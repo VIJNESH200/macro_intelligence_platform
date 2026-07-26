@@ -40,18 +40,11 @@ class ICIProvider(BaseProvider):
     def update_frequency(self) -> str:
         return 'monthly'
 
-    def _urlopen_with_ssl_fallback(self, req: urllib.request.Request, timeout: int = 15) -> bytes:
-        """Attempt secure default SSL verification first; fall back to unverified context
-        with explicit logging if DPIIT government server certificate fails validation."""
-        try:
-            secure_ctx = ssl.create_default_context()
-            return urllib.request.urlopen(req, context=secure_ctx, timeout=timeout).read()
-        except ssl.SSLError as e:
-            print(f"  [!] DPIIT SSL verification failed ({e}). Falling back to unverified context for eaindustry.nic.in.")
-            fallback_ctx = ssl.create_default_context()
-            fallback_ctx.check_hostname = False
-            fallback_ctx.verify_mode = ssl.CERT_NONE
-            return urllib.request.urlopen(req, context=fallback_ctx, timeout=timeout).read()
+    def _urlopen_secure(self, req: urllib.request.Request, timeout: int = 15) -> bytes:
+        """Execute HTTP request using default verified TLS/SSL context.
+        Raises error on SSL validation failure to ensure untrusted connections are rejected."""
+        context = ssl.create_default_context()
+        return urllib.request.urlopen(req, context=context, timeout=timeout).read()
 
     def _parse_excel_content(self, content: bytes) -> pd.Series:
         """Parse DPIIT Core Industries Excel file into a clean date-indexed Series."""
@@ -109,7 +102,7 @@ class ICIProvider(BaseProvider):
 
         try:
             req = urllib.request.Request(self.BASE_URL, headers={'User-Agent': 'Mozilla/5.0'})
-            html = self._urlopen_with_ssl_fallback(req, timeout=12).decode('utf-8', errors='ignore')
+            html = self._urlopen_secure(req, timeout=12).decode('utf-8', errors='ignore')
             soup = BeautifulSoup(html, 'html.parser')
 
             excel_urls = []
@@ -127,12 +120,12 @@ class ICIProvider(BaseProvider):
             s11, s22 = None, None
             if url_2011:
                 req_11 = urllib.request.Request(url_2011, headers={'User-Agent': 'Mozilla/5.0'})
-                content_11 = self._urlopen_with_ssl_fallback(req_11, timeout=15)
+                content_11 = self._urlopen_secure(req_11, timeout=15)
                 s11 = self._parse_excel_content(content_11)
 
             if url_2022:
                 req_22 = urllib.request.Request(url_2022, headers={'User-Agent': 'Mozilla/5.0'})
-                content_22 = self._urlopen_with_ssl_fallback(req_22, timeout=15)
+                content_22 = self._urlopen_secure(req_22, timeout=15)
                 s22 = self._parse_excel_content(content_22)
 
             if (s11 is None or s11.empty) and (s22 is None or s22.empty):

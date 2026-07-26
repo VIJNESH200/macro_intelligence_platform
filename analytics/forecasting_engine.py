@@ -111,7 +111,9 @@ class ForecastingEngine:
                     center,
                     analogues,
                     macro_contrib,
-                    h
+                    h,
+                    weights=w,
+                    conf_decay=conf_decay
                 )
                 forecasts[f'forecast_{h}m'] = {
                     'x': round(x_blend, 4),
@@ -281,23 +283,33 @@ class ForecastingEngine:
             return {'path': [(x_now, y_now)] * max_h}
 
     @staticmethod
-    def _compute_conviction(mom_pt, ana_pt, macro_pt, center, analogues, macro_contrib, horizon):
-        """Compute Forecast Conviction score (0-100%) based on empirical signal consensus agreement."""
+    def _compute_conviction(mom_pt, ana_pt, macro_pt, center, analogues, macro_contrib, horizon,
+                           weights=None, conf_decay=0.15):
+        """Compute Forecast Conviction score (0-100%) based on active weighted signal consensus agreement."""
         q_mom = ForecastingEngine._get_quadrant(mom_pt[0], mom_pt[1], center)
         q_ana = ForecastingEngine._get_quadrant(ana_pt[0], ana_pt[1], center)
         q_mac = ForecastingEngine._get_quadrant(macro_pt[0], macro_pt[1], center)
 
-        quads = [q_mom, q_ana, q_mac]
-        from collections import Counter
-        most_common_count = Counter(quads).most_common(1)[0][1]
+        # Respect active weights: exclude zero-weight signals from consensus agreement
+        use_macro = weights is not None and weights.get('macro_drivers', 0.0) > 0.0
 
-        # Base conviction calibrated directly by multi-signal agreement
-        if most_common_count == 3:
-            base_conv = 72.0  # Unanimous signal agreement
-        elif most_common_count == 2:
-            base_conv = 54.0  # Majority signal agreement
+        if use_macro:
+            quads = [q_mom, q_ana, q_mac]
+            from collections import Counter
+            most_common_count = Counter(quads).most_common(1)[0][1]
+
+            if most_common_count == 3:
+                base_conv = 72.0  # Unanimous 3-signal agreement
+            elif most_common_count == 2:
+                base_conv = 54.0  # Majority 2/3 agreement
+            else:
+                base_conv = 32.0  # Split 3-signal consensus
         else:
-            base_conv = 32.0  # Split signal consensus
+            # Active 2-signal consensus (Momentum vs Analogues)
+            if q_mom == q_ana:
+                base_conv = 72.0  # Unanimous 2-signal agreement
+            else:
+                base_conv = 42.0  # Split 2-signal consensus
 
         # Adjust for analogue similarity quality
         if analogues and analogues.get('matches'):
@@ -307,8 +319,9 @@ class ForecastingEngine:
                 avg_sim = sum(sims) / len(sims)
                 base_conv += (avg_sim - 70.0) * 0.25
 
-        # Apply horizon uncertainty decay (3% per month)
-        base_conv -= (horizon - 1) * 3.0
+        # Apply horizon uncertainty decay configured by conf_decay (0.15 -> 3.0 pts/month)
+        monthly_decay_pts = conf_decay * 20.0
+        base_conv -= (horizon - 1) * monthly_decay_pts
 
         return max(15.0, min(95.0, base_conv))
 

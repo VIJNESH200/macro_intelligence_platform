@@ -73,28 +73,36 @@ class TestPureMathEngine(unittest.TestCase):
         self.assertEqual(len(spline_df), 91)
 
     def test_conviction_score_calibration(self):
-        """Test conviction score calibration scaling with signal agreement."""
+        """Test conviction score calibration scaling with active signal consensus agreement."""
         center = 100.0
         horizon = 6
 
-        # Unanimous agreement: all 3 signals project Expansion
-        c_unanimous = ForecastingEngine._compute_conviction(
-            (102, 102), (103, 101), (101, 104), center, None, None, horizon
+        # Active 3-signal weights
+        w_3 = {'momentum': 0.45, 'analogues': 0.40, 'macro_drivers': 0.15}
+        c_unanimous_3 = ForecastingEngine._compute_conviction(
+            (102, 102), (103, 101), (101, 104), center, None, None, horizon, weights=w_3
+        )
+        c_majority_3 = ForecastingEngine._compute_conviction(
+            (102, 102), (103, 101), (101, 98), center, None, None, horizon, weights=w_3
+        )
+        c_split_3 = ForecastingEngine._compute_conviction(
+            (102, 102), (101, 98), (98, 97), center, None, None, horizon, weights=w_3
         )
 
-        # Majority agreement: 2 project Expansion, 1 projects Slowdown
-        c_majority = ForecastingEngine._compute_conviction(
-            (102, 102), (103, 101), (101, 98), center, None, None, horizon
+        self.assertGreater(c_unanimous_3, c_majority_3)
+        self.assertGreater(c_majority_3, c_split_3)
+
+        # Active 2-signal weights (macro_drivers = 0.0)
+        w_2 = {'momentum': 0.55, 'analogues': 0.45, 'macro_drivers': 0.00}
+        c_unanimous_2 = ForecastingEngine._compute_conviction(
+            (102, 102), (103, 101), (101, 98), center, None, None, horizon, weights=w_2
+        )
+        c_split_2 = ForecastingEngine._compute_conviction(
+            (102, 102), (98, 97), (101, 98), center, None, None, horizon, weights=w_2
         )
 
-        # Split signals: 1 Expansion, 1 Slowdown, 1 Contraction
-        c_split = ForecastingEngine._compute_conviction(
-            (102, 102), (101, 98), (98, 97), center, None, None, horizon
-        )
-
-        self.assertGreater(c_unanimous, c_majority)
-        self.assertGreater(c_majority, c_split)
-        self.assertTrue(15.0 <= c_split <= 95.0)
+        self.assertGreater(c_unanimous_2, c_split_2)
+        self.assertTrue(15.0 <= c_split_2 <= 95.0)
 
 
     def test_macro_driver_signal_with_real_evaluations_dict(self):
