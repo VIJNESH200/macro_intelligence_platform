@@ -45,10 +45,10 @@ Evaluated across a rolling **229-month out-of-sample historical window** (Jan 20
 | **CLI Momentum Only** | 67.7% | 63.5% | 0.674 | 0.802 | 1.133 |
 | **Historical Analogues Only** | 63.3% | 70.6% | 0.598 | 0.753 | 1.053 |
 | **Macro Drivers Only** | 65.9% | 50.6% | 0.664 | 0.661 | 1.013 |
-| **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.2%** 🏆 | **71.8%** 🏆 | **0.563** 🏆 | **0.601** 🏆 | **0.890** 🏆 |
+| **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.6%** 🏆 | **69.4%** 🏆 | **0.574** 🏆 | **0.614** 🏆 | **0.913** 🏆 |
 
 > [!NOTE]
-> **Key Improvement**: The Two-Signal Consensus model achieves a **+22.4 percentage point accuracy gain** over Persistence baselines on a 6-month horizon during the 2019–2026 held-out evaluation window and reduces coordinate error (Distance MAE) to **0.890**.
+> **Key Improvement**: The Two-Signal Consensus model achieves a **+20.0 percentage point accuracy gain** over Persistence baselines on a 6-month horizon during the 2019–2026 held-out evaluation window and reduces coordinate error (Distance MAE) to **0.913**.
 
 ---
 

@@ -285,31 +285,42 @@ class ForecastingEngine:
     @staticmethod
     def _compute_conviction(mom_pt, ana_pt, macro_pt, center, analogues, macro_contrib, horizon,
                            weights=None, conf_decay=0.15):
-        """Compute Forecast Conviction score (0-100%) based on active weighted signal consensus agreement."""
-        q_mom = ForecastingEngine._get_quadrant(mom_pt[0], mom_pt[1], center)
-        q_ana = ForecastingEngine._get_quadrant(ana_pt[0], ana_pt[1], center)
-        q_mac = ForecastingEngine._get_quadrant(macro_pt[0], macro_pt[1], center)
+        """Compute Forecast Conviction score (0-100%) based on active non-zero weighted signal consensus agreement."""
+        signal_quads = {
+            'momentum': ForecastingEngine._get_quadrant(mom_pt[0], mom_pt[1], center),
+            'analogues': ForecastingEngine._get_quadrant(ana_pt[0], ana_pt[1], center),
+            'macro_drivers': ForecastingEngine._get_quadrant(macro_pt[0], macro_pt[1], center)
+        }
 
-        # Respect active weights: exclude zero-weight signals from consensus agreement
-        use_macro = weights is not None and weights.get('macro_drivers', 0.0) > 0.0
+        # Filter active signals with non-zero weight
+        if weights:
+            active_keys = [k for k, v in weights.items() if v > 0.0 and k in signal_quads]
+        else:
+            active_keys = ['momentum', 'analogues', 'macro_drivers']
 
-        if use_macro:
-            quads = [q_mom, q_ana, q_mac]
-            from collections import Counter
-            most_common_count = Counter(quads).most_common(1)[0][1]
+        if not active_keys:
+            active_keys = ['momentum', 'analogues']
 
+        active_quads = [signal_quads[k] for k in active_keys]
+        from collections import Counter
+        most_common_count = Counter(active_quads).most_common(1)[0][1]
+        n_active = len(active_keys)
+
+        if n_active >= 3:
             if most_common_count == 3:
                 base_conv = 72.0  # Unanimous 3-signal agreement
             elif most_common_count == 2:
                 base_conv = 54.0  # Majority 2/3 agreement
             else:
                 base_conv = 32.0  # Split 3-signal consensus
-        else:
-            # Active 2-signal consensus (Momentum vs Analogues)
-            if q_mom == q_ana:
+        elif n_active == 2:
+            if most_common_count == 2:
                 base_conv = 72.0  # Unanimous 2-signal agreement
             else:
                 base_conv = 42.0  # Split 2-signal consensus
+        else:
+            # Single active signal
+            base_conv = 65.0
 
         # Adjust for analogue similarity quality
         if analogues and analogues.get('matches'):

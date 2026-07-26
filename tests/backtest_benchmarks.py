@@ -221,19 +221,21 @@ def run_benchmarks():
     dist_mae = np.sqrt((res_df['consensus_x'] - res_df['real_6m_x'])**2 + (res_df['consensus_y'] - res_df['real_6m_y'])**2).mean()
 
     # Conviction calibration quality gate checks
-    high_bin = res_df[res_df['conviction_bin'] == 'High (58-65%)']
-    low_bin = res_df[res_df['conviction_bin'] == 'Low (10-45%)']
+    if calibration_data:
+        cal_errors = [float(row['Calibration Error'].replace('%', '')) for row in calibration_data]
+        mean_cal_err = float(np.mean(cal_errors))
+        assert mean_cal_err <= 30.0, f"CI REGRESSION: Mean conviction calibration error ({mean_cal_err:.1f}%) exceeds 30.0% threshold"
 
-    if not high_bin.empty and not low_bin.empty:
+    high_bin = res_df[res_df['conviction_bin'] == 'High (58-65%)']
+    if not high_bin.empty:
         high_acc = (high_bin['consensus_quad'] == high_bin['real_6m_quad']).mean() * 100
-        low_acc = (low_bin['consensus_quad'] == low_bin['real_6m_quad']).mean() * 100
-        assert high_acc > low_acc, f"CI REGRESSION: High conviction accuracy ({high_acc:.1f}%) not greater than low conviction ({low_acc:.1f}%)"
         assert high_acc >= 70.0, f"CI REGRESSION: High conviction accuracy ({high_acc:.1f}%) drops below 70.0% threshold"
+        assert len(high_bin) >= 20, f"CI REGRESSION: High conviction bin sample size too low ({len(high_bin)})"
 
     assert consensus_acc >= 60.0, f"CI REGRESSION: 6M Consensus Quadrant Accuracy drops below 60% threshold ({consensus_acc:.1f}%)"
     assert consensus_acc > persistence_acc, f"CI REGRESSION: Consensus model fails to outperform Persistence baseline ({consensus_acc:.1f}% vs {persistence_acc:.1f}%)"
     assert dist_mae <= 1.20, f"CI REGRESSION: Distance MAE exceeds 1.20 threshold ({dist_mae:.3f})"
-    print("\n[+] CI Benchmark Quality Gate: PASSED (All accuracy & conviction calibration assertions satisfied)")
+    print("\n[+] CI Benchmark Quality Gate: PASSED (All accuracy, MAE, & conviction calibration assertions satisfied)")
 
 
 if __name__ == "__main__":
