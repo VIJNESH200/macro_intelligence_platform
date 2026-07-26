@@ -254,15 +254,16 @@ class ForecastingEngine:
         macro_score = macro_contrib.get('macro_score', 0) or 0
         magnitude = min(abs(macro_score) / 3.0, 1.0)
 
-        # Monthly trajectory shift
-        dx_per_month = net_direction * (0.15 + 0.1 * magnitude)
-        dy_per_month = net_direction * (0.10 + 0.1 * magnitude)
+        # Mean-reverting lead-lag trajectory adjustment
+        decay = 0.85
+        dx_total = net_direction * (0.8 + 0.4 * magnitude)
+        dy_total = net_direction * (0.5 + 0.3 * magnitude)
 
         path = []
-        x_proj, y_proj = x_now, y_now
         for h in range(1, max_h + 1):
-            x_proj += dx_per_month
-            y_proj += dy_per_month
+            scale = (1.0 - (decay ** h))
+            x_proj = x_now + dx_total * scale
+            y_proj = y_now + dy_total * scale
             path.append((x_proj, y_proj))
 
         return {'path': path}
