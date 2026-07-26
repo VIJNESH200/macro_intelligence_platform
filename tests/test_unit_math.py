@@ -104,6 +104,11 @@ class TestPureMathEngine(unittest.TestCase):
         self.assertGreater(c_unanimous_2, c_split_2)
         self.assertTrue(15.0 <= c_split_2 <= 95.0)
 
+    def test_single_active_signal_conviction(self):
+        """Test conviction score calculation when only a single signal is active."""
+        center = 100.0
+        horizon = 6
+
         # Single active signal weight (momentum = 1.0, others = 0.0)
         w_1 = {'momentum': 1.00, 'analogues': 0.00, 'macro_drivers': 0.00}
         c_single = ForecastingEngine._compute_conviction(
