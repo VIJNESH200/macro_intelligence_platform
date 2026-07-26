@@ -36,20 +36,17 @@ def main():
 
     def on_market_change(market: str):
         """Callback when user switches market via UI."""
-        print(f"Switching to {market} market...")
+        print(f"[Market] Switching to {market}...")
         reload_for_market(market)
 
-        # Reload data and features
+        print(f"[Market] Loading {CONFIG['name']} data...")
         new_engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES)
         new_df = new_engine.load_all()
+
+        print(f"[Market] Computing features...")
         new_df, new_spline = FeatureEngine.compute_all(new_df, CONFIG)
 
-        # Update app state
-        app_ref['df'] = new_df
-        app_ref['spline_data'] = new_spline
-        app_ref['engine'] = new_engine
-
-        # Update app internals
+        # Update app state efficiently
         app = app_ref['app']
         app.df = new_df
         app.spline_data = new_spline
@@ -59,11 +56,11 @@ def main():
         app.max_frames = len(new_df) - 1
         app.state['current_frame'] = 0
 
-        # Redraw everything
-        app.slider.set_val(0)
-        app.draw_frame(0)
+        # Redraw at latest frame
+        app.slider.set_val(app.max_frames)
+        app.draw_frame(app.max_frames)
         app.fig.canvas.draw_idle()
-        print(f"Market switched to {CONFIG['name']}")
+        print(f"[Market] ✓ Switched to {CONFIG['name']}")
 
     # 3. Launch GUI
     app = App(df, spline_data, CONFIG, MARKET_SERIES, data_metadata=engine.get_metadata,

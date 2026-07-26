@@ -731,13 +731,52 @@ class App:
         self.btn_reset.on_clicked(reset)
 
         def switch_market(market: str):
-            pe['status_label'].set_text(f"Switching to {market} market... Reloading data.")
+            try:
+                from ..config import get_current_market
+            except ImportError:
+                from config import get_current_market
+
+            current = get_current_market()
+            if current == market:
+                return
+
+            # Show loading state
+            pe['status_label'].set_text(f"⏳ Switching to {market}... loading data")
             pe['status_label'].set_fontweight('bold')
             pe['status_label'].set_color('white')
-            pe['status_label'].set_bbox(dict(facecolor='#0056b3', edgecolor='#004085',
+            pe['status_label'].set_bbox(dict(facecolor='#ff9800', edgecolor='#e68900',
                                              boxstyle='round,pad=0.3'))
 
-            # Update button visual state
+            # Disable buttons during load
+            self.btn_market_india.set_active(False)
+            self.btn_market_us.set_active(False)
+            for ax in [self.btn_market_india.ax, self.btn_market_us.ax]:
+                ax.set_alpha(0.6)
+
+            fig.canvas.draw_idle()
+            fig.canvas.flush_events()
+
+            # Do the actual market change
+            if self.on_market_change:
+                try:
+                    self.on_market_change(market)
+                    # Success feedback
+                    pe['status_label'].set_text(f"✓ Switched to {market} market")
+                    pe['status_label'].set_color('#ffffff')
+                    pe['status_label'].set_bbox(dict(facecolor='#28a745', edgecolor='#1e7e34',
+                                                     boxstyle='round,pad=0.3'))
+                except Exception as e:
+                    pe['status_label'].set_text(f"✗ Failed to switch market: {str(e)}")
+                    pe['status_label'].set_color('#ffffff')
+                    pe['status_label'].set_bbox(dict(facecolor='#dc3545', edgecolor='#c82333',
+                                                     boxstyle='round,pad=0.3'))
+
+            # Re-enable buttons and update visual state
+            self.btn_market_india.set_active(True)
+            self.btn_market_us.set_active(True)
+            for ax in [self.btn_market_india.ax, self.btn_market_us.ax]:
+                ax.set_alpha(1.0)
+
             if market == 'INDIA':
                 self.btn_market_india.color = '#1f497d'
                 self.btn_market_india.ax.set_facecolor('#1f497d')
@@ -754,8 +793,7 @@ class App:
                 self.btn_market_india.label.set_color('#495057')
 
             fig.canvas.draw_idle()
-            if self.on_market_change:
-                self.on_market_change(market)
+            self._schedule_status_restore(delay_ticks=400)
 
         self.btn_market_india.on_clicked(lambda e: switch_market('INDIA'))
         self.btn_market_us.on_clicked(lambda e: switch_market('US'))
