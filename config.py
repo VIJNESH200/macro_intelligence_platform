@@ -113,9 +113,9 @@ FORECAST_CONFIG = {
     'horizons': [3, 6, 9],              # months forward
     'decay_factor': 0.85,              # mean-reversion decay per month
     'weights': {
-        'momentum': 0.45,
+        'momentum': 0.50,
         'analogues': 0.40,
-        'macro_drivers': 0.15,
+        'macro_drivers': 0.10,
     },
     'confidence_decay_per_month': 0.15,
     'scenario_sigma': 1.0,             # standard deviations for bull/bear

@@ -98,30 +98,27 @@ class TestPureMathEngine(unittest.TestCase):
 
 
     def test_macro_driver_signal_with_real_evaluations_dict(self):
-        """Verify _macro_driver_signal produces a non-flat path when given real evaluations dict."""
-        df = pd.DataFrame({'X': [100.0, 100.0], 'Y': [100.0, 100.0]})
-        idx = 1
+        """Verify _macro_driver_signal produces a non-flat path using walk-forward fitted model."""
+        dates = pd.date_range(start='2010-01-01', periods=60, freq='MS')
+        data = {
+            'X': np.linspace(98.0, 102.0, 60),
+            'Y': np.linspace(99.0, 103.0, 60),
+            'ICI_Z': np.sin(np.linspace(0, 5, 60)),
+            'CPI_Z': np.cos(np.linspace(0, 5, 60)),
+            'Yield Spread_Z': np.linspace(-1, 1, 60),
+            'Real Policy Rate_Z': np.linspace(1, -1, 60)
+        }
+        df = pd.DataFrame(data, index=dates)
+        idx = 50
         center = 100.0
         max_h = 6
 
-        real_macro_contrib = {
-            'macro_score': 2.5,
-            'evaluations': {
-                'ICI': {'score': 1.2, 'level': 'Positive', 'trend': 'Improving'},
-                'CPI': {'score': -0.8, 'level': 'Negative', 'trend': 'Weakening'},
-                'Yield Spread': {'score': 1.5, 'level': 'Positive', 'trend': 'Improving'},
-                'Real Policy Rate': {'score': 0.9, 'level': 'Positive', 'trend': 'Improving'}
-            }
-        }
-
-        res = ForecastingEngine._macro_driver_signal(df, idx, center, real_macro_contrib, max_h)
+        res = ForecastingEngine._macro_driver_signal(df, idx, center, None, max_h)
         path = res['path']
 
         self.assertEqual(len(path), max_h)
-        # Ensure path is NOT flat at (100.0, 100.0)
-        self.assertNotEqual(path[0], (100.0, 100.0))
-        self.assertGreater(path[-1][0], 100.0)
-        self.assertGreater(path[-1][1], 100.0)
+        x_now, y_now = df['X'].iloc[idx], df['Y'].iloc[idx]
+        self.assertNotEqual(path[-1], (x_now, y_now))
 
 
 if __name__ == '__main__':

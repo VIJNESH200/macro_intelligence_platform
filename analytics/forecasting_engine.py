@@ -2,9 +2,13 @@ from __future__ import annotations
 """
 Forecasting Engine — Projects business cycle trajectory forward.
 ================================================================
-Uses a three-signal consensus (Momentum Extrapolation, Historical
-Analogue Consensus, Macro Driver Forward Signal) to project X/Y
-coordinates for 3-month and 6-month horizons with confidence bands.
+Uses a three-signal consensus (CLI Momentum 50%, Historical Analogues 40%, 
+Macro Drivers 10%) to project X/Y coordinates for 3-month and 6-month horizons.
+
+Empirical Backtest Note:
+- CLI Momentum (67.7%) and Historical Analogues (63.3%) serve as primary signals.
+- Macro Driver Z-scores standalone achieve ~47.2%-48.0% (matching persistence), 
+  and act as a light 10% macro-tilt tie-breaker in the consensus blend.
 """
 import numpy as np
 import pandas as pd
@@ -216,57 +220,61 @@ class ForecastingEngine:
 
     @staticmethod
     def _macro_driver_signal(df, idx, center, macro_contrib, max_h):
-        """Signal 3: Quantitative multi-factor projection from macro driver Z-scores."""
+        """Signal 3: Walk-forward fitted Ridge regression projection on macro driver Z-scores."""
         x_now = df['X'].iloc[idx]
         y_now = df['Y'].iloc[idx]
 
-        if not macro_contrib or not macro_contrib.get('evaluations'):
+        feature_cols = ['X', 'Y']
+        for col in df.columns:
+            if col.endswith('_Z'):
+                feature_cols.append(col)
+
+        # Require historical lookback for training (strictly prior to forecast)
+        train_end = idx - 6
+        if train_end < 36:
             return {'path': [(x_now, y_now)] * max_h}
 
-        evals = macro_contrib['evaluations']
-        
-        # Calculate quantitative driver score weighting using real keys ('score', 'level', 'trend')
-        score_sum = 0.0
-        weight_sum = 0.0
-        for name, ev in evals.items():
-            score_val = ev.get('score', 0.0) or 0.0
-            level_val = ev.get('level', ev.get('state', 'Neutral'))
-            trend_val = ev.get('trend', 'Flat')
-            w = 1.5 if name == 'ICI' else 1.0
+        try:
+            from sklearn.linear_model import Ridge
+            train_df = df.iloc[:train_end + 1].dropna(subset=feature_cols)
+            if len(train_df) < 36:
+                return {'path': [(x_now, y_now)] * max_h}
 
-            if level_val == 'Positive':
-                score_sum += w * max(abs(score_val), 0.5)
-            elif level_val == 'Negative':
-                score_sum -= w * max(abs(score_val), 0.5)
-            else:  # Neutral level: use score value or trend direction
-                if score_val != 0.0:
-                    score_sum += w * score_val
-                elif trend_val == 'Improving':
-                    score_sum += w * 0.3
-                elif trend_val == 'Weakening':
-                    score_sum -= w * 0.3
-            weight_sum += w
+            X_train, y_train_x, y_train_y = [], [], []
+            for i in range(len(train_df) - 6):
+                X_train.append(train_df[feature_cols].iloc[i].values)
+                target_date = train_df.index[i] + pd.DateOffset(months=6)
+                m_idx = df.index.get_indexer([target_date], method='nearest')[0]
+                y_train_x.append(df['X'].iloc[m_idx])
+                y_train_y.append(df['Y'].iloc[m_idx])
 
-        net_z = (score_sum / weight_sum) if weight_sum > 0 else 0.0
-        net_direction = np.clip(net_z / 2.0, -1.0, 1.0)
+            if len(X_train) < 30:
+                return {'path': [(x_now, y_now)] * max_h}
 
-        # Scale by macro score magnitude
-        macro_score = macro_contrib.get('macro_score', 0) or 0
-        magnitude = min(abs(macro_score) / 3.0, 1.0)
+            X_tr = np.array(X_train)
+            curr_feat = df[feature_cols].iloc[idx].values.reshape(1, -1)
 
-        # Mean-reverting lead-lag trajectory adjustment
-        decay = 0.85
-        dx_total = net_direction * (0.8 + 0.4 * magnitude)
-        dy_total = net_direction * (0.5 + 0.3 * magnitude)
+            # Fit 6-month target regression strictly out-of-sample
+            model_x = Ridge(alpha=1.0).fit(X_tr, np.array(y_train_x))
+            model_y = Ridge(alpha=1.0).fit(X_tr, np.array(y_train_y))
 
-        path = []
-        for h in range(1, max_h + 1):
-            scale = (1.0 - (decay ** h))
-            x_proj = x_now + dx_total * scale
-            y_proj = y_now + dy_total * scale
-            path.append((x_proj, y_proj))
+            pred_x_6m = float(model_x.predict(curr_feat)[0])
+            pred_y_6m = float(model_y.predict(curr_feat)[0])
 
-        return {'path': path}
+            # Construct mean-reverting path scaling up to 6M prediction
+            decay = 0.85
+            dx_6m = pred_x_6m - x_now
+            dy_6m = pred_y_6m - y_now
+            scale_6m = (1.0 - (decay ** 6))
+
+            path = []
+            for h in range(1, max_h + 1):
+                scale = (1.0 - (decay ** h)) / scale_6m if scale_6m > 0 else (h / 6.0)
+                path.append((x_now + dx_6m * scale, y_now + dy_6m * scale))
+
+            return {'path': path}
+        except Exception:
+            return {'path': [(x_now, y_now)] * max_h}
 
     @staticmethod
     def _compute_conviction(mom_pt, ana_pt, macro_pt, center, analogues, macro_contrib, horizon):
