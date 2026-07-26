@@ -79,7 +79,7 @@ flowchart TD
 | **Feature Engine** | `features/` | Vectorized Z-score transformations, velocity ($d^2/dt^2$), B-spline interpolation. |
 | **Analytics** | `analytics/` | Quantitative models (`MacroIntelligenceEngine`, `ForecastingEngine`, Markov `TransitionMatrix`). |
 | **API & Models** | `api.py`, `macro_intel.py`, `models.py` | Typed `DataBundle` / `ForecastResult` dataclasses and `macro_intel` import interface. |
-| **Research** | `research/` | S&P Global-style strategy narrative synthesis and ReportLab PDF layout generator. |
+| **Research** | `research/` | Institutional strategy narrative synthesis and publication-ready ReportLab PDF report generator. |
 | **User Interface** | `ui/` | Interactive dashboard with playback controls, sparklines, and market context panels. |
 
 ---

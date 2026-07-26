@@ -6,7 +6,7 @@ class ResearchEngine:
     """Institutional Narrative Generation Engine for Macro Intelligence.
     
     Synthesizes quantitative metrics (Z-Scores, YoY variations, Percentiles) into 
-    fluid, professional macro research notes inspired by S&P Global Market Intelligence.
+    fluid, institutional-grade macro strategy research notes.
     """
 
     @staticmethod
