@@ -5,8 +5,32 @@ Configuration package for Macro Intelligence Platform.
 import os
 from .markets import get_market_config
 
-# Global market selection (can be overridden at runtime)
-_CURRENT_MARKET = os.getenv('MARKET', 'US')
+_MARKET_PREF_FILE = os.path.join(os.path.expanduser('~'), '.macro_intelligence_platform', 'market_preference.txt')
+
+
+def _load_market_preference() -> str | None:
+    """Read the last market the user switched to, if any was saved."""
+    try:
+        with open(_MARKET_PREF_FILE) as f:
+            saved = f.read().strip()
+        return saved if saved in ('INDIA', 'US') else None
+    except OSError:
+        return None
+
+
+def save_market_preference(market: str) -> None:
+    """Persist the selected market so it's restored on the next launch."""
+    try:
+        os.makedirs(os.path.dirname(_MARKET_PREF_FILE), exist_ok=True)
+        with open(_MARKET_PREF_FILE, 'w') as f:
+            f.write(market)
+    except OSError:
+        pass
+
+
+# Global market selection (can be overridden at runtime).
+# Precedence: explicit $MARKET env var > last saved preference > India default.
+_CURRENT_MARKET = os.getenv('MARKET') or _load_market_preference() or 'INDIA'
 
 
 def get_current_market() -> str:

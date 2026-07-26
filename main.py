@@ -8,12 +8,12 @@ Runs the complete pipeline:
   DataEngine → FeatureEngine → App (GUI)
 """
 try:
-    from .config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market
+    from .config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market, save_market_preference
     from .data.data_engine import DataEngine
     from .features.feature_engine import FeatureEngine
     from .ui.app import App
 except ImportError:
-    from config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market
+    from config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market, save_market_preference
     from data.data_engine import DataEngine
     from features.feature_engine import FeatureEngine
     from ui.app import App
@@ -80,6 +80,7 @@ def main():
             app.fig.canvas.draw_idle()
             app._schedule_status_restore(delay_ticks=100)
 
+        save_market_preference(market)
         print(f"[Market] ✓ Switched to {CONFIG['name']}")
 
     # 3. Launch GUI

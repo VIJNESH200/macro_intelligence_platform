@@ -93,7 +93,7 @@ MARKET_PROFILES = {
 }
 
 
-def get_market_config(market: str = 'US') -> dict:
+def get_market_config(market: str = 'INDIA') -> dict:
     """Get configuration for a specific market."""
     if market not in MARKET_PROFILES:
         raise ValueError(f"Unknown market: {market}. Choose from {list(MARKET_PROFILES.keys())}")
