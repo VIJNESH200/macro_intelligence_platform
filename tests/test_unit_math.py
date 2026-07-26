@@ -104,6 +104,14 @@ class TestPureMathEngine(unittest.TestCase):
         self.assertGreater(c_unanimous_2, c_split_2)
         self.assertTrue(15.0 <= c_split_2 <= 95.0)
 
+        # Single active signal weight (momentum = 1.0, others = 0.0)
+        w_1 = {'momentum': 1.00, 'analogues': 0.00, 'macro_drivers': 0.00}
+        c_single = ForecastingEngine._compute_conviction(
+            (102, 102), (98, 97), (98, 97), center, None, None, horizon, weights=w_1
+        )
+        self.assertTrue(15.0 <= c_single <= 95.0)
+        self.assertEqual(c_single, 50.0)  # Base 65.0 - (6 - 1) * 3.0 = 50.0
+
 
     def test_macro_driver_signal_with_real_evaluations_dict(self):
         """Verify _macro_driver_signal produces a non-flat path using walk-forward fitted model."""

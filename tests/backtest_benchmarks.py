@@ -2,7 +2,7 @@ from __future__ import annotations
 """
 Rigorous validation and benchmarking of the Forecasting Engine.
 ================================================================
-Compares the Three-Signal Consensus model against five baselines
+Compares the Two-Signal Consensus model against baselines
 and evaluates the empirical calibration of Forecast Conviction.
 """
 import os
@@ -57,7 +57,7 @@ def run_benchmarks():
         analogues = generate_analogues(df_sliced, idx, data, MARKET_SERIES)
         
         # ----------------------------------------------------
-        # 1. Three-Signal Consensus (Full Model)
+        # 1. Two-Signal Consensus (Full Model)
         # ----------------------------------------------------
         forecast = ForecastingEngine.project(df_sliced, idx, CONFIG, analogues, data.get('macro_contrib'))
         proj_6m_quad = forecast['forecast_6m']['quadrant']
@@ -220,17 +220,19 @@ def run_benchmarks():
     persistence_acc = (res_df['curr_quad'] == res_df['real_6m_quad']).mean() * 100
     dist_mae = np.sqrt((res_df['consensus_x'] - res_df['real_6m_x'])**2 + (res_df['consensus_y'] - res_df['real_6m_y'])**2).mean()
 
-    # Conviction calibration quality gate checks
-    if calibration_data:
-        cal_errors = [float(row['Calibration Error'].replace('%', '')) for row in calibration_data]
-        mean_cal_err = float(np.mean(cal_errors))
-        assert mean_cal_err <= 30.0, f"CI REGRESSION: Mean conviction calibration error ({mean_cal_err:.1f}%) exceeds 30.0% threshold"
+    # Conviction calibration quality gate checks (evaluated on statistically representative bins with N >= 10)
+    valid_cal_rows = [row for row in calibration_data if row['Sample Size'] >= 10]
+    assert len(valid_cal_rows) >= 2, f"CI REGRESSION: Fewer than 2 statistically valid conviction bins (N >= 10)"
+
+    valid_cal_errors = [float(row['Calibration Error'].replace('%', '')) for row in valid_cal_rows]
+    mean_cal_err = float(np.mean(valid_cal_errors))
+    assert mean_cal_err <= 30.0, f"CI REGRESSION: Mean conviction calibration error on valid bins ({mean_cal_err:.1f}%) exceeds 30.0% threshold"
 
     high_bin = res_df[res_df['conviction_bin'] == 'High (58-65%)']
-    if not high_bin.empty:
-        high_acc = (high_bin['consensus_quad'] == high_bin['real_6m_quad']).mean() * 100
-        assert high_acc >= 70.0, f"CI REGRESSION: High conviction accuracy ({high_acc:.1f}%) drops below 70.0% threshold"
-        assert len(high_bin) >= 20, f"CI REGRESSION: High conviction bin sample size too low ({len(high_bin)})"
+    assert not high_bin.empty, "CI REGRESSION: High conviction bin is empty"
+    high_acc = (high_bin['consensus_quad'] == high_bin['real_6m_quad']).mean() * 100
+    assert high_acc >= 75.0, f"CI REGRESSION: High conviction accuracy ({high_acc:.1f}%) drops below 75.0% threshold"
+    assert len(high_bin) >= 50, f"CI REGRESSION: High conviction bin sample size too low ({len(high_bin)})"
 
     assert consensus_acc >= 60.0, f"CI REGRESSION: 6M Consensus Quadrant Accuracy drops below 60% threshold ({consensus_acc:.1f}%)"
     assert consensus_acc > persistence_acc, f"CI REGRESSION: Consensus model fails to outperform Persistence baseline ({consensus_acc:.1f}% vs {persistence_acc:.1f}%)"
