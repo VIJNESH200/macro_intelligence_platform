@@ -11,12 +11,12 @@ No API keys or third-party gateways (e.g., data.gov.in) required.
 import io
 import os
 import re
-import ssl
-import urllib.request
 from datetime import datetime
 from urllib.parse import urljoin
 
+import certifi
 import pandas as pd
+import requests
 from bs4 import BeautifulSoup
 from .base import BaseProvider, ProviderResult, create_provider_result
 
@@ -40,63 +40,33 @@ class ICIProvider(BaseProvider):
     def update_frequency(self) -> str:
         return 'monthly'
 
-    def _urlopen_secure(self, req: urllib.request.Request, timeout: int = 15) -> bytes:
-        """Execute HTTP request using default verified TLS/SSL context.
-        Raises error on SSL validation failure to ensure untrusted connections are rejected."""
-        context = ssl.create_default_context()
-        return urllib.request.urlopen(req, context=context, timeout=timeout).read()
-
     def _parse_excel_content(self, content: bytes) -> pd.Series:
         """Parse DPIIT Core Industries Excel file into a clean date-indexed Series."""
-        try:
-            excel_file = pd.ExcelFile(io.BytesIO(content))
-            sheet_name = excel_file.sheet_names[0]
-            df = excel_file.parse(sheet_name)
+        excel = pd.ExcelFile(io.BytesIO(content))
+        sheet_name = 'Index' if 'Index' in excel.sheet_names else excel.sheet_names[0]
+        df = pd.read_excel(excel, sheet_name=sheet_name)
 
-            overall_row_idx = None
-            for idx, row in df.iterrows():
-                row_str = " ".join([str(val) for val in row.values if pd.notna(val)])
-                if 'Overall' in row_str or 'CORE' in row_str.upper():
-                    overall_row_idx = idx
-                    break
+        # Check if first row contains column headers
+        if 'month' not in str(df.columns[0]).lower():
+            df.columns = [str(x).strip() for x in df.iloc[0]]
+            df = df.iloc[1:].reset_index(drop=True)
 
-            if overall_row_idx is None:
-                return pd.Series(dtype=float)
+        date_col = df.columns[0]
+        val_col = None
+        for col in df.columns:
+            if 'overall' in str(col).lower():
+                val_col = col
+                break
+        if val_col is None:
+            val_col = df.columns[1]
 
-            header_row = df.iloc[overall_row_idx]
-            dates = []
-            values = []
+        series_data = {}
+        for _, row in df.iterrows():
+            d_val = str(row[date_col]).strip()
+            v_val = row[val_col]
 
-            for col_idx in range(1, len(header_row)):
-                val = header_row.iloc[col_idx]
-                if pd.notna(val) and isinstance(val, (int, float)):
-                    col_header = None
-                    for r in range(overall_row_idx - 1, -1, -1):
-                        cell_val = df.iloc[r, col_idx]
-                        if pd.notna(cell_val):
-                            col_header = str(cell_val)
-                            break
-
-                    if col_header:
-                        try:
-                            clean_hdr = col_header.strip()
-                            dt = pd.to_datetime(clean_hdr, format='%b-%y')
-                            dates.append(dt)
-                            values.append(float(val))
-                        except Exception:
-                            try:
-                                dt = pd.to_datetime(clean_hdr, format='%b-%Y')
-                                dates.append(dt)
-                                values.append(float(val))
-                            except Exception:
-                                pass
-
-            if dates and values:
-                s = pd.Series(values, index=pd.DatetimeIndex(dates)).sort_index()
-                s = s.resample('MS').first().ffill()
-                return s
-
-            return pd.Series(dtype=float)
+            if any(term in d_val for term in ['(', 'Apr-Mar', 'Apr-Jun']) or d_val.lower() in ['nan', 'none', 'months/years', 'months']:
+                continue
 
         except Exception as e:
             print(f"  [!] Failed to parse DPIIT Excel file: {e}")

@@ -16,6 +16,7 @@ from .providers.rbi import RBIProvider
 from .providers.oecd import OECDProvider
 from .providers.yield_provider import YieldProvider
 from .providers.credit_provider import CreditProvider
+from .providers.ici import ICIProvider
 from .cache import CacheManager
 
 
@@ -73,7 +74,8 @@ class DataEngine:
             'rbi': RBIProvider(),
             'oecd': OECDProvider(),
             'yield': YieldProvider(),
-            'credit': CreditProvider()
+            'credit': CreditProvider(),
+            'ici': ICIProvider()
         }
         self.fred = self.providers['fred']
         self.yfinance = self.providers['yfinance']
@@ -164,7 +166,9 @@ class DataEngine:
             return df
             
         print("Fetching Macro Driver series...")
-        cache_key = "macro_series_all"
+        # Keyed by the actual series set so switching markets can't serve
+        # another market's cached columns (their series names largely differ).
+        cache_key = "macro_series_" + "_".join(sorted(self.macro_series.keys()))
 
         import os
         local_macro_path = os.path.join(os.path.dirname(__file__), 'local_data', 'macro_series_fallback.csv')
@@ -268,7 +272,9 @@ class DataEngine:
     def load_market_series(self, df: pd.DataFrame) -> pd.DataFrame:
         """Load all market context series and merge into the indicator DataFrame."""
         print("Fetching Market Context series...")
-        cache_key = "market_series_all"
+        # Keyed by the actual series set so switching markets can't serve
+        # another market's cached columns (e.g. India's 'Sensex' vs US's 'Dow Jones').
+        cache_key = "market_series_" + "_".join(sorted(self.market_series.keys()))
         self.load_warnings = []
 
         import os

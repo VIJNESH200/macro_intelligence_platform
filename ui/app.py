@@ -17,7 +17,7 @@ from matplotlib.widgets import Slider, Button, CheckButtons, RadioButtons
 from matplotlib.collections import LineCollection
 
 from .layout import create_figure, create_main_axes, create_background_axes, draw_group_container
-from .sidebars import create_sparkline_axes, create_left_sidebar, create_right_sidebar, create_market_panel
+from .sidebars import create_sparkline_axes, create_left_sidebar, create_right_sidebar, create_market_panel, build_market_texts
 
 
 class App:
@@ -298,6 +298,29 @@ class App:
             label.set_color('#495057')
             label.set_fontsize(9)
         return chk
+
+    def rebuild_market_panel(self):
+        """Rebuild the market-panel text artists to match self.market_series.
+
+        Needed after a market switch: the panel's texts are keyed by series
+        name, and INDIA/US expose different series names, so the widgets
+        built for the previous market must be replaced rather than reused.
+        """
+        pe = self.plot_elements
+        for texts in pe['market_texts'].values():
+            texts['name'].remove()
+            texts['val'].remove()
+            texts['chg'].remove()
+            texts['sep'].remove()
+
+        pe['market_texts'] = build_market_texts(self.ax_market, self.market_series)
+
+        m_state = pe['market_state']
+        m_state['selected'] = list(self.market_series.keys())
+        m_state['scroll_y'] = 0.0
+        self.ax_market.set_ylim(0, 1)
+
+        self._update_market_layout()
 
     def _update_market_layout(self):
         m_state = self.plot_elements['market_state']

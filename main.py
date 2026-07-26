@@ -58,6 +58,7 @@ def main():
         app.spline_data = new_spline
         app.config = CONFIG.copy()
         app.market_series = MARKET_SERIES.copy()
+        app.rebuild_market_panel()
         app.data_metadata = new_engine.get_metadata
         app.max_frames = len(new_df) - 1
         app.state['current_frame'] = 0

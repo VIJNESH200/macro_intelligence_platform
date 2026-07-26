@@ -120,6 +120,30 @@ def create_right_sidebar(fig: plt.Figure) -> dict:
     return texts
 
 
+def build_market_texts(ax_market, market_series: dict) -> dict:
+    """Create the per-series label/value/change text artists on the market axes."""
+    market_texts = {}
+    y_pos = 0.97
+    for name in market_series.keys():
+        t_name = ax_market.text(0.02, y_pos, name, fontsize=8.5, fontweight='bold',
+                                color='#333333', transform=ax_market.transData, clip_on=True)
+        t_val = ax_market.text(0.98, y_pos, "--", fontsize=8.5, ha='right',
+                               color='#333333', transform=ax_market.transData, clip_on=True)
+        t_chg = ax_market.text(0.98, y_pos - 0.042, "--", fontsize=8.0, ha='right',
+                               color='gray', transform=ax_market.transData, clip_on=True)
+
+        sep_line, = ax_market.plot([0.02, 0.98], [y_pos - 0.075, y_pos - 0.075],
+                                   color='lightgray', linewidth=0.5,
+                                   transform=ax_market.transData)
+        sep_line.set_clip_on(True)
+
+        market_texts[name] = {'name': t_name, 'val': t_val, 'chg': t_chg,
+                              'sep': sep_line, 'y0': y_pos}
+        y_pos -= 0.095
+
+    return market_texts
+
+
 def create_market_panel(fig: plt.Figure, market_series: dict) -> tuple:
     """Create the market context panel on the left sidebar.
 
@@ -159,24 +183,7 @@ def create_market_panel(fig: plt.Figure, market_series: dict) -> tuple:
     ax_market.set_xlim(0, 1)
     ax_market.set_ylim(0, 1)
 
-    market_texts = {}
-    y_pos = 0.97
-    for name in market_series.keys():
-        t_name = ax_market.text(0.02, y_pos, name, fontsize=8.5, fontweight='bold',
-                                color='#333333', transform=ax_market.transData, clip_on=True)
-        t_val = ax_market.text(0.98, y_pos, "--", fontsize=8.5, ha='right',
-                               color='#333333', transform=ax_market.transData, clip_on=True)
-        t_chg = ax_market.text(0.98, y_pos - 0.042, "--", fontsize=8.0, ha='right',
-                               color='gray', transform=ax_market.transData, clip_on=True)
-
-        sep_line, = ax_market.plot([0.02, 0.98], [y_pos - 0.075, y_pos - 0.075],
-                                   color='lightgray', linewidth=0.5,
-                                   transform=ax_market.transData)
-        sep_line.set_clip_on(True)
-
-        market_texts[name] = {'name': t_name, 'val': t_val, 'chg': t_chg,
-                              'sep': sep_line, 'y0': y_pos}
-        y_pos -= 0.095
+    market_texts = build_market_texts(ax_market, market_series)
 
     ax_market.set_ylim(0, 1)
 
