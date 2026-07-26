@@ -24,7 +24,8 @@ class App:
     """Main application class — creates the GUI and runs the event loop."""
 
     def __init__(self, df: pd.DataFrame, spline_data: pd.DataFrame,
-                 config: dict, market_series: dict, data_metadata: dict = None):
+                 config: dict, market_series: dict, data_metadata: dict = None,
+                 on_market_change=None):
         self.df = df
         self.spline_data = spline_data
         self.config = config
@@ -34,6 +35,7 @@ class App:
         self.state = {'current_frame': 0, 'is_playing': False,
                       'tick': 0, 'speed_div': 4, 'status_restore_tick': None}
         self.export_menu = {}
+        self.on_market_change = on_market_change
 
         self._build_ui()
         self._wire_callbacks()
@@ -106,13 +108,35 @@ class App:
         self.chk_market = self._style_check(ax_chk_market, ('Market Context',), (True,))
 
         # Group 4: Tools
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.68, grp_y, 0.16, grp_h, "Tools")
-        ax_export = self.fig.add_axes([0.685, 0.028, 0.045, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.68, grp_y, 0.30, grp_h, "Tools & Market")
+        ax_export = self.fig.add_axes([0.685, 0.028, 0.038, 0.035])
         self.btn_export = self._style_button(ax_export, 'Export')
-        ax_help = self.fig.add_axes([0.735, 0.028, 0.045, 0.035])
+        ax_help = self.fig.add_axes([0.728, 0.028, 0.038, 0.035])
         self.btn_help = self._style_button(ax_help, 'Help')
-        ax_cache = self.fig.add_axes([0.785, 0.028, 0.050, 0.035])
+        ax_cache = self.fig.add_axes([0.771, 0.028, 0.045, 0.035])
         self.btn_cache = self._style_button(ax_cache, 'Clr Cache')
+
+        # Market selector
+        try:
+            from ..config import get_current_market
+        except ImportError:
+            from config import get_current_market
+        current_market = get_current_market()
+        market_label = 'US' if current_market == 'US' else 'IN'
+
+        ax_market_india = self.fig.add_axes([0.821, 0.028, 0.038, 0.035])
+        self.btn_market_india = self._style_button(ax_market_india, 'India')
+        ax_market_us = self.fig.add_axes([0.864, 0.028, 0.038, 0.035])
+        self.btn_market_us = self._style_button(ax_market_us, 'US')
+
+        if current_market == 'INDIA':
+            self.btn_market_india.color = '#1f497d'
+            self.btn_market_india.ax.set_facecolor('#1f497d')
+            self.btn_market_india.label.set_color('#ffffff')
+        else:
+            self.btn_market_us.color = '#1f497d'
+            self.btn_market_us.ax.set_facecolor('#1f497d')
+            self.btn_market_us.label.set_color('#ffffff')
 
         # Open Folder button (hidden)
         ax_open = self.fig.add_axes([0.70, 0.002, 0.08, 0.016])
@@ -203,7 +227,7 @@ class App:
                              ax_1x, ax_2x, ax_3x,
                              ax_chk_tails, ax_chk_labels, ax_chk_market, ax_chk_forecast,
                              ax_export, ax_help, ax_cache, ax_open,
-                             ax_market_cfg, ax_market_mode],
+                             ax_market_cfg, ax_market_mode, ax_market_india, ax_market_us],
             'control_bg_elements': control_bg_elements
         }
         
@@ -224,7 +248,8 @@ class App:
             'chk_market': self.chk_market, 'chk_forecast': self.chk_forecast,
             'btn_export': self.btn_export, 'btn_help': self.btn_help,
             'btn_open': self.btn_open,
-            'btn_market_cfg': btn_market_cfg, 'btn_market_mode': btn_market_mode
+            'btn_market_cfg': btn_market_cfg, 'btn_market_mode': btn_market_mode,
+            'btn_market_india': self.btn_market_india, 'btn_market_us': self.btn_market_us
         }
 
         # Market state
@@ -704,6 +729,19 @@ class App:
         self.btn_play.on_clicked(play)
         self.btn_pause.on_clicked(pause)
         self.btn_reset.on_clicked(reset)
+
+        def switch_market(market: str):
+            pe['status_label'].set_text(f"Switching to {market} market... Reloading data.")
+            pe['status_label'].set_fontweight('bold')
+            pe['status_label'].set_color('white')
+            pe['status_label'].set_bbox(dict(facecolor='#0056b3', edgecolor='#004085',
+                                             boxstyle='round,pad=0.3'))
+            fig.canvas.draw_idle()
+            if self.on_market_change:
+                self.on_market_change(market)
+
+        self.btn_market_india.on_clicked(lambda e: switch_market('INDIA'))
+        self.btn_market_us.on_clicked(lambda e: switch_market('US'))
 
         self.btn_1x.on_clicked(lambda e: set_speed('1x'))
         self.btn_2x.on_clicked(lambda e: set_speed('2x'))

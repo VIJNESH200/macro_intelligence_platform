@@ -2,9 +2,38 @@ from __future__ import annotations
 """
 Market Insights — Deterministic rule-based market commentary.
 ==============================================================
-Exact port of report_market_insights.py.
+Market-aware rules for India and US markets.
 """
 import pandas as pd
+
+
+def _get_market() -> str:
+    """Get current market context."""
+    try:
+        from ..config import get_current_market
+    except ImportError:
+        from config import get_current_market
+    return get_current_market()
+
+
+def _get_domestic_indices() -> list[str]:
+    """Get list of domestic indices for current market."""
+    try:
+        from ..config.markets import MARKET_PROFILES
+    except ImportError:
+        from config.markets import MARKET_PROFILES
+    market = _get_market()
+    return MARKET_PROFILES[market].get('domestic_indices', [])
+
+
+def _get_global_indices() -> list[str]:
+    """Get list of global indices for current market."""
+    try:
+        from ..config.markets import MARKET_PROFILES
+    except ImportError:
+        from config.markets import MARKET_PROFILES
+    market = _get_market()
+    return MARKET_PROFILES[market].get('global_indices', [])
 
 
 def generate_market_insights(data: dict) -> dict:
@@ -47,8 +76,9 @@ def generate_market_insights(data: dict) -> dict:
         insights.append("Recent market action indicates broad-based risk aversion, with broad indices negative over the trailing month.")
 
     # Rule 3: Short-term pullback in long-term uptrend
+    domestic_indices = _get_domestic_indices()
     for asset in valid_assets:
-        if 'Nifty' in asset['name'] or 'Sensex' in asset['name'] or 'S&P' in asset['name']:
+        if asset['name'] in domestic_indices:
             raw = asset['returns_raw']
             if raw.get('1M', 0) < 0 and raw.get('12M', 0) > 0:
                 insights.append(f"Short-term weakness in {asset['name']} appears to be a consolidation within a broader long-term uptrend.")
@@ -69,14 +99,17 @@ def generate_market_insights(data: dict) -> dict:
     # Rule 5: Domestic vs Global
     dom_ret = []
     glob_ret = []
+    domestic_indices = _get_domestic_indices()
+    global_indices = _get_global_indices()
+
     for asset in valid_assets:
         name = asset['name']
         r12 = asset['returns_raw'].get('12M', 0)
         if pd.isna(r12):
             continue
-        if 'S&P' in name or 'Nasdaq' in name:
+        if name in global_indices:
             glob_ret.append(r12)
-        elif 'Nifty' in name or 'Sensex' in name:
+        elif name in domestic_indices:
             dom_ret.append(r12)
 
     if dom_ret and glob_ret:
@@ -110,7 +143,9 @@ def generate_market_insights(data: dict) -> dict:
     # Rule 6: Cross-Asset Macro-Market Decoupling
     health_val = data.get('health_val', 100)
     mom_val = data.get('momentum_val', 100)
-    equity_12m = next((a['returns_raw'].get('12M', 0) for a in valid_assets if 'S&P 500' in a['name']), 0)
+    domestic_indices = _get_domestic_indices()
+    lead_index = domestic_indices[0] if domestic_indices else None
+    equity_12m = next((a['returns_raw'].get('12M', 0) for a in valid_assets if lead_index and a['name'] == lead_index), 0)
     if equity_12m > 5.0 and (mom_val < 100 or health_val < 100):
         insights.append("Macro-Market Decoupling: Equity valuations are expanding despite underlying macroeconomic momentum operating below historical trend.")
 
@@ -123,19 +158,21 @@ def generate_market_insights(data: dict) -> dict:
         elif vix_val > 20.0:
             insights.append(f"Volatility Regime: VIX at {vix_val:.1f} reflects elevated market risk-pricing and hedging demand.")
 
-    # Rule 8: Commodity Input-Cost Squeeze (Crude Oil)
-    crude_asset = next((a for a in valid_assets if 'Brent' in a['name'] or 'Crude' in a['name']), None)
+    # Rule 8: Commodity Input-Cost Squeeze (Crude Oil) — all markets
+    crude_asset = next((a for a in valid_assets if 'Brent' in a['name'] or 'WTI' in a['name'] or 'Crude' in a['name']), None)
     if crude_asset:
         c_12m = crude_asset['returns_raw'].get('12M', 0)
         if not pd.isna(c_12m) and c_12m > 15.0:
-            insights.append(f"Commodity Squeeze: {crude_asset['name']} oil up {c_12m:+.1f}% YoY introduces input-cost inflation pressure for domestic margins.")
+            insights.append(f"Commodity Squeeze: {crude_asset['name']} up {c_12m:+.1f}% YoY introduces input-cost inflation pressure.")
 
-    # Rule 9: FX Transmission & Currency Risk (USD/INR)
-    fx_asset = next((a for a in valid_assets if 'USD/INR' in a['name'] or 'INR' in a['name']), None)
-    if fx_asset:
-        fx_12m = fx_asset['returns_raw'].get('12M', 0)
-        if not pd.isna(fx_12m) and fx_12m > 3.0:
-            insights.append(f"FX Transmission: Trailing USD/INR depreciation ({fx_12m:+.1f}% YoY) increases imported inflation risk and capital flow headwinds.")
+    # Rule 9: FX Transmission & Currency Risk — India specific
+    market = _get_market()
+    if market == 'INDIA':
+        fx_asset = next((a for a in valid_assets if 'USD/INR' in a['name'] or 'INR' in a['name']), None)
+        if fx_asset:
+            fx_12m = fx_asset['returns_raw'].get('12M', 0)
+            if not pd.isna(fx_12m) and fx_12m > 3.0:
+                insights.append(f"FX Transmission: Trailing USD/INR depreciation ({fx_12m:+.1f}% YoY) increases imported inflation risk and capital flow headwinds.")
 
     # Ensure we have at least one highlight
     if not insights:

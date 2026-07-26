@@ -8,12 +8,12 @@ Runs the complete pipeline:
   DataEngine → FeatureEngine → App (GUI)
 """
 try:
-    from .config import CONFIG, MARKET_SERIES, MACRO_SERIES
+    from .config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market
     from .data.data_engine import DataEngine
     from .features.feature_engine import FeatureEngine
     from .ui.app import App
 except ImportError:
-    from config import CONFIG, MARKET_SERIES, MACRO_SERIES
+    from config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market
     from data.data_engine import DataEngine
     from features.feature_engine import FeatureEngine
     from ui.app import App
@@ -31,8 +31,44 @@ def main():
     # 2. Compute features
     df, spline_data = FeatureEngine.compute_all(df, CONFIG)
 
+    # Global app reference for market switching
+    app_ref = {'app': None, 'df': df, 'spline_data': spline_data, 'engine': engine}
+
+    def on_market_change(market: str):
+        """Callback when user switches market via UI."""
+        print(f"Switching to {market} market...")
+        reload_for_market(market)
+
+        # Reload data and features
+        new_engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES)
+        new_df = new_engine.load_all()
+        new_df, new_spline = FeatureEngine.compute_all(new_df, CONFIG)
+
+        # Update app state
+        app_ref['df'] = new_df
+        app_ref['spline_data'] = new_spline
+        app_ref['engine'] = new_engine
+
+        # Update app internals
+        app = app_ref['app']
+        app.df = new_df
+        app.spline_data = new_spline
+        app.config = CONFIG.copy()
+        app.market_series = MARKET_SERIES.copy()
+        app.data_metadata = new_engine.get_metadata
+        app.max_frames = len(new_df) - 1
+        app.state['current_frame'] = 0
+
+        # Redraw everything
+        app.slider.set_val(0)
+        app.draw_frame(0)
+        app.fig.canvas.draw_idle()
+        print(f"Market switched to {CONFIG['name']}")
+
     # 3. Launch GUI
-    app = App(df, spline_data, CONFIG, MARKET_SERIES, data_metadata=engine.get_metadata)
+    app = App(df, spline_data, CONFIG, MARKET_SERIES, data_metadata=engine.get_metadata,
+              on_market_change=on_market_change)
+    app_ref['app'] = app
     app.run()
 
 
