@@ -65,8 +65,7 @@ class DataEngine:
         self.config = config
         self.market_series = market_series
         self.macro_series = macro_series or {}
-        self.offline = offline or bool(os.environ.get("CI")) or bool(os.environ.get("OFFLINE"))
-        
+
         self.providers = {
             'fred': FREDProvider(),
             'yfinance': YFinanceProvider(),
@@ -80,6 +79,7 @@ class DataEngine:
         self.yfinance = self.providers['yfinance']
         self.cache = CacheManager(cache_dir)
         self.data_metadata = {}
+        self.load_warnings = []  # Track partial failures
 
     def load_indicator(self) -> pd.DataFrame:
         """Load the primary macro indicator series."""
@@ -269,6 +269,7 @@ class DataEngine:
         """Load all market context series and merge into the indicator DataFrame."""
         print("Fetching Market Context series...")
         cache_key = "market_series_all"
+        self.load_warnings = []
 
         import os
         local_market_path = os.path.join(os.path.dirname(__file__), 'local_data', 'market_series_fallback.csv')
@@ -308,14 +309,7 @@ class DataEngine:
                 }
             else:
                 df[name] = np.nan
-                self.data_metadata[name] = {
-                    'value': 'N/A',
-                    'release_date': 'N/A',
-                    'source': 'bundled_fallback',
-                    'last_updated': 'N/A',
-                    'cache_status': 'Failed',
-                    'schema_ok': False
-                }
+                self.load_warnings.append(f"{name} ({sym}) unavailable")
 
         # ---- yfinance market series (bulk fetch) ----
         yf_series = {k: v['symbol'] for k, v in self.market_series.items()
@@ -328,19 +322,12 @@ class DataEngine:
             if not close_df.empty:
                 for name, sym in yf_series.items():
                     if sym in close_df.columns:
-                        series = close_df[sym]
-                        df[name] = series
-                        rel_date = series.dropna().index[-1] if not series.dropna().empty else None
-                        status, indicator = self.classify_freshness(rel_date, 'daily')
-                        meta = res_dict.get(sym)
-                        self.data_metadata[name] = {
-                            'value': round(series.dropna().iloc[-1], 2) if not series.dropna().empty else 'N/A',
-                            'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
-                            'source': meta.meta.source if meta else 'live',
-                            'last_updated': meta.meta.fetched_at if meta else 'N/A',
-                            'cache_status': f"{indicator} {status}",
-                            'schema_ok': meta.meta.schema_ok if meta else True
-                        }
+                        # Check if data is actually present (not all NaN)
+                        if not close_df[sym].isna().all():
+                            df[name] = close_df[sym]
+                        else:
+                            df[name] = np.nan
+                            self.load_warnings.append(f"{name} ({sym}) no data available")
                     else:
                         df[name] = np.nan
                         self.data_metadata[name] = {
@@ -362,6 +349,21 @@ class DataEngine:
                         'cache_status': 'Failed',
                         'schema_ok': False
                     }
+=======
+                        # Check if data is actually present (not all NaN)
+                        if not close_df[sym].isna().all():
+                            df[name] = close_df[sym]
+                        else:
+                            df[name] = np.nan
+                            self.load_warnings.append(f"{name} ({sym}) no data available")
+                    else:
+                        df[name] = np.nan
+                        self.load_warnings.append(f"{name} ({sym}) not found")
+            else:
+                for name in yf_series.keys():
+                    df[name] = np.nan
+                self.load_warnings.append(f"Market data fetch completely failed (using fallback)")
+>>>>>>> 19ef381 (fix: handle partial market data failures gracefully)
 
         # Cache the market columns
         market_cols = list(self.market_series.keys())

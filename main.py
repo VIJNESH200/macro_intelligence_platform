@@ -43,6 +43,12 @@ def main():
         new_engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES)
         new_df = new_engine.load_all()
 
+        # Report any data load warnings
+        if new_engine.load_warnings:
+            print(f"[Market] ⚠ Data warnings:")
+            for warning in new_engine.load_warnings:
+                print(f"  - {warning}")
+
         print(f"[Market] Computing features...")
         new_df, new_spline = FeatureEngine.compute_all(new_df, CONFIG)
 
@@ -60,7 +66,19 @@ def main():
         app.slider.set_val(app.max_frames)
         app.draw_frame(app.max_frames)
         app.fig.canvas.draw_idle()
-        print(f"[Market] ✓ Switched to {CONFIG['name']}")
+
+        # Show warning if some market data failed to load
+        if new_engine.load_warnings:
+            app.plot_elements['status_label'].set_text(
+                f"✓ Switched to {CONFIG['name']} • {len(new_engine.load_warnings)} data unavailable"
+            )
+            app.plot_elements['status_label'].set_color('#ff9800')
+            app.plot_elements['status_label'].set_bbox(dict(facecolor='#fff3cd', edgecolor='#ff9800',
+                                                           boxstyle='round,pad=0.3'))
+            app.fig.canvas.draw_idle()
+            app._schedule_status_restore(delay_ticks=600)
+        else:
+            print(f"[Market] ✓ Switched to {CONFIG['name']}")
 
     # 3. Launch GUI
     app = App(df, spline_data, CONFIG, MARKET_SERIES, data_metadata=engine.get_metadata,
