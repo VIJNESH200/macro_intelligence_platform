@@ -21,8 +21,7 @@ class RBIProvider(BaseProvider):
         
     def fetch(self, symbol: str, start_date: str = '2000-01-01', end_date: str | None = None, return_meta: bool = False) -> pd.Series | ProviderResult:
         source_type = "live"
-        base_dir = os.path.dirname(os.path.dirname(__file__))
-        csv_path = os.path.join(base_dir, 'local_data', f'{symbol}.csv')
+        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "local_data", f"{symbol}_fallback.csv")
         if os.path.exists(csv_path):
             try:
                 df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
