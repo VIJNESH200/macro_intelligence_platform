@@ -37,27 +37,27 @@ class DataEngine:
             e.g. ('Fresh', '🟢') or ('Stale', '🔴')
         """
         if release_date is None or pd.isna(release_date):
-            return 'Unknown', '⚪'
+            return 'Unknown', '[UNKNOWN]'
             
         delta_days = (pd.Timestamp.now() - release_date).days
         
         if frequency.lower() == 'daily':
             if delta_days <= 3:
-                return 'Fresh', '🟢'
+                return 'Fresh', '[OK]'
             elif delta_days <= 10:
-                return 'Delayed', '🟡'
+                return 'Delayed', '[DELAYED]'
             else:
-                return 'Stale', '🔴'
+                return 'Stale', '[STALE]'
         elif frequency.lower() == 'manual':
             # Manual inputs are updated whenever the user provides them
-            return 'Manual Input', '🟠'
+            return 'Manual Input', '[MANUAL]'
         else: # Monthly data
             if delta_days <= 45:
-                return 'Fresh', '🟢'
+                return 'Fresh', '[OK]'
             elif delta_days <= 90:
-                return 'Delayed', '🟡'
+                return 'Delayed', '[DELAYED]'
             else:
-                return 'Stale', '🔴'
+                return 'Stale', '[STALE]'
 
     def __init__(self, config: dict, market_series: dict,
                  macro_series: dict = None, cache_dir: str | None = None,
@@ -103,7 +103,7 @@ class DataEngine:
                 'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
                 'source': f"{self.config['source']} (Offline Bundled)",
                 'last_updated': 'N/A',
-                'cache_status': 'Offline 🟢'
+                'cache_status': 'Offline [OK]'
             }
             return local_df
 
