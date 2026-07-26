@@ -30,7 +30,9 @@ An academically-validated, open-source **quantitative business cycle forecasting
   1. **CLI Momentum Extrapolation** (55% weight — exponential decay pull toward long-term trend)
   2. **Multivariate Historical Analogues** (45% weight — Euclidean distance matching across past cycle footprints)
   3. **Auxiliary Macro Driver Assessment** (Diagnostic macro-tilt evaluation covering Real Policy Rate, Core Industries, CPI, and Yield Spreads)
-- **100% Open Data & Reproducible**: Fully automated pipeline using public sources (FRED, DPIIT, Yahoo Finance, RBI), replacing paywalled/proprietary PMI data with the official Government of India **Index of Eight Core Industries (ICI)**.
+- **100% Open Data & Provider Provenance**: Fully automated pipeline using public sources (FRED, DPIIT, IMF SDMX, Yahoo Finance, RBI) with explicit `ProviderMeta` tracking (`live`, `cache`, `bundled_fallback`, `schema_ok`).
+- **Python API & Notebook Integration**: Clean 3-step programmatic interface (`from macro_intel import load_macro_data, compute_features, forecast_cycle`) with typed `DataBundle` and `ForecastResult` containers.
+- **Documented JSON Output & Live Dashboard**: Automated serialization to JSON Schema draft-07 contract (`docs/latest_forecast.json`), static site generation (`docs/index.html`), and append-only live track record ledger (`docs/live_track_record.csv`).
 - **Automated Institutional Strategy Notes**: Exports publication-ready PDF research briefs featuring Markov transition matrices, scenario distributions (Bull/Base/Bear), and narrative synthesis.
 
 ---
@@ -47,8 +49,11 @@ Evaluated across a rolling **229-month out-of-sample historical window** (Jan 20
 | **Macro Drivers Only** | 65.9% | 50.6% | 0.664 | 0.661 | 1.013 |
 | **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.6%** 🏆 | **69.4%** 🏆 | **0.574** 🏆 | **0.614** 🏆 | **0.913** 🏆 |
 
-> [!NOTE]
-> **Key Improvement**: The Two-Signal Consensus model achieves a **+20.0 percentage point accuracy gain** over Persistence baselines on a 6-month horizon during the 2019–2026 held-out evaluation window and reduces coordinate error (Distance MAE) to **0.913**.
+### 📈 Statistical Significance & Conviction Calibration
+
+- **McNemar's Test (Classification Accuracy)**: $\chi^2 = 32.76, \quad p = 1.04 \times 10^{-8} \quad (p < 0.01)$ — Outperformance over Persistence is highly statistically significant.
+- **Diebold–Mariano Test (Continuous Error)**: $DM = 3.73, \quad p = 1.89 \times 10^{-4} \quad (p < 0.01)$ — Reduction in Distance MAE is highly statistically significant.
+- **High-Conviction Accuracy**: Signals with $\ge 58\%$ conviction score achieve **80.3% realized quadrant accuracy** ($N=127$, 95% Wilson CI: $[72.6\%, 86.3\%]$).
 
 ---
 
@@ -60,16 +65,19 @@ The platform follows a clean, decoupled 5-layer architecture:
 flowchart TD
     A[Data Ingestion Engine] --> B[Feature Engine]
     B --> C[Macro Intelligence Engine]
-    C --> D[Three-Signal Forecasting Engine]
-    D --> E[Interactive Matplotlib Dashboard]
-    D --> F[ReportLab PDF Strategy Note Generator]
+    C --> D[Two-Signal Forecasting Engine]
+    D --> E[Python API / DataBundle & ForecastResult]
+    E --> F[Interactive Matplotlib Dashboard]
+    E --> G[ReportLab PDF Strategy Note Generator]
+    E --> H[Documented JSON Export & GitHub Pages Site]
 ```
 
 | Layer | Directory | Responsibilities |
 | :--- | :--- | :--- |
-| **Data Engine** | `data/` | Live provider fetching (FRED, DPIIT, Yahoo Finance, RBI) + smart local caching & offline fallbacks. |
+| **Data Engine** | `data/` | Live provider fetching (FRED, DPIIT, IMF, Yahoo Finance, RBI) + `ProviderMeta` provenance tracking & local caching. |
 | **Feature Engine** | `features/` | Vectorized Z-score transformations, velocity ($d^2/dt^2$), B-spline interpolation. |
 | **Analytics** | `analytics/` | Quantitative models (`MacroIntelligenceEngine`, `ForecastingEngine`, Markov `TransitionMatrix`). |
+| **API & Models** | `api.py`, `macro_intel.py`, `models.py` | Typed `DataBundle` / `ForecastResult` dataclasses and `macro_intel` import interface. |
 | **Research** | `research/` | S&P Global-style strategy narrative synthesis and ReportLab PDF layout generator. |
 | **User Interface** | `ui/` | Interactive dashboard with playback controls, sparklines, and market context panels. |
 
@@ -85,10 +93,28 @@ flowchart TD
 ```bash
 git clone https://github.com/VIJNESH200/macro_intelligence_platform.git
 cd macro_intelligence_platform
-pip install -r requirements.txt
+pip install -e .
 ```
 
-### 3. Launching the App
+### 3. Python API Usage
+```python
+from macro_intel import load_macro_data, compute_features, forecast_cycle
+
+# 1. Load data bundle with provenance metadata
+bundle = load_macro_data(offline=True)
+
+# 2. Compute 2D cycle metrics (X Health, Y Momentum)
+bundle = compute_features(bundle)
+
+# 3. Project business cycle forward
+result = forecast_cycle(bundle)
+print(f"Current Regime: {result.current_regime}")
+print(f"6M Projection: {result.forecasts['6m'].quadrant} (Conviction: {result.forecasts['6m'].conviction}%)")
+```
+
+See [notebooks/quickstart.ipynb](notebooks/quickstart.ipynb) for a interactive walkthrough notebook.
+
+### 4. Launching the GUI App
 
 **Windows Launcher:**
 Double-click `run_platform.bat` or run:
@@ -101,9 +127,10 @@ run_platform.bat
 python main.py
 ```
 
-### 4. Running Validation Benchmarks
-To run the full out-of-sample backtest suite locally:
+### 5. Running Validation Benchmarks & Tests
+To run the full out-of-sample backtest suite and unit tests:
 ```bash
+python -m unittest discover -s tests
 python tests/backtest_benchmarks.py
 ```
 
