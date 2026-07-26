@@ -122,19 +122,31 @@ class App:
         except ImportError:
             from config import get_current_market
         current_market = get_current_market()
-        market_label = 'US' if current_market == 'US' else 'IN'
 
         ax_market_india = self.fig.add_axes([0.821, 0.028, 0.038, 0.035])
-        self.btn_market_india = self._style_button(ax_market_india, 'India')
+        self.btn_market_india = Button(ax_market_india, 'India', color='#ffffff', hovercolor='#e9ecef')
+        self.btn_market_india.label.set_fontsize(10)
+        self.btn_market_india.label.set_fontweight('bold')
+        self.btn_market_india.label.set_color('#495057')
+        for spine in ax_market_india.spines.values():
+            spine.set_color('#ced4da')
+
         ax_market_us = self.fig.add_axes([0.864, 0.028, 0.038, 0.035])
-        self.btn_market_us = self._style_button(ax_market_us, 'US')
+        self.btn_market_us = Button(ax_market_us, 'US', color='#ffffff', hovercolor='#e9ecef')
+        self.btn_market_us.label.set_fontsize(10)
+        self.btn_market_us.label.set_fontweight('bold')
+        self.btn_market_us.label.set_color('#495057')
+        for spine in ax_market_us.spines.values():
+            spine.set_color('#ced4da')
 
         if current_market == 'INDIA':
             self.btn_market_india.color = '#1f497d'
+            self.btn_market_india.hovercolor = '#17365d'
             self.btn_market_india.ax.set_facecolor('#1f497d')
             self.btn_market_india.label.set_color('#ffffff')
         else:
             self.btn_market_us.color = '#1f497d'
+            self.btn_market_us.hovercolor = '#17365d'
             self.btn_market_us.ax.set_facecolor('#1f497d')
             self.btn_market_us.label.set_color('#ffffff')
 
@@ -777,16 +789,20 @@ class App:
 
             if market == 'INDIA':
                 self.btn_market_india.color = '#1f497d'
+                self.btn_market_india.hovercolor = '#17365d'
                 self.btn_market_india.ax.set_facecolor('#1f497d')
                 self.btn_market_india.label.set_color('#ffffff')
                 self.btn_market_us.color = '#ffffff'
+                self.btn_market_us.hovercolor = '#e9ecef'
                 self.btn_market_us.ax.set_facecolor('#ffffff')
                 self.btn_market_us.label.set_color('#495057')
             else:
                 self.btn_market_us.color = '#1f497d'
+                self.btn_market_us.hovercolor = '#17365d'
                 self.btn_market_us.ax.set_facecolor('#1f497d')
                 self.btn_market_us.label.set_color('#ffffff')
                 self.btn_market_india.color = '#ffffff'
+                self.btn_market_india.hovercolor = '#e9ecef'
                 self.btn_market_india.ax.set_facecolor('#ffffff')
                 self.btn_market_india.label.set_color('#495057')
 
