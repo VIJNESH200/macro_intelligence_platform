@@ -236,13 +236,15 @@ class ForecastingEngine:
 
         try:
             from sklearn.linear_model import Ridge
-            train_df = df.iloc[:train_end + 1].dropna(subset=feature_cols)
+            train_df = df.iloc[:train_end + 1].copy()
+            train_df_feats = train_df[feature_cols].fillna(0.0)
+
             if len(train_df) < 36:
                 return {'path': [(x_now, y_now)] * max_h}
 
             X_train, y_train_dx, y_train_dy = [], [], []
             for i in range(len(train_df) - 6):
-                X_train.append(train_df[feature_cols].iloc[i].values)
+                X_train.append(train_df_feats.iloc[i].values)
                 target_date = train_df.index[i] + pd.DateOffset(months=6)
                 m_idx = df.index.get_indexer([target_date], method='nearest')[0]
                 dx = df['X'].iloc[m_idx] - train_df['X'].iloc[i]
@@ -254,9 +256,9 @@ class ForecastingEngine:
                 return {'path': [(x_now, y_now)] * max_h}
 
             X_tr = np.array(X_train)
-            curr_feat = df[feature_cols].iloc[idx].values.reshape(1, -1)
+            curr_feat = df[feature_cols].iloc[idx].fillna(0.0).values.reshape(1, -1)
 
-            # Fit 6-month relative delta regression (alpha=10.0 for strong regularization against overfitting)
+            # Fit 6-month relative delta regression (alpha=10.0 for strong regularization)
             model_dx = Ridge(alpha=10.0).fit(X_tr, np.array(y_train_dx))
             model_dy = Ridge(alpha=10.0).fit(X_tr, np.array(y_train_dy))
 

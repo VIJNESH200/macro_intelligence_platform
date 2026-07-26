@@ -168,7 +168,19 @@ def run_benchmarks():
         
     summary_df = pd.DataFrame(summary_data)
     print(summary_df.to_string(index=False))
-    
+
+    # Held-Out Evaluation Window Breakdown (Jan 2019 - Jan 2026)
+    heldout_df = res_df[res_df['date'] >= '2019-01-01']
+    if not heldout_df.empty:
+        print("\n------------------------------------------------------------------")
+        print("    HELD-OUT EVALUATION WINDOW BENCHMARK (Jan 2019 - Jan 2026)")
+        print("------------------------------------------------------------------")
+        heldout_summary = []
+        for name, (quad_col, x_col, y_col) in models.items():
+            acc_h = (heldout_df[quad_col] == heldout_df['real_6m_quad']).mean() * 100
+            heldout_summary.append({'Model': name, 'Held-Out Quadrant Accuracy': f"{acc_h:.1f}%"})
+        print(pd.DataFrame(heldout_summary).to_string(index=False))
+
     # ----------------------------------------------------
     # Calculate Forecast Conviction Calibration Curve
     # ----------------------------------------------------
