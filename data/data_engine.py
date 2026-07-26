@@ -211,7 +211,8 @@ class DataEngine:
             source = info.source.lower()
             provider = self.providers.get(source, self.providers['fred'])
             
-            series = provider.fetch(sym)
+            res = provider.fetch_with_meta(sym)
+            series = res.series
             if not series.empty:
                 df = df.join(series.rename(name), how='outer')
                 
@@ -231,9 +232,10 @@ class DataEngine:
                 self.data_metadata[name] = {
                     'value': round(display_series.dropna().iloc[-1], 2) if not display_series.dropna().empty else 'N/A',
                     'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
-                    'source': provider.last_source_used or provider.name,
-                    'last_updated': 'Live',
-                    'cache_status': f"{indicator} {status}"
+                    'source': res.meta.source,
+                    'last_updated': res.meta.fetched_at,
+                    'cache_status': f"{indicator} {status}",
+                    'schema_ok': res.meta.schema_ok
                 }
             else:
                 df[name] = np.nan
@@ -291,28 +293,76 @@ class DataEngine:
         fred_series = {k: v['symbol'] for k, v in self.market_series.items()
                        if v['type'] == 'fred'}
         for name, sym in fred_series.items():
-            series = self.fred.fetch(sym)
+            res = self.fred.fetch_with_meta(sym)
+            series = res.series
             if not series.empty:
                 df[name] = series
+                rel_date = series.dropna().index[-1] if not series.dropna().empty else None
+                status, indicator = self.classify_freshness(rel_date, 'monthly')
+                self.data_metadata[name] = {
+                    'value': round(series.dropna().iloc[-1], 2) if not series.dropna().empty else 'N/A',
+                    'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
+                    'source': res.meta.source,
+                    'last_updated': res.meta.fetched_at,
+                    'cache_status': f"{indicator} {status}",
+                    'schema_ok': res.meta.schema_ok
+                }
             else:
                 df[name] = np.nan
+                self.data_metadata[name] = {
+                    'value': 'N/A',
+                    'release_date': 'N/A',
+                    'source': 'bundled_fallback',
+                    'last_updated': 'N/A',
+                    'cache_status': 'Failed',
+                    'schema_ok': False
+                }
 
         # ---- yfinance market series (bulk fetch) ----
         yf_series = {k: v['symbol'] for k, v in self.market_series.items()
                      if v['type'] == 'yfinance'}
         if yf_series:
             tickers = list(yf_series.values())
-            close_df = self.yfinance.fetch_bulk(tickers)
+            res_dict = self.yfinance.fetch_bulk(tickers, return_meta=True)
+            close_df = pd.DataFrame({sym: res_dict[sym].series for sym in tickers if not res_dict[sym].series.empty})
 
             if not close_df.empty:
                 for name, sym in yf_series.items():
                     if sym in close_df.columns:
-                        df[name] = close_df[sym]
+                        series = close_df[sym]
+                        df[name] = series
+                        rel_date = series.dropna().index[-1] if not series.dropna().empty else None
+                        status, indicator = self.classify_freshness(rel_date, 'daily')
+                        meta = res_dict.get(sym)
+                        self.data_metadata[name] = {
+                            'value': round(series.dropna().iloc[-1], 2) if not series.dropna().empty else 'N/A',
+                            'release_date': rel_date.strftime('%b %Y') if rel_date else 'N/A',
+                            'source': meta.meta.source if meta else 'live',
+                            'last_updated': meta.meta.fetched_at if meta else 'N/A',
+                            'cache_status': f"{indicator} {status}",
+                            'schema_ok': meta.meta.schema_ok if meta else True
+                        }
                     else:
                         df[name] = np.nan
+                        self.data_metadata[name] = {
+                            'value': 'N/A',
+                            'release_date': 'N/A',
+                            'source': 'bundled_fallback',
+                            'last_updated': 'N/A',
+                            'cache_status': 'Failed',
+                            'schema_ok': False
+                        }
             else:
                 for name in yf_series.keys():
                     df[name] = np.nan
+                    self.data_metadata[name] = {
+                        'value': 'N/A',
+                        'release_date': 'N/A',
+                        'source': 'bundled_fallback',
+                        'last_updated': 'N/A',
+                        'cache_status': 'Failed',
+                        'schema_ok': False
+                    }
 
         # Cache the market columns
         market_cols = list(self.market_series.keys())
@@ -347,3 +397,20 @@ class DataEngine:
         df = self.load_macro_series(df)
         df = self.load_market_series(df)
         return df
+
+    def load_all_bundle(self) -> Any:
+        """Load data and return a structured DataBundle payload."""
+        try:
+            from ..models import DataBundle
+        except ImportError:
+            from models import DataBundle
+
+        df = self.load_all()
+        last_date = df.dropna(how='all').index[-1] if not df.empty else pd.Timestamp.now()
+        as_of_str = last_date.strftime('%Y-%m-%d')
+        return DataBundle(
+            df=df,
+            data_health=self.data_metadata,
+            as_of=as_of_str,
+            config=self.config
+        )

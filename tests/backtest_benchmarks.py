@@ -3,12 +3,13 @@ from __future__ import annotations
 Rigorous validation and benchmarking of the Forecasting Engine.
 ================================================================
 Compares the Two-Signal Consensus model against baselines
-and evaluates the empirical calibration of Forecast Conviction.
+and evaluates empirical calibration and statistical significance.
 """
 import os
 import sys
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -21,7 +22,66 @@ from analytics.forecasting_engine import ForecastingEngine
 from analytics.transition_matrix import compute_transition_matrix, get_transition_probs_from
 
 
+def compute_mcnemar_test(c1_correct: pd.Series, c2_correct: pd.Series) -> tuple[float, float]:
+    """Compute McNemar's test for paired classification accuracy comparison.
+    Returns (chi2_statistic, p_value).
+    """
+    b = (c1_correct & ~c2_correct).sum()  # model 1 right, model 2 wrong
+    c = (~c1_correct & c2_correct).sum()  # model 1 wrong, model 2 right
+    if b + c == 0:
+        return 0.0, 1.0
+    chi2_stat = (abs(b - c) - 1) ** 2 / (b + c)
+    p_val = stats.chi2.sf(chi2_stat, df=1)
+    return float(chi2_stat), float(p_val)
+
+
+def compute_diebold_mariano_test(e1: np.ndarray, e2: np.ndarray, h: int = 6) -> tuple[float, float]:
+    """Compute Diebold-Mariano test for predictive accuracy comparison of continuous errors.
+    Returns (dm_statistic, p_value).
+    """
+    d = e1**2 - e2**2
+    n = len(d)
+    mean_d = np.mean(d)
+    
+    # Auto-covariance lag adjustment (Harvey, Leybourne, Newbold 1997)
+    gamma_0 = np.var(d, ddof=0)
+    gamma_sum = 0.0
+    for k in range(1, h):
+        cov_k = np.cov(d[k:], d[:-k])[0, 1] if len(d[k:]) > 0 else 0.0
+        gamma_sum += (1 - k / h) * cov_k
+        
+    var_d = (gamma_0 + 2 * gamma_sum) / n
+    if var_d <= 0:
+        return 0.0, 1.0
+        
+    dm_stat = mean_d / np.sqrt(var_d)
+    # HLN small-sample correction multiplier
+    hln_mult = np.sqrt((n + 1 - 2 * h + h * (h - 1) / n) / n)
+    dm_stat_corrected = dm_stat * hln_mult
+    p_val = 2 * (1 - stats.norm.cdf(abs(dm_stat_corrected)))
+    return float(dm_stat_corrected), float(p_val)
+
+
+def wilson_ci(k: int, n: int, confidence: float = 0.95) -> tuple[float, float]:
+    """Compute Wilson score 95% confidence interval for binomial accuracy percentage."""
+    if n == 0:
+        return 0.0, 0.0
+    z = stats.norm.ppf(1 - (1 - confidence) / 2)
+    p_hat = k / n
+    denom = 1 + z**2 / n
+    center = (p_hat + z**2 / (2 * n)) / denom
+    spread = z * np.sqrt((p_hat * (1 - p_hat) + z**2 / (4 * n)) / n) / denom
+    return max(0.0, (center - spread) * 100), min(100.0, (center + spread) * 100)
+
+
 def run_benchmarks():
+    """
+    Freeze-Then-Evaluate Discipline Rule:
+    ======================================
+    If model hyperparameters, weights, or architecture are modified based on backtest tuning,
+    the resulting benchmark run is an in-sample optimization, not a clean evaluation.
+    Evaluate final frozen configurations once on held-out periods or out-of-sample datasets.
+    """
     print("Loading historical data...")
     # Use offline mode for deterministic, fast CI & test runs
     engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES, offline=True)
@@ -169,6 +229,35 @@ def run_benchmarks():
     summary_df = pd.DataFrame(summary_data)
     print(summary_df.to_string(index=False))
 
+    # ----------------------------------------------------
+    # Statistical Significance Testing (Consensus vs Persistence)
+    # ----------------------------------------------------
+    print("\n------------------------------------------------------------------")
+    print("        STATISTICAL SIGNIFICANCE TESTS (Consensus vs Persistence)")
+    print("------------------------------------------------------------------")
+    cons_correct = (res_df['consensus_quad'] == res_df['real_6m_quad'])
+    pers_correct = (res_df['curr_quad'] == res_df['real_6m_quad'])
+    
+    mc_stat, mc_pval = compute_mcnemar_test(cons_correct, pers_correct)
+    print(f" McNemar's Test (Classification Accuracy): chi^2 = {mc_stat:.2f}, p-value = {mc_pval:.4e}")
+    if mc_pval < 0.01:
+        print("  -> Difference in quadrant classification accuracy is HIGHLY STATISTICALLY SIGNIFICANT (p < 0.01)")
+    elif mc_pval < 0.05:
+        print("  -> Difference in quadrant classification accuracy is STATISTICALLY SIGNIFICANT (p < 0.05)")
+    else:
+        print("  -> Difference in classification accuracy is not statistically significant at 5% level.")
+
+    cons_err = np.sqrt((res_df['consensus_x'] - res_df['real_6m_x'])**2 + (res_df['consensus_y'] - res_df['real_6m_y'])**2)
+    pers_err = np.sqrt((res_df['curr_x'] - res_df['real_6m_x'])**2 + (res_df['curr_y'] - res_df['real_6m_y'])**2)
+    dm_stat, dm_pval = compute_diebold_mariano_test(pers_err.values, cons_err.values, h=6)
+    print(f" Diebold-Mariano Test (Continuous Distance MAE): DM = {dm_stat:.2f}, p-value = {dm_pval:.4e}")
+    if dm_pval < 0.01:
+        print("  -> Outperformance in continuous Distance MAE is HIGHLY STATISTICALLY SIGNIFICANT (p < 0.01)")
+    elif dm_pval < 0.05:
+        print("  -> Outperformance in continuous Distance MAE is STATISTICALLY SIGNIFICANT (p < 0.05)")
+    else:
+        print("  -> Continuous error outperformance is not statistically significant at 5% level.")
+
     # Held-Out Evaluation Window Breakdown (Jan 2019 - Jan 2026)
     heldout_df = res_df[res_df['date'] >= '2019-01-01']
     if not heldout_df.empty:
@@ -199,13 +288,16 @@ def run_benchmarks():
         bin_df = res_df[res_df['conviction_bin'] == label]
         if not bin_df.empty:
             avg_conv = bin_df['conviction'].mean()
-            realized_acc = (bin_df['consensus_quad'] == bin_df['real_6m_quad']).mean() * 100
+            k_correct = (bin_df['consensus_quad'] == bin_df['real_6m_quad']).sum()
             sample_count = len(bin_df)
+            realized_acc = (k_correct / sample_count) * 100
+            ci_low, ci_high = wilson_ci(k_correct, sample_count)
             calibration_data.append({
                 'Conviction Bin': label,
                 'Sample Size': sample_count,
                 'Average Conviction Score': f"{avg_conv:.1f}%",
                 'Realized Quadrant Accuracy': f"{realized_acc:.1f}%",
+                '95% Wilson CI': f"[{ci_low:.1f}%, {ci_high:.1f}%]",
                 'Calibration Error': f"{abs(avg_conv - realized_acc):.1f}%"
             })
             

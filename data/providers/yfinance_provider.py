@@ -2,7 +2,7 @@ from __future__ import annotations
 """yfinance data provider — wraps yfinance for market data."""
 import pandas as pd
 import yfinance as yf
-from .base import BaseProvider
+from .base import BaseProvider, ProviderResult, create_provider_result
 
 
 class YFinanceProvider(BaseProvider):
@@ -17,27 +17,37 @@ class YFinanceProvider(BaseProvider):
         return 'daily'
 
     def fetch(self, symbol: str, start_date: str = '2000-01-01',
-              end_date: str | None = None) -> pd.Series:
+              end_date: str | None = None, return_meta: bool = False) -> pd.Series | ProviderResult:
         """Fetch a single symbol's Close price, resampled to month-start."""
+        source_type = "live"
         try:
             data = yf.download(symbol, start=start_date, progress=False)
             if data.empty:
-                return pd.Series(dtype=float)
-            if isinstance(data.columns, pd.MultiIndex):
-                close = data['Close']
-                if isinstance(close, pd.DataFrame):
-                    close = close.iloc[:, 0]
+                series = pd.Series(dtype=float)
+                source_type = "bundled_fallback"
             else:
-                close = data['Close']
-            self.last_source_used = 'Yahoo Finance API'
-            return close.resample('MS').last().ffill()
+                if isinstance(data.columns, pd.MultiIndex):
+                    close = data['Close']
+                    if isinstance(close, pd.DataFrame):
+                        close = close.iloc[:, 0]
+                else:
+                    close = data['Close']
+                self.last_source_used = 'Yahoo Finance API'
+                series = close.resample('MS').last().ffill()
         except Exception as e:
             print(f"  ⚠ yfinance fetch failed for {symbol}: {e}")
-            return pd.Series(dtype=float)
+            series = pd.Series(dtype=float)
+            source_type = "bundled_fallback"
+
+        if return_meta:
+            return create_provider_result(series, source_type, symbol, details=self.name)
+        return series
 
     def fetch_bulk(self, symbols: list[str],
-                   start_date: str = '2000-01-01') -> pd.DataFrame:
+                   start_date: str = '2000-01-01',
+                   return_meta: bool = False) -> pd.DataFrame | dict[str, ProviderResult]:
         """Fetch multiple symbols in a single API call for efficiency."""
+        source_type = "live"
         try:
             data = yf.download(symbols, start=start_date, progress=False)
             if isinstance(data.columns, pd.MultiIndex) and 'Close' in data.columns.levels[0]:
@@ -45,7 +55,18 @@ class YFinanceProvider(BaseProvider):
             else:
                 close_df = data
             self.last_source_used = 'Yahoo Finance API (Bulk)'
-            return close_df.resample('MS').last().ffill()
+            close_df = close_df.resample('MS').last().ffill()
         except Exception as e:
             print(f"  ⚠ yfinance bulk fetch failed: {e}")
-            return pd.DataFrame()
+            close_df = pd.DataFrame()
+            source_type = "bundled_fallback"
+
+        if return_meta:
+            res_dict = {}
+            for sym in symbols:
+                s = close_df[sym] if sym in close_df.columns else pd.Series(dtype=float)
+                st = source_type if not s.empty else "bundled_fallback"
+                res_dict[sym] = create_provider_result(s, st, sym, details=self.name)
+            return res_dict
+
+        return close_df

@@ -1,12 +1,12 @@
-from __future__ import annotations
 import pandas as pd
-from .base import BaseProvider
+from .base import BaseProvider, ProviderResult, create_provider_result
 from .fred import FREDProvider
 
 class OECDProvider(BaseProvider):
     """Organization for Economic Co-operation and Development (OECD) provider."""
     
     def __init__(self):
+        super().__init__()
         self.proxy = FREDProvider()
         
     @property
@@ -17,6 +17,5 @@ class OECDProvider(BaseProvider):
     def update_frequency(self) -> str:
         return 'monthly'
         
-    def fetch(self, symbol: str, start_date: str = '2000-01-01', end_date: str | None = None) -> pd.Series:
-        # For Phase 2, we use FRED as a proxy for OECD data
-        return self.proxy.fetch(symbol, start_date, end_date)
+    def fetch(self, symbol: str, start_date: str = '2000-01-01', end_date: str | None = None, return_meta: bool = False) -> pd.Series | ProviderResult:
+        return self.proxy.fetch(symbol, start_date, end_date, return_meta=return_meta)

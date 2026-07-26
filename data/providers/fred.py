@@ -1,9 +1,7 @@
-from __future__ import annotations
-"""FRED data provider — wraps pandas-datareader for FRED API access."""
 import pandas as pd
 import pandas_datareader.data as web
 from datetime import datetime
-from .base import BaseProvider
+from .base import BaseProvider, ProviderResult, create_provider_result
 
 
 class FREDProvider(BaseProvider):
@@ -18,15 +16,20 @@ class FREDProvider(BaseProvider):
         return 'monthly'
 
     def fetch(self, symbol: str, start_date: str = '2000-01-01',
-              end_date: str | None = None) -> pd.Series:
+              end_date: str | None = None, return_meta: bool = False) -> pd.Series | ProviderResult:
         """Fetch a FRED series, resampled to month-start and forward-filled."""
         if end_date is None:
             end_date = datetime.now().strftime('%Y-%m-%d')
+        source_type = "live"
         try:
             df = web.DataReader(symbol, 'fred', start_date, end_date)
             series = df[symbol].resample('MS').first().ffill()
             self.last_source_used = 'FRED API'
-            return series
         except Exception as e:
             print(f"  [!] FRED fetch failed for {symbol}: {e}")
-            return pd.Series(dtype=float)
+            series = pd.Series(dtype=float)
+            source_type = "bundled_fallback"
+
+        if return_meta:
+            return create_provider_result(series, source_type, symbol, details=self.name)
+        return series
