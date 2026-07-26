@@ -45,9 +45,10 @@ Evaluated across a rolling **229-month out-of-sample historical window** (Jan 20
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Persistence Baseline** | 47.6% | 49.4% | 0.943 | 0.963 | 1.471 |
 | **CLI Momentum Only** | 67.7% | 63.5% | 0.674 | 0.802 | 1.133 |
-| **Historical Analogues Only** | 63.3% | 70.6% | 0.598 | 0.753 | 1.053 |
+| **Historical Analogues Only** | 63.3% | **70.6%** 🏆 | 0.598 | 0.753 | 1.053 |
 | **Macro Drivers Only** | 65.9% | 50.6% | 0.664 | 0.661 | 1.013 |
-| **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.6%** 🏆 | **69.4%** 🏆 | **0.574** 🏆 | **0.614** 🏆 | **0.913** 🏆 |
+| **Transition Matrix Only** | 47.2% | 49.4% | N/A | N/A | N/A |
+| **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.6%** 🏆 | 69.4% | **0.574** 🏆 | **0.614** 🏆 | **0.913** 🏆 |
 
 ### 📈 Statistical Significance & Conviction Calibration
 
