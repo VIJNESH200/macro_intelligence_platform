@@ -736,6 +736,23 @@ class App:
             pe['status_label'].set_color('white')
             pe['status_label'].set_bbox(dict(facecolor='#0056b3', edgecolor='#004085',
                                              boxstyle='round,pad=0.3'))
+
+            # Update button visual state
+            if market == 'INDIA':
+                self.btn_market_india.color = '#1f497d'
+                self.btn_market_india.ax.set_facecolor('#1f497d')
+                self.btn_market_india.label.set_color('#ffffff')
+                self.btn_market_us.color = '#ffffff'
+                self.btn_market_us.ax.set_facecolor('#ffffff')
+                self.btn_market_us.label.set_color('#495057')
+            else:
+                self.btn_market_us.color = '#1f497d'
+                self.btn_market_us.ax.set_facecolor('#1f497d')
+                self.btn_market_us.label.set_color('#ffffff')
+                self.btn_market_india.color = '#ffffff'
+                self.btn_market_india.ax.set_facecolor('#ffffff')
+                self.btn_market_india.label.set_color('#495057')
+
             fig.canvas.draw_idle()
             if self.on_market_change:
                 self.on_market_change(market)
