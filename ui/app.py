@@ -769,9 +769,11 @@ class App:
             fig.canvas.flush_events()
 
             # Do the actual market change
+            success = False
             if self.on_market_change:
                 try:
                     self.on_market_change(market)
+                    success = True
                 except Exception as e:
                     pe['status_label'].set_text(f"✗ Market switch failed: {str(e)}")
                     pe['status_label'].set_color('#ffffff')
@@ -779,35 +781,36 @@ class App:
                                                      boxstyle='round,pad=0.3'))
                     fig.canvas.draw_idle()
                     self._schedule_status_restore(delay_ticks=100)
-                    return
 
-            # Re-enable buttons and update visual state
+            # Re-enable buttons (even on failure)
             self.btn_market_india.set_active(True)
             self.btn_market_us.set_active(True)
             for ax in [self.btn_market_india.ax, self.btn_market_us.ax]:
                 ax.set_alpha(1.0)
 
-            if market == 'INDIA':
-                self.btn_market_india.color = '#1f497d'
-                self.btn_market_india.hovercolor = '#17365d'
-                self.btn_market_india.ax.set_facecolor('#1f497d')
-                self.btn_market_india.label.set_color('#ffffff')
-                self.btn_market_us.color = '#ffffff'
-                self.btn_market_us.hovercolor = '#e9ecef'
-                self.btn_market_us.ax.set_facecolor('#ffffff')
-                self.btn_market_us.label.set_color('#495057')
-            else:
-                self.btn_market_us.color = '#1f497d'
-                self.btn_market_us.hovercolor = '#17365d'
-                self.btn_market_us.ax.set_facecolor('#1f497d')
-                self.btn_market_us.label.set_color('#ffffff')
-                self.btn_market_india.color = '#ffffff'
-                self.btn_market_india.hovercolor = '#e9ecef'
-                self.btn_market_india.ax.set_facecolor('#ffffff')
-                self.btn_market_india.label.set_color('#495057')
+            # Only update button colors if switch succeeded
+            if success:
+                if market == 'INDIA':
+                    self.btn_market_india.color = '#1f497d'
+                    self.btn_market_india.hovercolor = '#17365d'
+                    self.btn_market_india.ax.set_facecolor('#1f497d')
+                    self.btn_market_india.label.set_color('#ffffff')
+                    self.btn_market_us.color = '#ffffff'
+                    self.btn_market_us.hovercolor = '#e9ecef'
+                    self.btn_market_us.ax.set_facecolor('#ffffff')
+                    self.btn_market_us.label.set_color('#495057')
+                else:
+                    self.btn_market_us.color = '#1f497d'
+                    self.btn_market_us.hovercolor = '#17365d'
+                    self.btn_market_us.ax.set_facecolor('#1f497d')
+                    self.btn_market_us.label.set_color('#ffffff')
+                    self.btn_market_india.color = '#ffffff'
+                    self.btn_market_india.hovercolor = '#e9ecef'
+                    self.btn_market_india.ax.set_facecolor('#ffffff')
+                    self.btn_market_india.label.set_color('#495057')
+                # Restore default status (without showing success message)
+                self._restore_status()
 
-            # Restore default status (without showing success message)
-            self._restore_status()
             fig.canvas.draw_idle()
 
         self.btn_market_india.on_clicked(lambda e: switch_market('INDIA'))
