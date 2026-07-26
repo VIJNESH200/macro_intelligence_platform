@@ -760,16 +760,14 @@ class App:
             if self.on_market_change:
                 try:
                     self.on_market_change(market)
-                    # Success feedback
-                    pe['status_label'].set_text(f"✓ Switched to {market} market")
-                    pe['status_label'].set_color('#ffffff')
-                    pe['status_label'].set_bbox(dict(facecolor='#28a745', edgecolor='#1e7e34',
-                                                     boxstyle='round,pad=0.3'))
                 except Exception as e:
-                    pe['status_label'].set_text(f"✗ Failed to switch market: {str(e)}")
+                    pe['status_label'].set_text(f"✗ Market switch failed: {str(e)}")
                     pe['status_label'].set_color('#ffffff')
                     pe['status_label'].set_bbox(dict(facecolor='#dc3545', edgecolor='#c82333',
                                                      boxstyle='round,pad=0.3'))
+                    fig.canvas.draw_idle()
+                    self._schedule_status_restore(delay_ticks=100)
+                    return
 
             # Re-enable buttons and update visual state
             self.btn_market_india.set_active(True)
@@ -792,8 +790,9 @@ class App:
                 self.btn_market_india.ax.set_facecolor('#ffffff')
                 self.btn_market_india.label.set_color('#495057')
 
+            # Restore default status (without showing success message)
+            self._restore_status()
             fig.canvas.draw_idle()
-            self._schedule_status_restore(delay_ticks=400)
 
         self.btn_market_india.on_clicked(lambda e: switch_market('INDIA'))
         self.btn_market_us.on_clicked(lambda e: switch_market('US'))

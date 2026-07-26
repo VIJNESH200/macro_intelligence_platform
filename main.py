@@ -67,18 +67,19 @@ def main():
         app.draw_frame(app.max_frames)
         app.fig.canvas.draw_idle()
 
-        # Show warning if some market data failed to load
+        # Show brief warning if some market data failed to load
         if new_engine.load_warnings:
-            app.plot_elements['status_label'].set_text(
-                f"✓ Switched to {CONFIG['name']} • {len(new_engine.load_warnings)} data unavailable"
+            pe = app.plot_elements
+            pe['status_label'].set_text(
+                f"⚠ {len(new_engine.load_warnings)} market data unavailable"
             )
-            app.plot_elements['status_label'].set_color('#ff9800')
-            app.plot_elements['status_label'].set_bbox(dict(facecolor='#fff3cd', edgecolor='#ff9800',
-                                                           boxstyle='round,pad=0.3'))
+            pe['status_label'].set_color('dimgray')
+            pe['status_label'].set_fontweight('normal')
+            pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
             app.fig.canvas.draw_idle()
-            app._schedule_status_restore(delay_ticks=600)
-        else:
-            print(f"[Market] ✓ Switched to {CONFIG['name']}")
+            app._schedule_status_restore(delay_ticks=100)
+
+        print(f"[Market] ✓ Switched to {CONFIG['name']}")
 
     # 3. Launch GUI
     app = App(df, spline_data, CONFIG, MARKET_SERIES, data_metadata=engine.get_metadata,
