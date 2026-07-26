@@ -6,6 +6,7 @@ Replaces the monolithic load_data() function with a modular,
 cached, provider-based pipeline. Produces the exact same
 DataFrame output as the original.
 """
+from typing import Any
 import pandas as pd
 import numpy as np
 from .providers.fred import FREDProvider
