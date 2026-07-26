@@ -13,8 +13,8 @@ VERSION = '2.5'
 # Primary Indicator Configuration
 # ---------------------------------------------------------------------------
 CONFIG = {
-    "name": "India CLI (OECD)",
-    "ticker": "INDLOLITOAASTSAM",
+    "name": "US CLI (OECD)",
+    "ticker": "USALOLITOAASTSAM",
     "window": 36,
     "source": "FRED",
     "frequency": "Monthly",
@@ -29,17 +29,16 @@ CONFIG = {
 # Market Context Series
 # ---------------------------------------------------------------------------
 MARKET_SERIES = {
-    'Sensex':           {'type': 'yfinance', 'symbol': '^BSESN',      'format': '{:,.2f}'},
-    'Nifty 50':         {'type': 'yfinance', 'symbol': '^NSEI',       'format': '{:,.2f}'},
-    'Nifty Bank':       {'type': 'yfinance', 'symbol': '^NSEBANK',    'format': '{:,.2f}'},
     'S&P 500':          {'type': 'yfinance', 'symbol': '^GSPC',       'format': '{:,.2f}'},
     'Nasdaq 100':       {'type': 'yfinance', 'symbol': '^NDX',        'format': '{:,.2f}'},
-    'India 10Y Yield':  {'type': 'fred',     'symbol': 'INDIRLTLT01STM', 'format': '{:.2f}%'},
+    'Dow Jones':        {'type': 'yfinance', 'symbol': '^DJI',        'format': '{:,.2f}'},
+    'Russell 2000':     {'type': 'yfinance', 'symbol': '^RUT',        'format': '{:,.2f}'},
     'US 10Y Yield':     {'type': 'yfinance', 'symbol': '^TNX',        'format': '{:.2f}%'},
-    'USD/INR':          {'type': 'yfinance', 'symbol': 'INR=X',       'format': '{:.2f}'},
+    'US 2Y Yield':      {'type': 'fred',     'symbol': 'DGS2',        'format': '{:.2f}%'},
+    'Dollar Index':     {'type': 'yfinance', 'symbol': 'DX-Y.NYB',    'format': '{:.2f}'},
     'Gold':             {'type': 'yfinance', 'symbol': 'GC=F',        'format': '{:,.2f}'},
-    'Brent Crude':      {'type': 'yfinance', 'symbol': 'BZ=F',        'format': '{:.2f}'},
-    'India VIX':        {'type': 'yfinance', 'symbol': '^INDIAVIX',   'format': '{:.2f}'}
+    'WTI Crude':        {'type': 'yfinance', 'symbol': 'CL=F',        'format': '{:.2f}'},
+    'VIX':              {'type': 'yfinance', 'symbol': '^VIX',        'format': '{:.2f}'}
 }
 
 from dataclasses import dataclass
@@ -56,26 +55,25 @@ class IndicatorConfig:
 # Macro Driver Series (Phase 2)
 # ---------------------------------------------------------------------------
 MACRO_SERIES = {
-    'ICI':              IndicatorConfig(name='ICI', source='ici', ticker='INDICI', format='{:.1f}', transformation='yoy'),
-    'CPI':              IndicatorConfig(name='CPI', source='imf', ticker='IND.CPI._T.IX.M', format='{:.2f}', transformation='yoy'),
-    'Yield 10Y':        IndicatorConfig(name='Yield 10Y', source='rbi', ticker='INDIRLTLT01STM', format='{:.2f}%', transformation='level'),
-    'Yield Short':      IndicatorConfig(name='Yield Short', source='rbi', ticker='INDIRLSTT01STM', format='{:.2f}%', transformation='level'),
-    'Yield Spread':     IndicatorConfig(name='Yield Spread', source='yield', ticker='SPREAD', format='{:.2f}%', transformation='spread'),
-    'Real Policy Rate': IndicatorConfig(name='Real Policy Rate', source='rbi', ticker='IRSTCB01INM156N', format='{:.2f}%', transformation='real_rate') 
+    'CPI':              IndicatorConfig(name='CPI', source='fred', ticker='CPIAUCSL', format='{:.2f}', transformation='yoy'),
+    'Yield 10Y':        IndicatorConfig(name='Yield 10Y', source='fred', ticker='GS10', format='{:.2f}%', transformation='level'),
+    'Yield Short':      IndicatorConfig(name='Yield Short', source='fred', ticker='TB3MS', format='{:.2f}%', transformation='level'),
+    'Yield Spread':     IndicatorConfig(name='Yield Spread', source='fred', ticker='T10Y3M', format='{:.2f}%', transformation='spread'),
+    'Real Policy Rate': IndicatorConfig(name='Real Policy Rate', source='fred', ticker='FEDFUNDS', format='{:.2f}%', transformation='real_rate')
 }
 
 # ---------------------------------------------------------------------------
 # Indicator Registry (extensible for Phase 2+)
 # ---------------------------------------------------------------------------
 INDICATOR_REGISTRY = {
-    'oecd_cli_india': {
-        'name': 'India CLI (OECD)',
-        'ticker': 'INDLOLITOAASTSAM',
+    'oecd_cli_us': {
+        'name': 'US CLI (OECD)',
+        'ticker': 'USALOLITOAASTSAM',
         'source': 'FRED',
         'frequency': 'Monthly',
         'normalization': 'z_score',
         'center': 100,
-        'description': 'OECD Composite Leading Indicator for India'
+        'description': 'OECD Composite Leading Indicator for the United States'
     }
 }
 

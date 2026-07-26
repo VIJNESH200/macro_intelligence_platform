@@ -110,25 +110,25 @@ def generate_market_insights(data: dict) -> dict:
     # Rule 6: Cross-Asset Macro-Market Decoupling
     health_val = data.get('health_val', 100)
     mom_val = data.get('momentum_val', 100)
-    equity_12m = next((a['returns_raw'].get('12M', 0) for a in valid_assets if 'Nifty 50' in a['name'] or 'Sensex' in a['name']), 0)
+    equity_12m = next((a['returns_raw'].get('12M', 0) for a in valid_assets if 'S&P 500' in a['name']), 0)
     if equity_12m > 5.0 and (mom_val < 100 or health_val < 100):
         insights.append("Macro-Market Decoupling: Equity valuations are expanding despite underlying macroeconomic momentum operating below historical trend.")
 
-    # Rule 7: Volatility Regime & Risk Premium (India VIX)
+    # Rule 7: Volatility Regime & Risk Premium (VIX)
     vix_asset = next((a for a in valid_assets if 'VIX' in a['name']), None)
     if vix_asset and 'latest_value' in vix_asset:
         vix_val = vix_asset['latest_value']
         if vix_val < 12.5:
-            insights.append(f"Volatility Regime: India VIX at {vix_val:.1f} signals extreme market complacency, suggesting potential asymmetric downside risk.")
+            insights.append(f"Volatility Regime: VIX at {vix_val:.1f} signals extreme market complacency, suggesting potential asymmetric downside risk.")
         elif vix_val > 20.0:
-            insights.append(f"Volatility Regime: India VIX at {vix_val:.1f} reflects elevated market risk-pricing and hedging demand.")
+            insights.append(f"Volatility Regime: VIX at {vix_val:.1f} reflects elevated market risk-pricing and hedging demand.")
 
-    # Rule 8: Commodity Input-Cost Squeeze (Brent Crude)
+    # Rule 8: Commodity Input-Cost Squeeze (Crude Oil)
     crude_asset = next((a for a in valid_assets if 'Brent' in a['name'] or 'Crude' in a['name']), None)
     if crude_asset:
         c_12m = crude_asset['returns_raw'].get('12M', 0)
         if not pd.isna(c_12m) and c_12m > 15.0:
-            insights.append(f"Commodity Squeeze: Brent Crude oil up {c_12m:+.1f}% YoY introduces input-cost inflation pressure for domestic margins.")
+            insights.append(f"Commodity Squeeze: {crude_asset['name']} oil up {c_12m:+.1f}% YoY introduces input-cost inflation pressure for domestic margins.")
 
     # Rule 9: FX Transmission & Currency Risk (USD/INR)
     fx_asset = next((a for a in valid_assets if 'USD/INR' in a['name'] or 'INR' in a['name']), None)

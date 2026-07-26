@@ -14,7 +14,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.widgets import Slider, Button, CheckButtons, RadioButtons
-from matplotlib.animation import FuncAnimation
 from matplotlib.collections import LineCollection
 
 from .layout import create_figure, create_main_axes, create_background_axes, draw_group_container
@@ -32,7 +31,8 @@ class App:
         self.market_series = market_series
         self.data_metadata = data_metadata or {}
         self.max_frames = len(df) - 1
-        self.state = {'current_frame': 0, 'is_playing': False}
+        self.state = {'current_frame': 0, 'is_playing': False,
+                      'tick': 0, 'speed_div': 4, 'status_restore_tick': None}
         self.export_menu = {}
 
         self._build_ui()
@@ -49,7 +49,7 @@ class App:
         self.ax = create_main_axes(self.fig, df, config)
 
         # Sparkline
-        self.ax_spark, self.spark_pt = create_sparkline_axes(self.fig, df)
+        self.ax_spark, self.spark_pt = create_sparkline_axes(self.fig, df, config['name'])
 
         # Left sidebar
         left = create_left_sidebar(self.fig)
@@ -137,6 +137,10 @@ class App:
                                      ha='center', va='center', fontsize=9,
                                      color='#1f497d', fontweight='bold')
 
+        # Chart title — shows the date of the frame being displayed
+        chart_title = self.fig.text(0.5, 0.965, '', ha='center', va='center',
+                                    fontsize=14, fontweight='bold', color='#1f497d')
+
         # Chart elements
         current_pt = self.ax.scatter([], [], color='#1f497d', s=90, zorder=6,
                                      edgecolor='white', linewidth=1.5)
@@ -171,6 +175,7 @@ class App:
         # Assemble plot_elements dict (same structure as original)
         self.plot_elements = {
             'ax': self.ax, 'current_pt': current_pt, 'current_label': current_label,
+            'chart_title': chart_title,
             'tail_dots': tail_dots, 'lc': lc,
             'info_date': left['info_date'], 'info_val': left['info_val'],
             'info_quad': left['info_quad'],
@@ -225,7 +230,7 @@ class App:
         # Market state
         self.plot_elements['market_state'] = {
             'horizon': 1,
-            'selected': list(self.market_series.keys())[:5],
+            'selected': list(self.market_series.keys()),
             'scroll_y': 0.0,
             'menu_fig': None,
             'mode_fig': None
@@ -259,21 +264,37 @@ class App:
 
     def _update_market_layout(self):
         m_state = self.plot_elements['market_state']
-        y_pos = 0.95
+        y_pos = 0.97
         for name in self.market_series.keys():
             texts = self.plot_elements['market_texts'][name]
             if name in m_state['selected'] and self.chk_market.get_status()[0]:
                 texts['name'].set_y(y_pos)
                 texts['val'].set_y(y_pos)
-                texts['chg'].set_y(y_pos)
+                texts['chg'].set_y(y_pos - 0.042)
+                texts['sep'].set_ydata([y_pos - 0.075, y_pos - 0.075])
                 texts['name'].set_visible(True)
                 texts['val'].set_visible(True)
                 texts['chg'].set_visible(True)
-                y_pos -= 0.16
+                texts['sep'].set_visible(True)
+                y_pos -= 0.095
             else:
                 texts['name'].set_visible(False)
                 texts['val'].set_visible(False)
                 texts['chg'].set_visible(False)
+                texts['sep'].set_visible(False)
+
+    def _restore_status(self):
+        pe = self.plot_elements
+        pe['status_label'].set_text(pe['default_status'])
+        pe['status_label'].set_fontweight('normal')
+        pe['status_label'].set_color('dimgray')
+        pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
+        pe['ax_open'].set_visible(False)
+        self.fig.canvas.draw_idle()
+
+    def _schedule_status_restore(self, delay_ticks: int = 200):
+        """Restore the status bar after delay_ticks heartbeat ticks (50ms each)."""
+        self.state['status_restore_tick'] = self.state['tick'] + delay_ticks
 
     # ------------------------------------------------------------------
     # Frame Rendering (exact port of draw_frame)
@@ -308,12 +329,14 @@ class App:
         else:
             pe['current_label'].set_text('')
 
-        pe['info_date'].set_text(f"Date:\n{date_str}")
-        pe['info_val'].set_text(f"Value:\n{curr_row['CLI_Raw']:.2f}")
+        pe['chart_title'].set_text(date_str)
+
+        pe['info_date'].set_text(f"Date: {date_str}")
+        pe['info_val'].set_text(f"Value: {curr_row['CLI_Raw']:.2f}")
 
         quad_color = {"Expansion": "darkgreen", "Slowdown": "darkgoldenrod",
                       "Contraction": "darkred", "Recovery": "darkblue"}[curr_row['Quadrant']]
-        pe['info_quad'].set_text(f"Quadrant:\n{curr_row['Quadrant']}")
+        pe['info_quad'].set_text(f"Quadrant: {curr_row['Quadrant']}")
         pe['info_quad'].set_color(quad_color)
 
         # Cycle Statistics
@@ -328,22 +351,22 @@ class App:
         entered_date = df.iloc[entry_idx].name
         duration_months = idx - entry_idx + 1
 
-        pe['stat_entered'].set_text(f"Entered:\n{entered_date.strftime('%b %Y')}")
-        pe['stat_duration'].set_text(f"Duration:\n{duration_months} month{'s' if duration_months > 1 else ''}")
-        pe['stat_prev'].set_text(f"Previous Phase:\n{prev_quad}")
+        pe['stat_entered'].set_text(f"Entered: {entered_date.strftime('%b %Y')}")
+        pe['stat_duration'].set_text(f"Duration: {duration_months} month{'s' if duration_months > 1 else ''}")
+        pe['stat_prev'].set_text(f"Previous Phase: {prev_quad}")
 
         import matplotlib.dates as mdates
         pe['spark_pt'].set_offsets(np.c_[mdates.date2num(curr_row.name), curr_row['CLI_Raw']])
 
         # Right Sidebar
         c = config['center']
-        pe['interp_phase'].set_text(f"Current Phase:\n{curr_quad}")
+        pe['interp_phase'].set_text(f"Current Phase: {curr_quad}")
 
         trend_str = "Strengthening" if curr_y >= c else "Weakening"
-        pe['interp_trend'].set_text(f"Trend:\n{trend_str}")
+        pe['interp_trend'].set_text(f"Trend: {trend_str}")
 
         signal_str = "Above long-term trend" if curr_x >= c else "Below long-term trend"
-        pe['interp_signal'].set_text(f"Signal:\n{signal_str}")
+        pe['interp_signal'].set_text(f"Signal: {signal_str}")
 
         overall_map = {
             "Expansion": "Bullish macro environment",
@@ -351,7 +374,7 @@ class App:
             "Contraction": "Bearish macro environment",
             "Recovery": "Improving macro environment"
         }
-        pe['interp_overall'].set_text(f"Overall:\n{overall_map.get(curr_quad, 'Neutral')}")
+        pe['interp_overall'].set_text(f"Overall: {overall_map.get(curr_quad, 'Neutral')}")
 
         prev_x, prev_y = curr_x, curr_y
         if len(df_slice) > 1:
@@ -361,13 +384,13 @@ class App:
         mom_diff = curr_y - prev_y
         mom_str = ("Positive (Accelerating)" if mom_diff > 0
                    else ("Negative (Decelerating)" if mom_diff < 0 else "Neutral"))
-        pe['interp_mom'].set_text(f"Momentum:\n{mom_str}")
+        pe['interp_mom'].set_text(f"Momentum: {mom_str}")
 
-        pe['read_health'].set_text(f"Health:\n{curr_x:.2f}")
-        pe['read_mom'].set_text(f"Momentum:\n{curr_y:.2f}")
+        pe['read_health'].set_text(f"Health: {curr_x:.2f}")
+        pe['read_mom'].set_text(f"Momentum: {curr_y:.2f}")
 
         dist_center = np.sqrt((curr_x - c) ** 2 + (curr_y - c) ** 2)
-        pe['read_dist'].set_text(f"Distance from Center:\n{dist_center:.2f}")
+        pe['read_dist'].set_text(f"Distance from Center: {dist_center:.2f}")
 
         # Direction
         dx = curr_x - prev_x
@@ -387,7 +410,7 @@ class App:
             elif 292.5 <= angle < 337.5: dir_sym = "↘ Southeast"
             else: dir_sym = "→ East"
 
-        pe['read_dir'].set_text(f"Direction:\n{dir_sym}")
+        pe['read_dir'].set_text(f"Direction: {dir_sym}")
 
         # Macro Drivers
         try:
@@ -610,33 +633,38 @@ class App:
 
         self.slider.on_changed(update_plot)
 
-        def animation_step(frame):
-            if self.state['is_playing']:
-                self.state['current_frame'] += 1
-                if self.state['current_frame'] > self.max_frames:
-                    self.state['current_frame'] = 0
-                self.slider.set_val(self.state['current_frame'])
+        def heartbeat_step():
+            st = self.state
+            st['tick'] += 1
+            if st['status_restore_tick'] is not None and st['tick'] >= st['status_restore_tick']:
+                st['status_restore_tick'] = None
+                self._restore_status()
+            if st['is_playing'] and st['tick'] % st['speed_div'] == 0:
+                st['current_frame'] += 1
+                if st['current_frame'] > self.max_frames:
+                    st['current_frame'] = 0
+                self.slider.set_val(st['current_frame'])
 
-        self.anim = FuncAnimation(fig, animation_step, interval=200, cache_frame_data=False)
-        self.anim.event_source.stop()
+        # Single persistent timer, started once and never stopped or reconfigured:
+        # the macosx backend segfaults (over-released callback blocks) when timers
+        # are invalidated or recreated at runtime, so playback/speed/status delays
+        # are all derived from this one heartbeat instead of separate timers.
+        self.heartbeat = fig.canvas.new_timer(interval=50)
+        self.heartbeat.add_callback(heartbeat_step)
+        self.heartbeat.start()
 
         def play(event):
-            if not self.state['is_playing']:
-                self.state['is_playing'] = True
-                self.anim.event_source.start()
+            self.state['is_playing'] = True
 
         def pause(event):
-            if self.state['is_playing']:
-                self.state['is_playing'] = False
-                self.anim.event_source.stop()
+            self.state['is_playing'] = False
 
         def reset(event):
             pause(None)
             self.slider.set_val(0)
 
         def set_speed(label):
-            speed_map = {'1x': 200, '2x': 100, '3x': 50}
-            self.anim.event_source.interval = speed_map[label]
+            self.state['speed_div'] = {'1x': 4, '2x': 2, '3x': 1}[label]
             for l, btn in [('1x', self.btn_1x), ('2x', self.btn_2x), ('3x', self.btn_3x)]:
                 if label == l:
                     btn.color = '#1f497d'
@@ -700,7 +728,7 @@ class App:
                     m_state['scroll_y'] += step
 
                 num_sel = len(m_state['selected'])
-                max_y = max(0, (num_sel * 0.16) - 1.0)
+                max_y = max(0, (num_sel * 0.095) - 1.0)
                 m_state['scroll_y'] = max(0, min(m_state['scroll_y'], max_y))
 
                 sy = -m_state['scroll_y']
@@ -856,19 +884,7 @@ The path transitions through four phases:
                 pe['ax_open'].set_visible(True)
             fig.canvas.draw_idle()
 
-            def restore():
-                pe['status_label'].set_text(pe['default_status'])
-                pe['status_label'].set_fontweight('normal')
-                pe['status_label'].set_color('dimgray')
-                pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
-                pe['ax_open'].set_visible(False)
-                fig.canvas.draw_idle()
-
-            t = fig.canvas.new_timer(interval=10000)
-            t.single_shot = True
-            t.add_callback(restore)
-            t.start()
-            pe['active_timer'] = t
+            self._schedule_status_restore()
 
         # Export
         def export_data(fmt):
@@ -1136,19 +1152,8 @@ The path transitions through four phases:
         # Initialize to latest frame
         self.slider.set_val(self.max_frames)
 
-        # Startup timer to restore status bar
-        def restore_status():
-            pe['status_label'].set_text(pe['default_status'])
-            pe['status_label'].set_fontweight('normal')
-            pe['status_label'].set_color('dimgray')
-            pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
-            fig.canvas.draw_idle()
-
-        startup_timer = fig.canvas.new_timer(interval=10000)
-        startup_timer.single_shot = True
-        startup_timer.add_callback(restore_status)
-        startup_timer.start()
-        pe['startup_timer'] = startup_timer
+        # Restore the status bar shortly after startup (via the heartbeat timer)
+        self._schedule_status_restore()
 
     # ------------------------------------------------------------------
     # Run

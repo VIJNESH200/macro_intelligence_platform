@@ -140,7 +140,7 @@ class ScenarioEngine:
             'expected_market_return_6m': bull_ret,
             'path': bull_path,
             'key_assumption': "Macro momentum accelerates faster than base expectations, driven by positive surprises in leading indicators.",
-            'trigger': "Upside breakout in ICI or rapid yield curve steepening."
+            'trigger': "Upside surprise in leading indicators or rapid yield curve steepening."
         })
         
         scenarios.append({
@@ -164,7 +164,7 @@ class ScenarioEngine:
             'expected_market_return_6m': bear_ret,
             'path': bear_path,
             'key_assumption': "Macroeconomic health deteriorates significantly as underlying fundamentals crack.",
-            'trigger': "Systemic credit event, sharp CPI spike, or sustained ICI contraction."
+            'trigger': "Systemic credit event, sharp CPI spike, or sustained contraction in leading indicators."
         })
 
         return scenarios

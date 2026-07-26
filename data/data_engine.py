@@ -12,7 +12,6 @@ import numpy as np
 from .providers.fred import FREDProvider
 from .providers.yfinance_provider import YFinanceProvider
 from .providers.imf import IMFProvider
-from .providers.ici import ICIProvider
 from .providers.rbi import RBIProvider
 from .providers.oecd import OECDProvider
 from .providers.yield_provider import YieldProvider
@@ -72,7 +71,6 @@ class DataEngine:
             'fred': FREDProvider(),
             'yfinance': YFinanceProvider(),
             'imf': IMFProvider(),
-            'ici': ICIProvider(),
             'rbi': RBIProvider(),
             'oecd': OECDProvider(),
             'yield': YieldProvider(),
