@@ -8,9 +8,6 @@ reportlab>=4.0.0
 flake8>=6.0.0
 sdmx1>=2.17.0
 beautifulsoup4>=4.12.0
-<<<<<<< HEAD
 scikit-learn>=1.3.0
-=======
 requests>=2.31.0
 certifi>=2024.2.2
->>>>>>> 0f21fbc (fix: resolve India market switch crash and wire up live ICI data)

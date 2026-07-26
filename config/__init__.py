@@ -30,13 +30,15 @@ def get_market_label() -> str:
     return market_config['label']
 
 
+VERSION = '2.5'
+
 # Load active configuration
 _active_config = get_market_config(_CURRENT_MARKET)
 
 # Export active CONFIG for backward compatibility
 CONFIG = {
     **_active_config['primary_indicator'],
-    'version': '2.5'
+    'version': VERSION
 }
 
 MARKET_SERIES = _active_config['market_series'].copy()
@@ -114,7 +116,7 @@ def reload_for_market(market: str) -> None:
     CONFIG.clear()
     CONFIG.update({
         **_active_config['primary_indicator'],
-        'version': '2.5'
+        'version': VERSION
     })
 
     MARKET_SERIES.clear()
