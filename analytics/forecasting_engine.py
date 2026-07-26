@@ -2,13 +2,14 @@ from __future__ import annotations
 """
 Forecasting Engine — Projects business cycle trajectory forward.
 ================================================================
-Uses a three-signal consensus (CLI Momentum 50%, Historical Analogues 40%, 
-Macro Drivers 10%) to project X/Y coordinates for 3-month and 6-month horizons.
+Uses a two-signal consensus (CLI Momentum 55%, Historical Analogues 45%) 
+to project X/Y coordinates for 3-month and 6-month horizons.
 
 Empirical Backtest Note:
-- CLI Momentum (67.7%) and Historical Analogues (63.3%) serve as primary signals.
-- Macro Driver Z-score walk-forward Ridge model standalone achieves 63.3% 6M accuracy, 
-  and acts as a 10% macro-tilt signal in the consensus blend (72.5% overall accuracy).
+- CLI Momentum (67.7%) and Historical Analogues (63.3%) drive out-of-sample edge.
+- Held-out backtesting (2019-2026) confirmed macro drivers standalone achieve 50.6%
+  (only +1.2pp over persistence), so consensus weighting focuses 100% on Momentum (55%)
+  and Analogues (45%), achieving 71.8% held-out out-of-sample quadrant accuracy.
 """
 import numpy as np
 import pandas as pd
