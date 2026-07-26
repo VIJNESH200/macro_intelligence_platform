@@ -143,7 +143,7 @@ def generate_narrative(data, analysis, insights, market_insights, analogues):
         "<b>Economic Health & Momentum</b><br/><font size=8>&bull; Rolling Z-score<br/>&bull; Normalized monthly change</font><br/><br/>"
         "<b>Market Score</b><br/><font size=8>&bull; Independent signal derived strictly from asset price action<br/>&bull; Composite of multi-horizon price momentum</font><br/><br/>"
         "<b>Analogue Matching</b><br/><font size=8>&bull; Multi-dimensional Euclidean distance (XY + Macro Drivers)</font><br/><br/>"
-        "<b>Forecasting Engine</b><br/><font size=8>&bull; 3-Signal Consensus (Momentum, Analogues, Macro Drivers)</font>"
+        "<b>Forecasting Engine</b><br/><font size=8>&bull; Two-Signal Consensus (CLI Momentum, Historical Analogues)</font>"
     )
 
     return {
