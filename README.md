@@ -80,7 +80,8 @@ flowchart TD
 | **Analytics** | `analytics/` | Quantitative models (`MacroIntelligenceEngine`, `ForecastingEngine`, Markov `TransitionMatrix`). |
 | **API & Models** | `api.py`, `macro_intel.py`, `models.py` | Typed `DataBundle` / `ForecastResult` dataclasses and `macro_intel` import interface. |
 | **Research** | `research/` | Institutional strategy narrative synthesis and publication-ready ReportLab PDF report generator. |
-| **User Interface** | `ui/` | Interactive dashboard with playback controls, sparklines, and market context panels. |
+| **User Interface** | `ui/` | Interactive Matplotlib desktop dashboard with playback controls, sparklines, and market context panels. |
+| **Web Server & UI** | `web/` | FastAPI REST API backend (`web/server.py`) and modern React 18 SPA frontend (`web/frontend/`). |
 
 ---
 
