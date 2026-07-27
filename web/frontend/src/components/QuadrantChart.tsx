@@ -5,7 +5,6 @@ import { REGIME_CORNERS, REGIME_ORDER, REGIMES, fixed } from '@/lib/regime'
 import { cn } from '@/lib/utils'
 
 const MARGIN = { top: 18, right: 20, bottom: 46, left: 56 }
-const TICK_COUNT = 6
 
 /** Opacity ramp along the trail: one hue, oldest faint -> newest solid. */
 const TRAIL_MIN_OPACITY = 0.16
@@ -70,25 +69,26 @@ export function QuadrantChart({
 
   const { width, height } = size
 
-  // X and Y share one domain, and the header reports distance-from-centre and a
-  // compass direction. Both are only true if a unit reads the same on each axis,
-  // so the plot is square and centred rather than stretched to the container.
-  const available = {
-    w: Math.max(10, width - MARGIN.left - MARGIN.right),
-    h: Math.max(10, height - MARGIN.top - MARGIN.bottom),
-  }
-  const side = Math.min(available.w, available.h)
-  const plotW = side
-  const plotH = side
-  const offsetX = MARGIN.left + (available.w - side) / 2
+  const plotW = Math.max(10, width - MARGIN.left - MARGIN.right)
+  const plotH = Math.max(10, height - MARGIN.top - MARGIN.bottom)
+  const offsetX = MARGIN.left
+
+  // A unit must measure the same on both axes, or the reported distance-from-
+  // centre and trajectory stop being true. Rather than letterbox a square plot
+  // and waste the container, hold the scale equal and let the longer axis show
+  // more range: the shorter one covers exactly +/- extent, the longer covers
+  // proportionally more. The centre stays centred either way.
+  const unitsPerPixel = (2 * bounds.extent) / Math.min(plotW, plotH)
+  const halfX = (plotW * unitsPerPixel) / 2
+  const halfY = (plotH * unitsPerPixel) / 2
 
   const x = React.useMemo(
-    () => scaleLinear().domain([bounds.min, bounds.max]).range([0, side]),
-    [bounds.min, bounds.max, side],
+    () => scaleLinear().domain([bounds.center - halfX, bounds.center + halfX]).range([0, plotW]),
+    [bounds.center, halfX, plotW],
   )
   const y = React.useMemo(
-    () => scaleLinear().domain([bounds.min, bounds.max]).range([side, 0]),
-    [bounds.min, bounds.max, side],
+    () => scaleLinear().domain([bounds.center - halfY, bounds.center + halfY]).range([plotH, 0]),
+    [bounds.center, halfY, plotH],
   )
 
   const cx = x(bounds.center)
@@ -122,7 +122,15 @@ export function QuadrantChart({
       .join('')
   }, [forecast, x, y])
 
-  const ticks = React.useMemo(() => x.ticks(TICK_COUNT), [x])
+  // Separate tick sets: the axes now cover different ranges at the same scale.
+  const xTicks = React.useMemo(
+    () => x.ticks(Math.max(3, Math.round((plotW / 130)))),
+    [x, plotW],
+  )
+  const yTicks = React.useMemo(
+    () => y.ticks(Math.max(3, Math.round((plotH / 90)))),
+    [y, plotH],
+  )
 
   /**
    * Horizon markers, with labels dropped where they would collide. When the
@@ -185,10 +193,10 @@ export function QuadrantChart({
 
           {/* Recessive grid */}
           <g stroke="var(--gridline)" strokeWidth={1}>
-            {ticks.map((t) => (
+            {xTicks.map((t) => (
               <line key={`gx-${t}`} x1={x(t)} y1={0} x2={x(t)} y2={plotH} />
             ))}
-            {ticks.map((t) => (
+            {yTicks.map((t) => (
               <line key={`gy-${t}`} x1={0} y1={y(t)} x2={plotW} y2={y(t)} />
             ))}
           </g>
@@ -364,12 +372,12 @@ export function QuadrantChart({
             <line x1={0} y1={0} x2={0} y2={plotH} />
           </g>
           <g className="fill-ink-muted tabular text-[10px]">
-            {ticks.map((t) => (
+            {xTicks.map((t) => (
               <text key={`tx-${t}`} x={x(t)} y={plotH + 15} textAnchor="middle">
                 {t.toFixed(1)}
               </text>
             ))}
-            {ticks.map((t) => (
+            {yTicks.map((t) => (
               <text key={`ty-${t}`} x={-8} y={y(t) + 3.5} textAnchor="end">
                 {t.toFixed(1)}
               </text>

@@ -2,7 +2,6 @@ import * as React from 'react'
 import { Download, Moon, RefreshCw, Sun } from 'lucide-react'
 import { api } from '@/lib/api'
 import type { CyclePayload, ForecastPayload, FramePayload, MarketProfile } from '@/lib/types'
-import { REGIMES, describeDirection, fixed, signed } from '@/lib/regime'
 import { QuadrantChart } from '@/components/QuadrantChart'
 import { Controls, type DisplayOptions } from '@/components/Controls'
 import { MarketPanel } from '@/components/MarketPanel'
@@ -12,7 +11,7 @@ import { PhasePanel } from '@/components/PhasePanel'
 import { NarrativePanel } from '@/components/NarrativePanel'
 import { DataHealth } from '@/components/DataHealth'
 import { Sparkline } from '@/components/Sparkline'
-import { StatTile } from '@/components/StatTile'
+import { StatusRail } from '@/components/StatusRail'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -212,7 +211,6 @@ export default function App() {
   if (!cycle) return null
 
   const current = cycle.frames[Math.min(index, cycle.frames.length - 1)]
-  const regime = frame?.quadrant ?? current.quadrant
   const center = cycle.config.center
 
   return (
@@ -256,51 +254,10 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-[1600px] px-5 py-4">
-        <section className="mb-4 grid grid-cols-2 gap-4 rounded-lg border border-hairline bg-surface p-4 sm:grid-cols-3 lg:grid-cols-6">
-          <StatTile
-            label="Regime"
-            value={regime}
-            accent={REGIMES[regime]?.color}
-            hint={REGIMES[regime]?.blurb}
-          />
-          <StatTile
-            label="As of"
-            value={current.label}
-            hint={`Frame ${index + 1} of ${cycle.frames.length}`}
-          />
-          <StatTile
-            label="Health"
-            value={fixed(current.x)}
-            hint={`${signed(current.x - center)} vs centre`}
-          />
-          <StatTile
-            label="Momentum"
-            value={fixed(current.y)}
-            hint={`${signed(current.y - center)} vs centre`}
-          />
-          <StatTile
-            label="Trajectory"
-            value={
-              <span className="text-[17px]">{describeDirection(frame?.direction).short}</span>
-            }
-            hint={describeDirection(frame?.direction).long}
-          />
-          <StatTile
-            label="6M Conviction"
-            value={forecast?.conviction != null ? `${fixed(forecast.conviction, 0)}%` : '—'}
-            hint={forecast?.forecasts?.['6m']?.quadrant ?? '—'}
-            accent={
-              forecast?.forecasts?.['6m']
-                ? REGIMES[forecast.forecasts['6m'].quadrant]?.color
-                : undefined
-            }
-          />
-        </section>
-
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="flex min-w-0 flex-col gap-4">
-            <Card className="min-h-[440px] flex-1">
-              <CardContent className="h-[clamp(420px,58vh,660px)] px-2 pt-2 pb-1">
+            <Card className="flex-1">
+              <CardContent className="h-[clamp(460px,74vh,940px)] px-2 pt-2 pb-1">
                 <QuadrantChart
                   frames={cycle.frames}
                   spline={cycle.spline}
@@ -338,6 +295,15 @@ export default function App() {
           </div>
 
           <aside className="flex flex-col gap-4">
+            <StatusRail
+              frame={frame}
+              forecast={forecast}
+              current={current}
+              previous={index > 0 ? cycle.frames[index - 1] : null}
+              totalFrames={cycle.frames.length}
+              center={center}
+            />
+
             <Card>
               <CardHeader>
                 <CardTitle>Indicator</CardTitle>
