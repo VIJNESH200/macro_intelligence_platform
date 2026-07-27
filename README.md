@@ -134,6 +134,8 @@ python main.py
 
 Launch the modern Web UI and REST API server:
 
+![Macro Intelligence Web UI](docs/assets/web_ui_preview.png)
+
 **Windows Launcher:**
 ```cmd
 run_web.bat
