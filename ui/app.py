@@ -14,26 +14,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.widgets import Slider, Button, CheckButtons, RadioButtons
-from matplotlib.animation import FuncAnimation
 from matplotlib.collections import LineCollection
 
 from .layout import create_figure, create_main_axes, create_background_axes, draw_group_container
-from .sidebars import create_sparkline_axes, create_left_sidebar, create_right_sidebar, create_market_panel
+from .sidebars import create_sparkline_axes, create_left_sidebar, create_right_sidebar, create_market_panel, build_market_texts
 
 
 class App:
     """Main application class — creates the GUI and runs the event loop."""
 
     def __init__(self, df: pd.DataFrame, spline_data: pd.DataFrame,
-                 config: dict, market_series: dict, data_metadata: dict = None):
+                 config: dict, market_series: dict, data_metadata: dict = None,
+                 on_market_change=None):
         self.df = df
         self.spline_data = spline_data
         self.config = config
         self.market_series = market_series
         self.data_metadata = data_metadata or {}
         self.max_frames = len(df) - 1
-        self.state = {'current_frame': 0, 'is_playing': False}
+        self.state = {'current_frame': 0, 'is_playing': False,
+                      'tick': 0, 'speed_div': 4, 'status_restore_tick': None}
         self.export_menu = {}
+        self.on_market_change = on_market_change
 
         self._build_ui()
         self._wire_callbacks()
@@ -49,7 +51,7 @@ class App:
         self.ax = create_main_axes(self.fig, df, config)
 
         # Sparkline
-        self.ax_spark, self.spark_pt = create_sparkline_axes(self.fig, df)
+        self.ax_spark, self.spark_pt = create_sparkline_axes(self.fig, df, config['name'])
 
         # Left sidebar
         left = create_left_sidebar(self.fig)
@@ -106,13 +108,47 @@ class App:
         self.chk_market = self._style_check(ax_chk_market, ('Market Context',), (True,))
 
         # Group 4: Tools
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.68, grp_y, 0.16, grp_h, "Tools")
-        ax_export = self.fig.add_axes([0.685, 0.028, 0.045, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.68, grp_y, 0.30, grp_h, "Tools & Market")
+        ax_export = self.fig.add_axes([0.685, 0.028, 0.038, 0.035])
         self.btn_export = self._style_button(ax_export, 'Export')
-        ax_help = self.fig.add_axes([0.735, 0.028, 0.045, 0.035])
+        ax_help = self.fig.add_axes([0.728, 0.028, 0.038, 0.035])
         self.btn_help = self._style_button(ax_help, 'Help')
-        ax_cache = self.fig.add_axes([0.785, 0.028, 0.050, 0.035])
+        ax_cache = self.fig.add_axes([0.771, 0.028, 0.045, 0.035])
         self.btn_cache = self._style_button(ax_cache, 'Clr Cache')
+
+        # Market selector
+        try:
+            from ..config import get_current_market
+        except ImportError:
+            from config import get_current_market
+        current_market = get_current_market()
+
+        ax_market_india = self.fig.add_axes([0.821, 0.028, 0.038, 0.035])
+        self.btn_market_india = Button(ax_market_india, 'India', color='#ffffff', hovercolor='#e9ecef')
+        self.btn_market_india.label.set_fontsize(10)
+        self.btn_market_india.label.set_fontweight('bold')
+        self.btn_market_india.label.set_color('#495057')
+        for spine in ax_market_india.spines.values():
+            spine.set_color('#ced4da')
+
+        ax_market_us = self.fig.add_axes([0.864, 0.028, 0.038, 0.035])
+        self.btn_market_us = Button(ax_market_us, 'US', color='#ffffff', hovercolor='#e9ecef')
+        self.btn_market_us.label.set_fontsize(10)
+        self.btn_market_us.label.set_fontweight('bold')
+        self.btn_market_us.label.set_color('#495057')
+        for spine in ax_market_us.spines.values():
+            spine.set_color('#ced4da')
+
+        if current_market == 'INDIA':
+            self.btn_market_india.color = '#1f497d'
+            self.btn_market_india.hovercolor = '#17365d'
+            self.btn_market_india.ax.set_facecolor('#1f497d')
+            self.btn_market_india.label.set_color('#ffffff')
+        else:
+            self.btn_market_us.color = '#1f497d'
+            self.btn_market_us.hovercolor = '#17365d'
+            self.btn_market_us.ax.set_facecolor('#1f497d')
+            self.btn_market_us.label.set_color('#ffffff')
 
         # Open Folder button (hidden)
         ax_open = self.fig.add_axes([0.70, 0.002, 0.08, 0.016])
@@ -136,6 +172,10 @@ class App:
                                      "Tip: Click Help (?) to view keyboard shortcuts.",
                                      ha='center', va='center', fontsize=9,
                                      color='#1f497d', fontweight='bold')
+
+        # Chart title — shows the date of the frame being displayed
+        chart_title = self.fig.text(0.5, 0.965, '', ha='center', va='center',
+                                    fontsize=14, fontweight='bold', color='#1f497d')
 
         # Chart elements
         current_pt = self.ax.scatter([], [], color='#1f497d', s=90, zorder=6,
@@ -171,6 +211,7 @@ class App:
         # Assemble plot_elements dict (same structure as original)
         self.plot_elements = {
             'ax': self.ax, 'current_pt': current_pt, 'current_label': current_label,
+            'chart_title': chart_title,
             'tail_dots': tail_dots, 'lc': lc,
             'info_date': left['info_date'], 'info_val': left['info_val'],
             'info_quad': left['info_quad'],
@@ -198,7 +239,7 @@ class App:
                              ax_1x, ax_2x, ax_3x,
                              ax_chk_tails, ax_chk_labels, ax_chk_market, ax_chk_forecast,
                              ax_export, ax_help, ax_cache, ax_open,
-                             ax_market_cfg, ax_market_mode],
+                             ax_market_cfg, ax_market_mode, ax_market_india, ax_market_us],
             'control_bg_elements': control_bg_elements
         }
         
@@ -219,13 +260,14 @@ class App:
             'chk_market': self.chk_market, 'chk_forecast': self.chk_forecast,
             'btn_export': self.btn_export, 'btn_help': self.btn_help,
             'btn_open': self.btn_open,
-            'btn_market_cfg': btn_market_cfg, 'btn_market_mode': btn_market_mode
+            'btn_market_cfg': btn_market_cfg, 'btn_market_mode': btn_market_mode,
+            'btn_market_india': self.btn_market_india, 'btn_market_us': self.btn_market_us
         }
 
         # Market state
         self.plot_elements['market_state'] = {
             'horizon': 1,
-            'selected': list(self.market_series.keys())[:5],
+            'selected': list(self.market_series.keys()),
             'scroll_y': 0.0,
             'menu_fig': None,
             'mode_fig': None
@@ -257,23 +299,62 @@ class App:
             label.set_fontsize(9)
         return chk
 
+    def rebuild_market_panel(self):
+        """Rebuild the market-panel text artists to match self.market_series.
+
+        Needed after a market switch: the panel's texts are keyed by series
+        name, and INDIA/US expose different series names, so the widgets
+        built for the previous market must be replaced rather than reused.
+        """
+        pe = self.plot_elements
+        for texts in pe['market_texts'].values():
+            texts['name'].remove()
+            texts['val'].remove()
+            texts['chg'].remove()
+            texts['sep'].remove()
+
+        pe['market_texts'] = build_market_texts(self.ax_market, self.market_series)
+
+        m_state = pe['market_state']
+        m_state['selected'] = list(self.market_series.keys())
+        m_state['scroll_y'] = 0.0
+        self.ax_market.set_ylim(0, 1)
+
+        self._update_market_layout()
+
     def _update_market_layout(self):
         m_state = self.plot_elements['market_state']
-        y_pos = 0.95
+        y_pos = 0.97
         for name in self.market_series.keys():
             texts = self.plot_elements['market_texts'][name]
             if name in m_state['selected'] and self.chk_market.get_status()[0]:
                 texts['name'].set_y(y_pos)
                 texts['val'].set_y(y_pos)
-                texts['chg'].set_y(y_pos)
+                texts['chg'].set_y(y_pos - 0.042)
+                texts['sep'].set_ydata([y_pos - 0.075, y_pos - 0.075])
                 texts['name'].set_visible(True)
                 texts['val'].set_visible(True)
                 texts['chg'].set_visible(True)
-                y_pos -= 0.16
+                texts['sep'].set_visible(True)
+                y_pos -= 0.095
             else:
                 texts['name'].set_visible(False)
                 texts['val'].set_visible(False)
                 texts['chg'].set_visible(False)
+                texts['sep'].set_visible(False)
+
+    def _restore_status(self):
+        pe = self.plot_elements
+        pe['status_label'].set_text(pe['default_status'])
+        pe['status_label'].set_fontweight('normal')
+        pe['status_label'].set_color('dimgray')
+        pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
+        pe['ax_open'].set_visible(False)
+        self.fig.canvas.draw_idle()
+
+    def _schedule_status_restore(self, delay_ticks: int = 200):
+        """Restore the status bar after delay_ticks heartbeat ticks (50ms each)."""
+        self.state['status_restore_tick'] = self.state['tick'] + delay_ticks
 
     # ------------------------------------------------------------------
     # Frame Rendering (exact port of draw_frame)
@@ -308,12 +389,14 @@ class App:
         else:
             pe['current_label'].set_text('')
 
-        pe['info_date'].set_text(f"Date:\n{date_str}")
-        pe['info_val'].set_text(f"Value:\n{curr_row['CLI_Raw']:.2f}")
+        pe['chart_title'].set_text(date_str)
+
+        pe['info_date'].set_text(f"Date: {date_str}")
+        pe['info_val'].set_text(f"Value: {curr_row['CLI_Raw']:.2f}")
 
         quad_color = {"Expansion": "darkgreen", "Slowdown": "darkgoldenrod",
                       "Contraction": "darkred", "Recovery": "darkblue"}[curr_row['Quadrant']]
-        pe['info_quad'].set_text(f"Quadrant:\n{curr_row['Quadrant']}")
+        pe['info_quad'].set_text(f"Quadrant: {curr_row['Quadrant']}")
         pe['info_quad'].set_color(quad_color)
 
         # Cycle Statistics
@@ -328,22 +411,22 @@ class App:
         entered_date = df.iloc[entry_idx].name
         duration_months = idx - entry_idx + 1
 
-        pe['stat_entered'].set_text(f"Entered:\n{entered_date.strftime('%b %Y')}")
-        pe['stat_duration'].set_text(f"Duration:\n{duration_months} month{'s' if duration_months > 1 else ''}")
-        pe['stat_prev'].set_text(f"Previous Phase:\n{prev_quad}")
+        pe['stat_entered'].set_text(f"Entered: {entered_date.strftime('%b %Y')}")
+        pe['stat_duration'].set_text(f"Duration: {duration_months} month{'s' if duration_months > 1 else ''}")
+        pe['stat_prev'].set_text(f"Previous Phase: {prev_quad}")
 
         import matplotlib.dates as mdates
         pe['spark_pt'].set_offsets(np.c_[mdates.date2num(curr_row.name), curr_row['CLI_Raw']])
 
         # Right Sidebar
         c = config['center']
-        pe['interp_phase'].set_text(f"Current Phase:\n{curr_quad}")
+        pe['interp_phase'].set_text(f"Current Phase: {curr_quad}")
 
         trend_str = "Strengthening" if curr_y >= c else "Weakening"
-        pe['interp_trend'].set_text(f"Trend:\n{trend_str}")
+        pe['interp_trend'].set_text(f"Trend: {trend_str}")
 
         signal_str = "Above long-term trend" if curr_x >= c else "Below long-term trend"
-        pe['interp_signal'].set_text(f"Signal:\n{signal_str}")
+        pe['interp_signal'].set_text(f"Signal: {signal_str}")
 
         overall_map = {
             "Expansion": "Bullish macro environment",
@@ -351,7 +434,7 @@ class App:
             "Contraction": "Bearish macro environment",
             "Recovery": "Improving macro environment"
         }
-        pe['interp_overall'].set_text(f"Overall:\n{overall_map.get(curr_quad, 'Neutral')}")
+        pe['interp_overall'].set_text(f"Overall: {overall_map.get(curr_quad, 'Neutral')}")
 
         prev_x, prev_y = curr_x, curr_y
         if len(df_slice) > 1:
@@ -361,13 +444,13 @@ class App:
         mom_diff = curr_y - prev_y
         mom_str = ("Positive (Accelerating)" if mom_diff > 0
                    else ("Negative (Decelerating)" if mom_diff < 0 else "Neutral"))
-        pe['interp_mom'].set_text(f"Momentum:\n{mom_str}")
+        pe['interp_mom'].set_text(f"Momentum: {mom_str}")
 
-        pe['read_health'].set_text(f"Health:\n{curr_x:.2f}")
-        pe['read_mom'].set_text(f"Momentum:\n{curr_y:.2f}")
+        pe['read_health'].set_text(f"Health: {curr_x:.2f}")
+        pe['read_mom'].set_text(f"Momentum: {curr_y:.2f}")
 
         dist_center = np.sqrt((curr_x - c) ** 2 + (curr_y - c) ** 2)
-        pe['read_dist'].set_text(f"Distance from Center:\n{dist_center:.2f}")
+        pe['read_dist'].set_text(f"Distance from Center: {dist_center:.2f}")
 
         # Direction
         dx = curr_x - prev_x
@@ -387,7 +470,7 @@ class App:
             elif 292.5 <= angle < 337.5: dir_sym = "↘ Southeast"
             else: dir_sym = "→ East"
 
-        pe['read_dir'].set_text(f"Direction:\n{dir_sym}")
+        pe['read_dir'].set_text(f"Direction: {dir_sym}")
 
         # Macro Drivers
         try:
@@ -610,33 +693,38 @@ class App:
 
         self.slider.on_changed(update_plot)
 
-        def animation_step(frame):
-            if self.state['is_playing']:
-                self.state['current_frame'] += 1
-                if self.state['current_frame'] > self.max_frames:
-                    self.state['current_frame'] = 0
-                self.slider.set_val(self.state['current_frame'])
+        def heartbeat_step():
+            st = self.state
+            st['tick'] += 1
+            if st['status_restore_tick'] is not None and st['tick'] >= st['status_restore_tick']:
+                st['status_restore_tick'] = None
+                self._restore_status()
+            if st['is_playing'] and st['tick'] % st['speed_div'] == 0:
+                st['current_frame'] += 1
+                if st['current_frame'] > self.max_frames:
+                    st['current_frame'] = 0
+                self.slider.set_val(st['current_frame'])
 
-        self.anim = FuncAnimation(fig, animation_step, interval=200, cache_frame_data=False)
-        self.anim.event_source.stop()
+        # Single persistent timer, started once and never stopped or reconfigured:
+        # the macosx backend segfaults (over-released callback blocks) when timers
+        # are invalidated or recreated at runtime, so playback/speed/status delays
+        # are all derived from this one heartbeat instead of separate timers.
+        self.heartbeat = fig.canvas.new_timer(interval=50)
+        self.heartbeat.add_callback(heartbeat_step)
+        self.heartbeat.start()
 
         def play(event):
-            if not self.state['is_playing']:
-                self.state['is_playing'] = True
-                self.anim.event_source.start()
+            self.state['is_playing'] = True
 
         def pause(event):
-            if self.state['is_playing']:
-                self.state['is_playing'] = False
-                self.anim.event_source.stop()
+            self.state['is_playing'] = False
 
         def reset(event):
             pause(None)
             self.slider.set_val(0)
 
         def set_speed(label):
-            speed_map = {'1x': 200, '2x': 100, '3x': 50}
-            self.anim.event_source.interval = speed_map[label]
+            self.state['speed_div'] = {'1x': 4, '2x': 2, '3x': 1}[label]
             for l, btn in [('1x', self.btn_1x), ('2x', self.btn_2x), ('3x', self.btn_3x)]:
                 if label == l:
                     btn.color = '#1f497d'
@@ -677,6 +765,80 @@ class App:
         self.btn_pause.on_clicked(pause)
         self.btn_reset.on_clicked(reset)
 
+        def switch_market(market: str):
+            try:
+                from ..config import get_current_market
+            except ImportError:
+                from config import get_current_market
+
+            current = get_current_market()
+            if current == market:
+                return
+
+            # Show loading state
+            pe['status_label'].set_text(f"⏳ Switching to {market}... loading data")
+            pe['status_label'].set_fontweight('bold')
+            pe['status_label'].set_color('white')
+            pe['status_label'].set_bbox(dict(facecolor='#ff9800', edgecolor='#e68900',
+                                             boxstyle='round,pad=0.3'))
+
+            # Disable buttons during load
+            self.btn_market_india.set_active(False)
+            self.btn_market_us.set_active(False)
+            for ax in [self.btn_market_india.ax, self.btn_market_us.ax]:
+                ax.set_alpha(0.6)
+
+            fig.canvas.draw_idle()
+            fig.canvas.flush_events()
+
+            # Do the actual market change
+            success = False
+            if self.on_market_change:
+                try:
+                    self.on_market_change(market)
+                    success = True
+                except Exception as e:
+                    pe['status_label'].set_text(f"✗ Market switch failed: {str(e)}")
+                    pe['status_label'].set_color('#ffffff')
+                    pe['status_label'].set_bbox(dict(facecolor='#dc3545', edgecolor='#c82333',
+                                                     boxstyle='round,pad=0.3'))
+                    fig.canvas.draw_idle()
+                    self._schedule_status_restore(delay_ticks=100)
+
+            # Re-enable buttons (even on failure)
+            self.btn_market_india.set_active(True)
+            self.btn_market_us.set_active(True)
+            for ax in [self.btn_market_india.ax, self.btn_market_us.ax]:
+                ax.set_alpha(1.0)
+
+            # Only update button colors if switch succeeded
+            if success:
+                if market == 'INDIA':
+                    self.btn_market_india.color = '#1f497d'
+                    self.btn_market_india.hovercolor = '#17365d'
+                    self.btn_market_india.ax.set_facecolor('#1f497d')
+                    self.btn_market_india.label.set_color('#ffffff')
+                    self.btn_market_us.color = '#ffffff'
+                    self.btn_market_us.hovercolor = '#e9ecef'
+                    self.btn_market_us.ax.set_facecolor('#ffffff')
+                    self.btn_market_us.label.set_color('#495057')
+                else:
+                    self.btn_market_us.color = '#1f497d'
+                    self.btn_market_us.hovercolor = '#17365d'
+                    self.btn_market_us.ax.set_facecolor('#1f497d')
+                    self.btn_market_us.label.set_color('#ffffff')
+                    self.btn_market_india.color = '#ffffff'
+                    self.btn_market_india.hovercolor = '#e9ecef'
+                    self.btn_market_india.ax.set_facecolor('#ffffff')
+                    self.btn_market_india.label.set_color('#495057')
+                # Restore default status (without showing success message)
+                self._restore_status()
+
+            fig.canvas.draw_idle()
+
+        self.btn_market_india.on_clicked(lambda e: switch_market('INDIA'))
+        self.btn_market_us.on_clicked(lambda e: switch_market('US'))
+
         self.btn_1x.on_clicked(lambda e: set_speed('1x'))
         self.btn_2x.on_clicked(lambda e: set_speed('2x'))
         self.btn_3x.on_clicked(lambda e: set_speed('3x'))
@@ -700,7 +862,7 @@ class App:
                     m_state['scroll_y'] += step
 
                 num_sel = len(m_state['selected'])
-                max_y = max(0, (num_sel * 0.16) - 1.0)
+                max_y = max(0, (num_sel * 0.095) - 1.0)
                 m_state['scroll_y'] = max(0, min(m_state['scroll_y'], max_y))
 
                 sy = -m_state['scroll_y']
@@ -856,19 +1018,7 @@ The path transitions through four phases:
                 pe['ax_open'].set_visible(True)
             fig.canvas.draw_idle()
 
-            def restore():
-                pe['status_label'].set_text(pe['default_status'])
-                pe['status_label'].set_fontweight('normal')
-                pe['status_label'].set_color('dimgray')
-                pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
-                pe['ax_open'].set_visible(False)
-                fig.canvas.draw_idle()
-
-            t = fig.canvas.new_timer(interval=10000)
-            t.single_shot = True
-            t.add_callback(restore)
-            t.start()
-            pe['active_timer'] = t
+            self._schedule_status_restore()
 
         # Export
         def export_data(fmt):
@@ -1136,19 +1286,8 @@ The path transitions through four phases:
         # Initialize to latest frame
         self.slider.set_val(self.max_frames)
 
-        # Startup timer to restore status bar
-        def restore_status():
-            pe['status_label'].set_text(pe['default_status'])
-            pe['status_label'].set_fontweight('normal')
-            pe['status_label'].set_color('dimgray')
-            pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
-            fig.canvas.draw_idle()
-
-        startup_timer = fig.canvas.new_timer(interval=10000)
-        startup_timer.single_shot = True
-        startup_timer.add_callback(restore_status)
-        startup_timer.start()
-        pe['startup_timer'] = startup_timer
+        # Restore the status bar shortly after startup (via the heartbeat timer)
+        self._schedule_status_restore()
 
     # ------------------------------------------------------------------
     # Run

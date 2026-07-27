@@ -9,3 +9,5 @@ flake8>=6.0.0
 sdmx1>=2.17.0
 beautifulsoup4>=4.12.0
 scikit-learn>=1.3.0
+requests>=2.31.0
+certifi>=2024.2.2

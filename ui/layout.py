@@ -24,29 +24,19 @@ def create_main_axes(fig: plt.Figure, df, config: dict) -> plt.Axes:
     ax = fig.add_axes([0.16, 0.20, 0.68, 0.75])
     ax.set_facecolor('white')
 
-    x_min, x_max = df['X'].min(), df['X'].max()
-    y_min, y_max = df['Y'].min(), df['Y'].max()
     center = config['center']
-    max_dist_x = max(abs(x_max - center), abs(center - x_min))
-    max_dist_y = max(abs(y_max - center), abs(center - y_min))
-    max_dist = max(max_dist_x, max_dist_y) * (1 + config['padding'])
-    max_dist = max(max_dist, 5)
-
-    # Preserve equal aspect ratio filling the rectangular axes
-    fig_w, fig_h = 16, 9
-    ax_w_frac, ax_h_frac = 0.68, 0.75
-    ax_w_inch = fig_w * ax_w_frac
-    ax_h_inch = fig_h * ax_h_frac
-
-    data_height = max_dist * 2
-    data_width = data_height * (ax_w_inch / ax_h_inch)
+    # Robust extent: 98th percentile of deviation from center, so a handful of
+    # extreme months (e.g. 2020) don't inflate the quadrants for every frame
+    dev_x = (df['X'] - center).abs().quantile(0.98)
+    dev_y = (df['Y'] - center).abs().quantile(0.98)
+    max_dist = max(dev_x, dev_y) * (1 + config['padding'])
+    max_dist = max(max_dist, 3.0)
 
     y_lim_min, y_lim_max = center - max_dist, center + max_dist
-    x_lim_min, x_lim_max = center - data_width / 2, center + data_width / 2
+    x_lim_min, x_lim_max = center - max_dist, center + max_dist
 
     ax.set_xlim(x_lim_min, x_lim_max)
     ax.set_ylim(y_lim_min, y_lim_max)
-    ax.set_aspect('equal', adjustable='box')
 
     # Clean spines
     ax.spines['top'].set_visible(False)

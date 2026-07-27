@@ -8,6 +8,7 @@ import pandas as pd
 from api import load_macro_data, compute_features, forecast_cycle
 from macro_intel import load_macro_data as alias_load, compute_features as alias_compute, forecast_cycle as alias_forecast
 from models import DataBundle, ForecastResult, HorizonForecast
+from config.markets import get_market_config
 
 
 class TestAPIAndModels(unittest.TestCase):
@@ -47,7 +48,13 @@ class TestAPIAndModels(unittest.TestCase):
 
     def test_end_to_end_api_pipeline(self):
         """Verify load_macro_data -> compute_features -> forecast_cycle execution in offline mode."""
-        bundle = load_macro_data(offline=True)
+        # Pass INDIA's config explicitly rather than relying on the process-global
+        # CONFIG (whose active market is mutable state the market-toggle feature
+        # can flip to 'US'), since this test asserts on the India CLI ticker.
+        india = get_market_config('INDIA')
+        config = {**india['primary_indicator'], 'version': '2.5'}
+        bundle = load_macro_data(config=config, market_series=india['market_series'],
+                                  macro_series=india['macro_series'], offline=True)
         self.assertIsInstance(bundle, DataBundle)
         self.assertIn('INDLOLITOAASTSAM', bundle.df.columns)
         self.assertIsNotNone(bundle.as_of)

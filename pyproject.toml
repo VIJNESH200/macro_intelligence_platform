@@ -20,7 +20,9 @@ dependencies = [
     "yfinance>=0.2.18",
     "pandas-datareader>=0.10.0",
     "sdmx1>=2.17.0",
-    "beautifulsoup4>=4.12.0"
+    "beautifulsoup4>=4.12.0",
+    "requests>=2.31.0",
+    "certifi>=2024.2.2"
 ]
 
 [project.optional-dependencies]

@@ -11,12 +11,11 @@ No API keys or third-party gateways (e.g., data.gov.in) required.
 import io
 import os
 import re
-import ssl
-import urllib.request
-from datetime import datetime
 from urllib.parse import urljoin
 
+import certifi
 import pandas as pd
+import requests
 from bs4 import BeautifulSoup
 from .base import BaseProvider, ProviderResult, create_provider_result
 
@@ -40,105 +39,102 @@ class ICIProvider(BaseProvider):
     def update_frequency(self) -> str:
         return 'monthly'
 
-    def _urlopen_secure(self, req: urllib.request.Request, timeout: int = 15) -> bytes:
-        """Execute HTTP request using default verified TLS/SSL context.
-        Raises error on SSL validation failure to ensure untrusted connections are rejected."""
-        context = ssl.create_default_context()
-        return urllib.request.urlopen(req, context=context, timeout=timeout).read()
-
     def _parse_excel_content(self, content: bytes) -> pd.Series:
         """Parse DPIIT Core Industries Excel file into a clean date-indexed Series."""
-        try:
-            excel_file = pd.ExcelFile(io.BytesIO(content))
-            sheet_name = excel_file.sheet_names[0]
-            df = excel_file.parse(sheet_name)
+        excel = pd.ExcelFile(io.BytesIO(content))
+        sheet_name = 'Index' if 'Index' in excel.sheet_names else excel.sheet_names[0]
+        df = pd.read_excel(excel, sheet_name=sheet_name)
 
-            overall_row_idx = None
-            for idx, row in df.iterrows():
-                row_str = " ".join([str(val) for val in row.values if pd.notna(val)])
-                if 'Overall' in row_str or 'CORE' in row_str.upper():
-                    overall_row_idx = idx
-                    break
+        # Check if first row contains column headers
+        if 'month' not in str(df.columns[0]).lower():
+            df.columns = [str(x).strip() for x in df.iloc[0]]
+            df = df.iloc[1:].reset_index(drop=True)
 
-            if overall_row_idx is None:
-                return pd.Series(dtype=float)
+        date_col = df.columns[0]
+        val_col = None
+        for col in df.columns:
+            if 'overall' in str(col).lower():
+                val_col = col
+                break
+        if val_col is None:
+            val_col = df.columns[1]
 
-            header_row = df.iloc[overall_row_idx]
-            dates = []
-            values = []
+        series_data = {}
+        for _, row in df.iterrows():
+            d_val = str(row[date_col]).strip()
+            v_val = row[val_col]
 
-            for col_idx in range(1, len(header_row)):
-                val = header_row.iloc[col_idx]
-                if pd.notna(val) and isinstance(val, (int, float)):
-                    col_header = None
-                    for r in range(overall_row_idx - 1, -1, -1):
-                        cell_val = df.iloc[r, col_idx]
-                        if pd.notna(cell_val):
-                            col_header = str(cell_val)
-                            break
+            if any(term in d_val for term in ['(', 'Apr-Mar', 'Apr-Jun']) or d_val.lower() in ['nan', 'none', 'months/years', 'months']:
+                continue
 
-                    if col_header:
-                        try:
-                            clean_hdr = col_header.strip()
-                            dt = pd.to_datetime(clean_hdr, format='%b-%y')
-                            dates.append(dt)
-                            values.append(float(val))
-                        except Exception:
-                            try:
-                                dt = pd.to_datetime(clean_hdr, format='%b-%Y')
-                                dates.append(dt)
-                                values.append(float(val))
-                            except Exception:
-                                pass
+            try:
+                val_float = float(v_val)
+                dt = pd.NaT
 
-            if dates and values:
-                s = pd.Series(values, index=pd.DatetimeIndex(dates)).sort_index()
-                s = s.resample('MS').first().ffill()
-                return s
+                # Try format like 'Apr-23' or 'Jun-26'
+                if re.match(r'^[A-Za-z]{3}-\d{2}$', d_val):
+                    dt = pd.to_datetime('01-' + d_val, format='%d-%b-%y', errors='coerce')
+                elif re.match(r'^[A-Za-z]{3}-\d{4}$', d_val):
+                    dt = pd.to_datetime('01-' + d_val, format='%d-%b-%Y', errors='coerce')
 
-            return pd.Series(dtype=float)
+                if pd.isna(dt):
+                    dt = pd.to_datetime(d_val, errors='coerce')
 
-        except Exception as e:
-            print(f"  [!] Failed to parse DPIIT Excel file: {e}")
-            return pd.Series(dtype=float)
+                if not pd.isna(dt):
+                    series_data[dt.strftime('%Y-%m-01')] = val_float
+            except Exception:
+                continue
 
-    def fetch(self, symbol: str = 'INDICI', start_date: str = '2000-01-01', return_meta: bool = False) -> pd.Series | ProviderResult:
+        s = pd.Series(series_data)
+        s.index = pd.to_datetime(s.index)
+        return s.sort_index()
+
+    def fetch(self, symbol: str = 'INDICI', start_date: str = '2000-01-01', end_date: str | None = None,
+              return_meta: bool = False) -> pd.Series | ProviderResult:
         """Fetch ICI data directly from DPIIT website, chain-linking historical bases."""
+        print(f"Fetching ICI data directly from DPIIT ({self.BASE_URL})...")
+        headers = {'User-Agent': 'Mozilla/5.0'}
         source_type = "live"
+
         try:
-            req = urllib.request.Request(
-                self.BASE_URL,
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            )
-            html_content = self._urlopen_secure(req, timeout=15)
-            soup = BeautifulSoup(html_content, 'html.parser')
+            html = requests.get(self.BASE_URL, headers=headers, timeout=12,
+                                 verify=certifi.where()).text
+            soup = BeautifulSoup(html, 'html.parser')
 
-            link_1112 = None
-            link_2223 = None
+            excel_urls = []
+            for a in soup.find_all('a', href=True):
+                href = a['href']
+                if 'Core_Industries' in href:
+                    excel_urls.append(urljoin(self.BASE_URL, href))
 
-            for a_tag in soup.find_all('a', href=True):
-                href = a_tag['href']
-                text = a_tag.get_text()
-                if '2011' in href or '2011' in text:
-                    link_1112 = urljoin(self.BASE_URL, href)
-                elif '2022' in href or '2022' in text:
-                    link_2223 = urljoin(self.BASE_URL, href)
+            if not excel_urls:
+                raise Exception("No Core Industries download links found on DPIIT portal")
 
-            s11 = None
-            s22 = None
+            url_2022 = next((u for u in excel_urls if '2022_23' in u), None)
+            url_2011 = next((u for u in excel_urls if '2011_12' in u), None)
 
-            if link_1112:
-                req11 = urllib.request.Request(link_1112, headers={'User-Agent': 'Mozilla/5.0'})
-                content11 = self._urlopen_secure(req11, timeout=15)
-                s11 = self._parse_excel_content(content11)
+            s11, s22 = None, None
+            if url_2011:
+                content_11 = requests.get(url_2011, headers=headers, timeout=15,
+                                           verify=certifi.where()).content
+                s11 = self._parse_excel_content(content_11)
 
-            if link_2223:
-                req22 = urllib.request.Request(link_2223, headers={'User-Agent': 'Mozilla/5.0'})
-                content22 = self._urlopen_secure(req22, timeout=15)
-                s22 = self._parse_excel_content(content22)
+            if url_2022:
+                content_22 = requests.get(url_2022, headers=headers, timeout=15,
+                                           verify=certifi.where()).content
+                s22 = self._parse_excel_content(content_22)
+
+            if (s11 is None or s11.empty) and (s22 is None or s22.empty):
+                raise Exception("Failed to parse any valid ICI series from DPIIT Excel files")
 
             if s11 is not None and not s11.empty and s22 is not None and not s22.empty:
+                # Chain-link the 2011-12 base series to the 2022-23 base.
+                # The two series use different base years (2011-12=100 vs 2022-23=100),
+                # so raw concatenation creates an artificial step-jump.
+                # We scale the older series so its value at the overlap point matches
+                # the first value of the newer series, producing a continuous index.
                 overlap_date = s22.index[0]
+                # Find the closest date in the old series at or just before the overlap
                 s11_before_overlap = s11[s11.index < overlap_date]
                 if not s11_before_overlap.empty:
                     old_value_at_join = s11_before_overlap.iloc[-1]
@@ -159,8 +155,10 @@ class ICIProvider(BaseProvider):
             combined.name = 'ICI'
             combined.index.name = 'Date'
 
+            # Save to cache
             combined.to_csv(self.cache_file)
             print(f"  [+] Successfully fetched {len(combined)} months of ICI data (Latest: {combined.index[-1].strftime('%b %Y')})")
+
             series = combined[combined.index >= start_date]
 
         except Exception as e:

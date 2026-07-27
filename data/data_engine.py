@@ -31,16 +31,16 @@ class DataEngine:
     @staticmethod
     def classify_freshness(release_date: pd.Timestamp | None, frequency: str) -> tuple[str, str]:
         """Classify data freshness relative to current system date.
-        
+
         Returns:
             tuple (status_label, color_indicator)
-            e.g. ('Fresh', '🟢') or ('Stale', '🔴')
+            e.g. ('Fresh', '[OK]') or ('Stale', '[STALE]')
         """
         if release_date is None or pd.isna(release_date):
             return 'Unknown', '[UNKNOWN]'
-            
+
         delta_days = (pd.Timestamp.now() - release_date).days
-        
+
         if frequency.lower() == 'daily':
             if delta_days <= 3:
                 return 'Fresh', '[OK]'
@@ -67,7 +67,7 @@ class DataEngine:
         self.market_series = market_series
         self.macro_series = macro_series or {}
         self.offline = offline or bool(os.environ.get("CI")) or bool(os.environ.get("OFFLINE"))
-        
+
         self.providers = {
             'fred': FREDProvider(),
             'yfinance': YFinanceProvider(),
@@ -82,6 +82,7 @@ class DataEngine:
         self.yfinance = self.providers['yfinance']
         self.cache = CacheManager(cache_dir)
         self.data_metadata = {}
+        self.load_warnings = []  # Track partial market-data failures for the UI banner
 
     def load_indicator(self) -> pd.DataFrame:
         """Load the primary macro indicator series."""
@@ -148,7 +149,7 @@ class DataEngine:
         df = series.to_frame(name=ticker)
         df = df.resample('MS').first().ffill()
         self.cache.put(cache_key, df)
-        
+
         rel_date = series.dropna().index[-1] if not series.dropna().empty else None
         status, indicator = self.classify_freshness(rel_date, self.config['frequency'])
         self.data_metadata[self.config['name']] = {
@@ -164,9 +165,11 @@ class DataEngine:
         """Load all macro driver series and merge into the indicator DataFrame."""
         if not self.macro_series:
             return df
-            
+
         print("Fetching Macro Driver series...")
-        cache_key = "macro_series_all"
+        # Keyed by the actual series set so switching markets can't serve
+        # another market's cached columns (their series names largely differ).
+        cache_key = "macro_series_" + "_".join(sorted(self.macro_series.keys()))
 
         import os
         local_macro_path = os.path.join(os.path.dirname(__file__), 'local_data', 'macro_series_fallback.csv')
@@ -182,7 +185,7 @@ class DataEngine:
                 print("  (using cached macro data)")
                 # Outer join the cached macro data to ensure newer dates are kept
                 df = df.join(cached, how='outer')
-                
+
                 for col in cached.columns:
                     # Transform for metadata display if needed
                     info = self.macro_series.get(col)
@@ -195,7 +198,7 @@ class DataEngine:
                         display_series = (repo_rate.reindex(combined_index).ffill() - cpi_yoy.reindex(combined_index).ffill()).dropna()
                     else:
                         display_series = cached[col]
-                        
+
                     rel_date = cached[col].dropna().index[-1] if not cached[col].dropna().empty else None
                     status, indicator = self.classify_freshness(rel_date, 'monthly')
                     self.data_metadata[col] = {
@@ -211,12 +214,12 @@ class DataEngine:
             sym = info.ticker
             source = info.source.lower()
             provider = self.providers.get(source, self.providers['fred'])
-            
+
             res = provider.fetch_with_meta(sym)
             series = res.series
             if not series.empty:
                 df = df.join(series.rename(name), how='outer')
-                
+
                 # Transform for metadata display if needed
                 if info.transformation == 'yoy':
                     display_series = series.dropna().pct_change(12) * 100
@@ -227,7 +230,7 @@ class DataEngine:
                     display_series = (repo_rate.reindex(combined_index).ffill() - cpi_yoy.reindex(combined_index).ffill()).dropna()
                 else:
                     display_series = series
-                    
+
                 rel_date = display_series.index[-1] if not display_series.empty else None
                 status, indicator = self.classify_freshness(rel_date, 'monthly')
                 self.data_metadata[name] = {
@@ -270,7 +273,10 @@ class DataEngine:
     def load_market_series(self, df: pd.DataFrame) -> pd.DataFrame:
         """Load all market context series and merge into the indicator DataFrame."""
         print("Fetching Market Context series...")
-        cache_key = "market_series_all"
+        # Keyed by the actual series set so switching markets can't serve
+        # another market's cached columns (e.g. India's 'Sensex' vs US's 'Dow Jones').
+        cache_key = "market_series_" + "_".join(sorted(self.market_series.keys()))
+        self.load_warnings = []
 
         import os
         local_market_path = os.path.join(os.path.dirname(__file__), 'local_data', 'market_series_fallback.csv')
@@ -310,6 +316,7 @@ class DataEngine:
                 }
             else:
                 df[name] = np.nan
+                self.load_warnings.append(f"{name} ({sym}) unavailable")
                 self.data_metadata[name] = {
                     'value': 'N/A',
                     'release_date': 'N/A',
@@ -345,6 +352,7 @@ class DataEngine:
                         }
                     else:
                         df[name] = np.nan
+                        self.load_warnings.append(f"{name} ({sym}) not found")
                         self.data_metadata[name] = {
                             'value': 'N/A',
                             'release_date': 'N/A',
@@ -354,6 +362,7 @@ class DataEngine:
                             'schema_ok': False
                         }
             else:
+                self.load_warnings.append("Market data fetch completely failed (using fallback)")
                 for name in yf_series.keys():
                     df[name] = np.nan
                     self.data_metadata[name] = {

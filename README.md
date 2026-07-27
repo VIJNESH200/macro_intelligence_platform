@@ -147,6 +147,10 @@ Unlike proprietary macro engines, this platform operates on 100% open public dat
 - **Yield Curve & Real Rates**: 10Y India Government Bond Yield vs. 91D T-Bill Rate and RBI Policy Repo Rate.
 - **Market Context**: Live Yahoo Finance indices (Nifty 50, Sensex, Nifty Bank, S&P 500, Nasdaq 100, Brent Crude, USD/INR, VIX).
 
+### Market Selector (India / US)
+
+The **India** / **US** buttons in the lower-right corner switch the entire dashboard — primary indicator, macro drivers, and market context panel — between the two market profiles defined in `config/markets.py`. Each market has its own indicator ticker, macro-driver set, and market-context series (e.g. India tracks Sensex/Nifty, US tracks Dow Jones/Russell 2000), so switching markets reloads and recomputes the full pipeline rather than just relabeling the existing chart.
+
 ---
 
 ## 📄 Automated Strategy Note Export
