@@ -101,7 +101,7 @@ class TestMarketSeriesCacheIsolation(unittest.TestCase):
         profile = get_market_config(market)
         config = {**profile['primary_indicator'], 'version': '2.5'}
         engine = DataEngine(config, profile['market_series'], profile['macro_series'],
-                             cache_dir=self.cache_dir)
+                             cache_dir=self.cache_dir, offline=False)
         df = pd.DataFrame(index=pd.date_range('2020-01-01', periods=6, freq='MS'))
 
         fred_result = create_provider_result(_fake_series(1.0), 'live', 'x')
