@@ -128,10 +128,31 @@ run_platform.bat
 python main.py
 ```
 
-### 5. Running Validation Benchmarks & Tests
+### 5. Web Interface & React Frontend
+
+Launch the modern Web UI and REST API server:
+
+**Windows Launcher:**
+```cmd
+run_web.bat
+```
+
+**Cross-Platform Command Line:**
+```bash
+./run_web.sh
+```
+
+Or start the server directly using Uvicorn:
+```bash
+uvicorn web.server:app --host 127.0.0.1 --port 8000
+```
+- **Web App**: Open `http://127.0.0.1:8000/` in your browser.
+- **REST API Docs**: Open `http://127.0.0.1:8000/docs` for interactive OpenAPI documentation.
+
+### 6. Running Validation Benchmarks & Tests
 To run the full out-of-sample backtest suite and unit tests:
 ```bash
-python -m unittest discover -s tests
+pytest tests/
 python tests/backtest_benchmarks.py
 ```
 

@@ -85,6 +85,9 @@ def compute_transition_matrix(df: pd.DataFrame) -> dict:
     }
 
 
+import logging
+
+
 def _compute_steady_state(P: np.ndarray) -> np.ndarray:
     """Compute the stationary distribution of a Markov chain via eigen-decomposition."""
     try:
@@ -97,7 +100,8 @@ def _compute_steady_state(P: np.ndarray) -> np.ndarray:
         stationary = np.maximum(stationary, 0)
         stationary = stationary / stationary.sum()
         return stationary
-    except Exception:
+    except Exception as e:
+        logging.warning("Steady-state computation failed, returning uniform distribution: %s", e)
         return np.ones(len(QUADRANT_ORDER)) / len(QUADRANT_ORDER)
 
 

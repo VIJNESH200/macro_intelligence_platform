@@ -73,8 +73,10 @@ class FeatureEngine:
             index=x.index
         )
 
-    @staticmethod
-    def compute_spline(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    _spline_cache = {}
+
+    @classmethod
+    def compute_spline(cls, df: pd.DataFrame, config: dict) -> pd.DataFrame:
         """Compute cubic B-spline interpolation for smooth trail rendering.
 
         Returns a DataFrame with columns: t, X, Y
@@ -82,20 +84,27 @@ class FeatureEngine:
         x_all = df['X'].values
         y_all = df['Y'].values
         t_all = np.arange(len(x_all))
+        pts_per_seg = config.get('points_per_segment', 10)
+
+        cache_key = (len(x_all), pts_per_seg, x_all[-1] if len(x_all) else 0, y_all[-1] if len(y_all) else 0)
+        if cache_key in cls._spline_cache:
+            return cls._spline_cache[cache_key].copy()
 
         if len(x_all) >= 4:
             spl_x = interp.make_interp_spline(t_all, x_all, k=3)
             spl_y = interp.make_interp_spline(t_all, y_all, k=3)
 
-            pts_per_seg = config['points_per_segment']
             total_smooth_points = (len(x_all) - 1) * pts_per_seg + 1
             t_smooth = np.linspace(0, len(x_all) - 1, total_smooth_points)
             x_smooth = spl_x(t_smooth)
             y_smooth = spl_y(t_smooth)
 
-            return pd.DataFrame({'t': t_smooth, 'X': x_smooth, 'Y': y_smooth})
+            res = pd.DataFrame({'t': t_smooth, 'X': x_smooth, 'Y': y_smooth})
         else:
-            return pd.DataFrame({'t': t_all, 'X': x_all, 'Y': y_all})
+            res = pd.DataFrame({'t': t_all, 'X': x_all, 'Y': y_all})
+
+        cls._spline_cache[cache_key] = res
+        return res.copy()
 
     @classmethod
     def compute_macro_features(cls, df: pd.DataFrame, window: int) -> pd.DataFrame:

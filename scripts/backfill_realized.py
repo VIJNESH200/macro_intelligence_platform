@@ -11,13 +11,19 @@ import csv
 import pandas as pd
 import argparse
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from api import load_macro_data, compute_features
+try:
+    from ..api import load_macro_data, compute_features
+except ImportError:
+    from api import load_macro_data, compute_features
 
 
-def backfill_realized_outcomes(ledger_path: str = 'docs/live_track_record.csv') -> str:
+def backfill_realized_outcomes(ledger_path: str = None) -> str:
     """Read ledger, compute actual historical outcomes for past entries, and update realized columns."""
+    if ledger_path is None:
+        ledger_path = os.path.join(REPO_ROOT, 'docs', 'live_track_record.csv')
+
     if not os.path.exists(ledger_path):
         print(f"[*] Ledger file not found at {ledger_path}. Nothing to back-fill.")
         return ledger_path

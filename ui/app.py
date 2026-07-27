@@ -554,7 +554,8 @@ class App:
 
         # Minimal extraction for analogues
         temp_data = {'quadrant': curr_row['Quadrant']}
-        analogues = historical_analogues.generate_analogues(df, idx, temp_data, self.market_series)
+        df_hist_slice = df.iloc[:idx + 1]
+        analogues = historical_analogues.generate_analogues(df_hist_slice, len(df_hist_slice) - 1, temp_data, self.market_series)
         forecast_result = fe_mod.ForecastingEngine.project(df, idx, config, analogues, macro_contrib)
         
         if 'fc_base' in pe:
@@ -1000,10 +1001,16 @@ The path transitions through four phases:
 
         # Open folder
         def open_export_folder(event):
-            export_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                      '..', '..', 'Exports')
+            import sys
+            import subprocess
+            export_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Exports'))
             os.makedirs(export_dir, exist_ok=True)
-            os.startfile(os.path.abspath(export_dir))
+            if sys.platform == 'win32':
+                os.startfile(export_dir)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', export_dir])
+            else:
+                subprocess.run(['xdg-open', export_dir])
 
         self.btn_open.on_clicked(open_export_folder)
 

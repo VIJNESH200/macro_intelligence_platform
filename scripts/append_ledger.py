@@ -11,12 +11,16 @@ import json
 import csv
 import argparse
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def append_to_live_ledger(json_path: str = 'docs/latest_forecast.json',
-                           ledger_path: str = 'docs/live_track_record.csv') -> str:
+def append_to_live_ledger(json_path: str = None, ledger_path: str = None) -> str:
     """Read latest forecast JSON and append a row to the live track record CSV."""
+    if json_path is None:
+        json_path = os.path.join(REPO_ROOT, 'docs', 'latest_forecast.json')
+    if ledger_path is None:
+        ledger_path = os.path.join(REPO_ROOT, 'docs', 'live_track_record.csv')
+
     if not os.path.exists(json_path):
         raise FileNotFoundError(f"Forecast JSON payload not found at {json_path}")
 

@@ -22,7 +22,7 @@ from analytics.forecasting_engine import ForecastingEngine
 
 def run_backtest():
     print("Initializing Data Engine for Backtest...")
-    engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES)
+    engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES, offline=True)
     df = engine.load_all()
     df, _ = FeatureEngine.compute_all(df, CONFIG)
     

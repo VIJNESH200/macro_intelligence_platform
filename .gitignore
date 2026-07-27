@@ -56,3 +56,12 @@ node_modules/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Scratch and log files
+log.txt
+*.log
+scratch/
+.agents/
+scripts/*.xlsx
+scripts/*.xls
+scripts/*_codelists.json

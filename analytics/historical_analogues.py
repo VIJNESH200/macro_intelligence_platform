@@ -31,26 +31,29 @@ def generate_analogues(df, current_idx: int, data: dict,
 
     Uses Euclidean distance across normalized health (X) and momentum (Y) vectors.
     """
-    x_curr = df['X'].iloc[current_idx]
-    y_curr = df['Y'].iloc[current_idx]
+    eval_idx = min(current_idx, len(df) - 1)
+    x_curr = df['X'].iloc[eval_idx]
+    y_curr = df['Y'].iloc[eval_idx]
     quad_curr = get_quadrant(x_curr, y_curr, center)
 
     historical_phases = []
-    current_phase_start = current_idx
+    current_phase_start = eval_idx
 
     # Find start of current phase
-    for i in range(current_idx, -1, -1):
+    for i in range(eval_idx, -1, -1):
         if get_quadrant(df['X'].iloc[i], df['Y'].iloc[i], center) != quad_curr:
             break
         current_phase_start = i
 
     start_i = 0
-    while start_i < current_phase_start:
+    # Stop searching historical phases at current_phase_start - 6 to guarantee 6-month forward return visibility
+    max_search_idx = min(current_phase_start, eval_idx - 6)
+    while start_i < max_search_idx:
         q = get_quadrant(df['X'].iloc[start_i], df['Y'].iloc[start_i], center)
         if q == quad_curr:
             # Find end of this phase
             end_i = start_i
-            while (end_i < current_phase_start and
+            while (end_i < max_search_idx and
                    get_quadrant(df['X'].iloc[end_i], df['Y'].iloc[end_i], center) == quad_curr):
                 end_i += 1
             end_i -= 1
@@ -66,7 +69,7 @@ def generate_analogues(df, current_idx: int, data: dict,
                 valid_macro = 0
                 macro_cols = [c for c in df.columns if str(c).endswith('_Z')]
                 for mc in macro_cols:
-                    val_curr = df[mc].iloc[current_idx]
+                    val_curr = df[mc].iloc[eval_idx]
                     val_hist = df[mc].iloc[j]
                     if not pd.isna(val_curr) and not pd.isna(val_hist):
                         macro_dist += (val_curr - val_hist)**2
@@ -94,7 +97,7 @@ def generate_analogues(df, current_idx: int, data: dict,
                     best_idx = j
 
             next_phase = "N/A"
-            if end_i + 1 <= current_idx:
+            if end_i + 1 <= eval_idx:
                 next_phase = get_quadrant(
                     df['X'].iloc[end_i + 1], df['Y'].iloc[end_i + 1], center
                 )
@@ -132,7 +135,7 @@ def generate_analogues(df, current_idx: int, data: dict,
         fwd_ret_val = np.nan
         if benchmark_name:
             future_idx = p['best_idx'] + 6
-            if future_idx < len(df):
+            if future_idx <= eval_idx and future_idx < len(df):
                 try:
                     val_now = df[benchmark_name].iloc[p['best_idx']]
                     val_fut = df[benchmark_name].iloc[future_idx]

@@ -13,10 +13,17 @@ def generate_insights(report_data: dict, analysis_results: dict) -> dict:
     confidence scores, and analytical alerts for consumption by the narrative engine.
     """
 
+    import pandas as pd
+    
     # Extract baseline metrics
     phase = report_data.get('quadrant', 'Unknown')
     phase_duration = analysis_results.get('current_duration_num', 1)
+    if pd.isna(phase_duration) or phase_duration is None or phase_duration < 1:
+        phase_duration = 1
+        
     hist_avg = analysis_results.get('avg_duration_num', 1.0)
+    if pd.isna(hist_avg) or hist_avg is None or hist_avg <= 0:
+        hist_avg = 1.0
 
     center = report_data.get('center', 100)
     health = report_data.get('health_val', center)
