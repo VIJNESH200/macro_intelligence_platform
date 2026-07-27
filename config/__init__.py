@@ -92,11 +92,8 @@ QUADRANTS = {
 FORECAST_CONFIG = {
     'horizons': [3, 6, 9],
     'decay_factor': 0.85,
-    'weights': {
-        'momentum': 0.40,
-        'analogues': 0.35,
-        'macro_drivers': 0.25,
-    },
+    # Per-market; reload_for_market() swaps these in place.
+    'weights': dict(_active_config['forecast_weights']),
     'confidence_decay_per_month': 0.15,
     'scenario_sigma': 1.0,
     'analogue_similarity_weights': {
@@ -148,5 +145,8 @@ def reload_for_market(market: str) -> None:
 
     MACRO_SERIES.clear()
     MACRO_SERIES.update(_active_config['macro_series'])
+
+    FORECAST_CONFIG['weights'].clear()
+    FORECAST_CONFIG['weights'].update(_active_config['forecast_weights'])
 
     os.environ['MARKET_CHANGED'] = '1'

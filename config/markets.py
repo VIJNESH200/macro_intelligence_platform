@@ -54,6 +54,7 @@ MARKET_PROFILES = {
         },
         'domestic_indices': ['Sensex', 'Nifty 50', 'Nifty Bank'],
         'global_indices': ['S&P 500', 'Nasdaq 100'],
+        'forecast_weights': {'momentum': 0.40, 'analogues': 0.35, 'macro_drivers': 0.25},
     },
     'US': {
         'label': 'US Market',
@@ -89,6 +90,11 @@ MARKET_PROFILES = {
         },
         'domestic_indices': ['S&P 500', 'Nasdaq 100'],
         'global_indices': [],
+        # Same values as India, deliberately. A rolling-origin fit on 2007-2018 chose
+        # 0.10/0.75/0.15 for the US and beat the incumbent by 6.9pp in-sample, but lost
+        # on held-out 2019 (-8.3pp) and 2022-2026 (-8.2pp), winning only through COVID.
+        # The blend stays frozen until a re-fit survives held-out evaluation.
+        'forecast_weights': {'momentum': 0.40, 'analogues': 0.35, 'macro_drivers': 0.25},
     }
 }
 

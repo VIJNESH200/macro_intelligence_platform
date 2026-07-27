@@ -128,7 +128,9 @@ def cycle_payload(snapshot: MarketSnapshot) -> dict:
         {
             'i': i,
             'date': timestamp.strftime('%Y-%m-%d'),
-            'label': timestamp.strftime('%b %Y'),
+            # Year first so the leading glyphs stay put while scrubbing; with the
+            # month leading, its varying width shifts the year on every frame.
+            'label': timestamp.strftime('%Y %b'),
             'x': float(x),
             'y': float(y),
             'velocity': float(v) if pd.notna(v) else None,

@@ -13,7 +13,7 @@ from scipy import stats
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-from config import CONFIG, MACRO_SERIES, MARKET_SERIES
+from config import CONFIG, FORECAST_CONFIG, MACRO_SERIES, MARKET_SERIES, reload_for_market
 from data.data_engine import DataEngine
 from features.feature_engine import FeatureEngine
 from research.report_data import extract_report_data
@@ -74,7 +74,19 @@ def wilson_ci(k: int, n: int, confidence: float = 0.95) -> tuple[float, float]:
     return max(0.0, (center - spread) * 100), min(100.0, (center + spread) * 100)
 
 
-def run_benchmarks():
+# Quality gates are per-market: the same model scores very differently on each,
+# because the signal ranking inverts (Momentum is India's strongest predictor and
+# the US's weakest). A single global bar would either wave through India
+# regressions or fail the US permanently. Each bar sits below the current
+# committed baseline by roughly one standard error, so it catches regressions
+# without tracking noise.
+MARKET_GATES = {
+    'INDIA': {'min_accuracy': 60.0, 'min_top_quartile_accuracy': 75.0, 'max_distance_mae': 1.20},
+    'US':    {'min_accuracy': 50.0, 'min_top_quartile_accuracy': 60.0, 'max_distance_mae': 1.30},
+}
+
+
+def run_benchmarks(market: str = 'INDIA'):
     """
     Freeze-Then-Evaluate Discipline Rule:
     ======================================
@@ -82,7 +94,14 @@ def run_benchmarks():
     the resulting benchmark run is an in-sample optimization, not a clean evaluation.
     Evaluate final frozen configurations once on held-out periods or out-of-sample datasets.
     """
-    print("Loading historical data...")
+    # The active market is mutable global state that the market toggle can flip,
+    # and the choice persists to ~/.macro_intelligence_platform/market_preference.txt.
+    # Pin it explicitly so the run never inherits whichever market the app was last
+    # opened in, and so each market is scored against its own gates.
+    reload_for_market(market)
+    gates = MARKET_GATES[market]
+
+    print(f"Loading historical data for {market}...")
     # Use offline mode for deterministic, fast CI & test runs
     engine = DataEngine(CONFIG, MARKET_SERIES, MACRO_SERIES, offline=True)
     df = engine.load_all()
@@ -186,16 +205,20 @@ def run_benchmarks():
     # Calculate Benchmarking Performance Metrics (6M Horizon)
     # ----------------------------------------------------
     print("\n==================================================================")
-    print("                6-MONTH HORIZON MODEL BENCHMARKS")
+    print(f"          6-MONTH HORIZON MODEL BENCHMARKS — {market}")
     print("==================================================================")
     
+    w = FORECAST_CONFIG['weights']
+    consensus_label = (f"Blended Consensus ({w['momentum']:.0%} Mom / "
+                       f"{w['analogues']:.0%} Ana / {w['macro_drivers']:.0%} Macro)")
+
     models = {
         'Persistence': ('curr_quad', 'curr_x', 'curr_y'),
         'CLI Momentum Only': ('momentum_quad', 'momentum_x', 'momentum_y'),
         'Analogues Only': ('analogues_quad', 'analogues_x', 'analogues_y'),
         'Macro Drivers Only': ('macro_quad', 'macro_x', 'macro_y'),
         'Transition Matrix Only': ('tm_quad', None, None),
-        'Two-Signal Consensus (55% Mom / 45% Ana)': ('consensus_quad', 'consensus_x', 'consensus_y'),
+        consensus_label: ('consensus_quad', 'consensus_x', 'consensus_y'),
     }
     
     summary_data = []
@@ -277,12 +300,14 @@ def run_benchmarks():
     print("             FORECAST CONVICTION CALIBRATION ANALYSIS")
     print("==================================================================")
     
-    # Define Conviction bins for 6-month horizon (since max conviction is ~65% due to decay)
-    bins = [10, 45, 52, 58, 66]
-    bin_labels = ['Low (10-45%)', 'Moderate (45-52%)', 'Strong (52-58%)', 'High (58-65%)']
-    
-    res_df['conviction_bin'] = pd.cut(res_df['conviction'], bins=bins, labels=bin_labels)
-    
+    # Bin by quartile of the realized conviction distribution rather than fixed cut
+    # points. Fixed edges were tuned to India's distribution and left the US 'Strong'
+    # bin holding 2 samples, which makes its accuracy meaningless; quartiles keep every
+    # bin populated on any market and let the calibration check compare like with like.
+    binned = pd.qcut(res_df['conviction'], 4, duplicates='drop')
+    res_df['conviction_bin'] = binned
+    bin_labels = list(binned.cat.categories)
+
     calibration_data = []
     for label in bin_labels:
         bin_df = res_df[res_df['conviction_bin'] == label]
@@ -293,7 +318,7 @@ def run_benchmarks():
             realized_acc = (k_correct / sample_count) * 100
             ci_low, ci_high = wilson_ci(k_correct, sample_count)
             calibration_data.append({
-                'Conviction Bin': label,
+                'Conviction Bin': f"{label.left:.1f}-{label.right:.1f}%",
                 'Sample Size': sample_count,
                 'Average Conviction Score': f"{avg_conv:.1f}%",
                 'Realized Quadrant Accuracy': f"{realized_acc:.1f}%",
@@ -318,19 +343,27 @@ def run_benchmarks():
 
     valid_cal_errors = [float(row['Calibration Error'].replace('%', '')) for row in valid_cal_rows]
     mean_cal_err = float(np.mean(valid_cal_errors))
-    assert mean_cal_err <= 30.0, f"CI REGRESSION: Mean conviction calibration error on valid bins ({mean_cal_err:.1f}%) exceeds 30.0% threshold"
+    assert mean_cal_err <= 30.0, f"CI REGRESSION [{market}]: Mean conviction calibration error on valid bins ({mean_cal_err:.1f}%) exceeds 30.0% threshold"
 
-    high_bin = res_df[res_df['conviction_bin'] == 'High (58-65%)']
-    assert not high_bin.empty, "CI REGRESSION: High conviction bin is empty"
-    high_acc = (high_bin['consensus_quad'] == high_bin['real_6m_quad']).mean() * 100
-    assert high_acc >= 75.0, f"CI REGRESSION: High conviction accuracy ({high_acc:.1f}%) drops below 75.0% threshold"
-    assert len(high_bin) >= 50, f"CI REGRESSION: High conviction bin sample size too low ({len(high_bin)})"
+    # Conviction must be monotone in outcome: the model's most confident quartile
+    # has to beat its least confident one, or the score carries no information.
+    top_bin = res_df[res_df['conviction_bin'] == bin_labels[-1]]
+    bottom_bin = res_df[res_df['conviction_bin'] == bin_labels[0]]
+    assert not top_bin.empty, f"CI REGRESSION [{market}]: Top conviction quartile is empty"
+    top_acc = (top_bin['consensus_quad'] == top_bin['real_6m_quad']).mean() * 100
+    bottom_acc = (bottom_bin['consensus_quad'] == bottom_bin['real_6m_quad']).mean() * 100
+    assert top_acc >= gates['min_top_quartile_accuracy'], f"CI REGRESSION [{market}]: Top-quartile conviction accuracy ({top_acc:.1f}%) drops below {gates['min_top_quartile_accuracy']:.1f}% threshold"
+    assert top_acc > bottom_acc, f"CI REGRESSION [{market}]: Conviction is not discriminative — top quartile {top_acc:.1f}% vs bottom quartile {bottom_acc:.1f}%"
 
-    assert consensus_acc >= 60.0, f"CI REGRESSION: 6M Consensus Quadrant Accuracy drops below 60% threshold ({consensus_acc:.1f}%)"
-    assert consensus_acc > persistence_acc, f"CI REGRESSION: Consensus model fails to outperform Persistence baseline ({consensus_acc:.1f}% vs {persistence_acc:.1f}%)"
-    assert dist_mae <= 1.20, f"CI REGRESSION: Distance MAE exceeds 1.20 threshold ({dist_mae:.3f})"
-    print("\n[+] CI Benchmark Quality Gate: PASSED (All accuracy, MAE, & conviction calibration assertions satisfied)")
+    assert consensus_acc >= gates['min_accuracy'], f"CI REGRESSION [{market}]: 6M Consensus Quadrant Accuracy drops below {gates['min_accuracy']:.1f}% threshold ({consensus_acc:.1f}%)"
+    assert consensus_acc > persistence_acc, f"CI REGRESSION [{market}]: Consensus model fails to outperform Persistence baseline ({consensus_acc:.1f}% vs {persistence_acc:.1f}%)"
+    assert dist_mae <= gates['max_distance_mae'], f"CI REGRESSION [{market}]: Distance MAE exceeds {gates['max_distance_mae']:.2f} threshold ({dist_mae:.3f})"
+    print(f"\n[+] CI Benchmark Quality Gate [{market}]: PASSED "
+          f"(accuracy {consensus_acc:.1f}%, MAE {dist_mae:.3f}, top-quartile conviction {top_acc:.1f}%)")
 
 
 if __name__ == "__main__":
-    run_benchmarks()
+    # Both markets are gated. The model is materially weaker on US, but it is shipped
+    # there, so it needs regression cover too -- against its own baseline, not India's.
+    for _market in ('INDIA', 'US'):
+        run_benchmarks(_market)

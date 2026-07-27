@@ -2,14 +2,19 @@ from __future__ import annotations
 """
 Forecasting Engine — Projects business cycle trajectory forward.
 ================================================================
-Uses a two-signal consensus (CLI Momentum 55%, Historical Analogues 45%) 
-to project X/Y coordinates for 3-month and 6-month horizons.
+Blends three signals — CLI Momentum, Historical Analogues, and Macro Drivers —
+to project X/Y coordinates for 3-month and 6-month horizons. Weights come from
+the active market profile (config.markets); both markets currently use
+40% / 35% / 25%. Weights are re-normalized across whichever signals produced a
+real projection, but in practice all three do (analogues fall back on ~3-5% of
+steps, the others effectively never), so the live blend is the full 40/35/25.
 
-Empirical Backtest Note:
-- CLI Momentum (67.7%) and Historical Analogues (63.3%) drive out-of-sample edge.
-- Held-out backtesting (2019-2026) confirmed macro drivers standalone achieve 50.6%
-  (only +1.2pp over persistence), so consensus weighting focuses 100% on Momentum (55%)
-  and Analogues (45%), achieving 71.8% held-out out-of-sample quadrant accuracy.
+Empirical Backtest Note (India, full sample 2007-2026):
+- Momentum 67.7%, Analogues 63.3%, Macro Drivers 65.9%; blended 71.2%.
+- Held-out (2019-2026) blended accuracy is 68.2%.
+- The same blend on US scores 56.3% full-sample / 51.8% held-out. The signal
+  ranking inverts there (Momentum is India's strongest and the US's weakest),
+  but per-market re-fitting failed held-out evaluation -- see config.markets.
 """
 import numpy as np
 import pandas as pd

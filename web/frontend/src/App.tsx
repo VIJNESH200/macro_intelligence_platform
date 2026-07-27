@@ -219,12 +219,12 @@ export default function App() {
   return (
     <div className="flex min-h-dvh flex-col bg-plane lg:h-dvh lg:min-h-0 lg:overflow-hidden">
       <header className="shrink-0 border-b border-hairline bg-plane/85 backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-1">
           <p className="min-w-0 truncate text-xs font-medium text-ink">
-            {cycle.config.name}
+            Macro Intelligence Platform
             <span className="text-ink-muted">
               {' · '}
-              {cycle.config.source} · {cycle.config.window}M window
+              {cycle.config.name} · {cycle.config.source} · {cycle.config.window}M window
             </span>
           </p>
 
@@ -241,10 +241,10 @@ export default function App() {
               </Tabs>
             ) : null}
 
-            <Button variant="ghost" size="icon" onClick={handleRefresh} aria-label="Refetch data">
+            <Button variant="ghost" size="icon" className="size-7" onClick={handleRefresh} aria-label="Refetch data">
               <RefreshCw className={refreshing ? 'animate-spin' : undefined} />
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
+            <Button variant="ghost" size="icon" className="size-7" onClick={toggle} aria-label="Toggle theme">
               {theme === 'dark' ? <Sun /> : <Moon />}
             </Button>
             <Button variant="outline" size="sm" asChild>
