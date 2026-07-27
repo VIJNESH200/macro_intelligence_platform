@@ -48,7 +48,7 @@ class TestMarketProfiles(unittest.TestCase):
     series sets rather than merge or leak state between markets."""
 
     def tearDown(self):
-        reload_for_market('US')  # restore the default for later tests/imports
+        reload_for_market('INDIA')  # restore the actual default for later tests/imports
 
     def test_india_and_us_have_distinct_series(self):
         india = get_market_config('INDIA')
@@ -95,7 +95,7 @@ class TestMarketSeriesCacheIsolation(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.cache_dir, ignore_errors=True)
-        reload_for_market('US')
+        reload_for_market('INDIA')
 
     def _load_market_df(self, market: str) -> pd.DataFrame:
         profile = get_market_config(market)
