@@ -52,7 +52,7 @@ export function Controls({
   ]
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-hairline bg-surface p-3">
+    <div className="flex shrink-0 flex-col gap-2.5 rounded-lg border border-hairline bg-surface px-3 py-2.5">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
           <Button

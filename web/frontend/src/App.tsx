@@ -213,16 +213,20 @@ export default function App() {
   const current = cycle.frames[Math.min(index, cycle.frames.length - 1)]
   const center = cycle.config.center
 
+  // The whole app is pinned to the viewport on desktop so the chart and every
+  // live panel animate together without the page scrolling. Only the reference
+  // column scrolls internally; below `lg` this relaxes to normal document flow.
   return (
-    <div className="min-h-dvh bg-plane">
-      <header className="sticky top-0 z-30 border-b border-hairline bg-plane/85 backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-5 py-3">
-          <div className="min-w-0">
-            <h1 className="text-sm font-semibold text-ink">Macro Intelligence Platform</h1>
-            <p className="truncate text-[11px] text-ink-muted">
-              {cycle.config.name} · {cycle.config.source} · {cycle.config.window}M window
-            </p>
-          </div>
+    <div className="flex min-h-dvh flex-col bg-plane lg:h-dvh lg:min-h-0 lg:overflow-hidden">
+      <header className="shrink-0 border-b border-hairline bg-plane/85 backdrop-blur">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2">
+          <p className="min-w-0 truncate text-xs font-medium text-ink">
+            {cycle.config.name}
+            <span className="text-ink-muted">
+              {' · '}
+              {cycle.config.source} · {cycle.config.window}M window
+            </span>
+          </p>
 
           <div className="ml-auto flex items-center gap-2">
             {markets.length > 1 ? (
@@ -253,11 +257,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1600px] px-5 py-4">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="flex min-w-0 flex-col gap-4">
-            <Card className="flex-1">
-              <CardContent className="h-[clamp(460px,74vh,940px)] px-2 pt-2 pb-1">
+      <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-3 lg:min-h-0 lg:overflow-hidden">
+        <div className="grid gap-3 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_296px]">
+          <div className="flex min-w-0 flex-col gap-3 lg:min-h-0">
+            <Card className="h-[58vh] lg:h-auto lg:min-h-[200px] lg:flex-1">
+              <CardContent className="h-full px-2 pt-2 pb-1">
                 <QuadrantChart
                   frames={cycle.frames}
                   spline={cycle.spline}
@@ -290,11 +294,20 @@ export default function App() {
               onOptionsChange={setOptions}
             />
 
-            {frame ? <MarketPanel rows={frame.market_data} /> : null}
-            {frame ? <NarrativePanel narrative={frame.narrative} /> : null}
+            {/* Both panels animate with the scrubber, so they sit under the
+                chart in the eye's path rather than off in the side column. */}
+            {frame ? (
+              <div className="grid shrink-0 gap-3 sm:grid-cols-2 lg:h-[184px]">
+                <MacroPanel
+                  drivers={frame.macro_contrib?.all_drivers ?? []}
+                  shifts={frame.macro_shifts}
+                />
+                <PhasePanel frame={frame} forecast={forecast} />
+              </div>
+            ) : null}
           </div>
 
-          <aside className="flex flex-col gap-4">
+          <aside className="space-y-3 lg:min-h-0 lg:overflow-y-auto lg:pr-0.5">
             <StatusRail
               frame={frame}
               forecast={forecast}
@@ -314,25 +327,20 @@ export default function App() {
             </Card>
 
             <ForecastPanel forecast={forecast} />
-            {frame ? <PhasePanel frame={frame} forecast={forecast} /> : null}
-            {frame ? (
-              <MacroPanel
-                drivers={frame.macro_contrib?.all_drivers ?? []}
-                shifts={frame.macro_shifts}
-              />
-            ) : null}
+            {frame ? <MarketPanel rows={frame.market_data} /> : null}
+            {frame ? <NarrativePanel narrative={frame.narrative} /> : null}
             <DataHealth
               health={cycle.data_health}
               warnings={cycle.warnings}
               asOf={cycle.as_of}
             />
+
+            <footer className="shrink-0 pb-1 text-[10px] leading-snug text-ink-muted">
+              {cycle.config.name} ({cycle.config.ticker}) · {cycle.config.frequency} ·
+              model v{forecast?.model_version ?? '—'} · Market data via Yahoo Finance
+            </footer>
           </aside>
         </div>
-
-        <footer className="mt-6 pb-6 text-[10.5px] text-ink-muted">
-          {cycle.config.name} ({cycle.config.ticker}) · {cycle.config.frequency} ·
-          model v{forecast?.model_version ?? '—'} · Market data via Yahoo Finance
-        </footer>
       </main>
     </div>
   )
