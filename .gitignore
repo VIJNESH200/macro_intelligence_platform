@@ -43,6 +43,11 @@ exports/
 *.png
 !docs/assets/*.png
 
+# Frontend (web/frontend/dist is covered by the dist/ rule above and is a
+# build artifact -- rebuild it with `npm run build`)
+node_modules/
+*.tsbuildinfo
+
 # IDE and OS files
 .vscode/
 .idea/

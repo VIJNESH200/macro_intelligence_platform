@@ -2,9 +2,32 @@ from __future__ import annotations
 # report_narrative.py
 import pandas as pd
 
+# The engines describe movement as a compass bearing in the health/momentum
+# plane. That is a property of the chart's geometry, not language a reader can
+# act on, so prose renders it as the two things it actually encodes.
+# X (east/west) is economic health; Y (north/south) is momentum.
+DIRECTION_PROSE = {
+    'Northeast': 'health and momentum both improving',
+    'North': 'momentum improving',
+    'Northwest': 'momentum improving as health softens',
+    'West': 'health weakening',
+    'Southwest': 'health and momentum both deteriorating',
+    'South': 'momentum rolling over',
+    'Southeast': 'health improving as momentum fades',
+    'East': 'health improving',
+    'Neutral': 'no material change on either axis',
+}
+
+
+def describe_direction(direction: str) -> str:
+    """Translate a compass bearing into plain language for report prose."""
+    return DIRECTION_PROSE.get(direction, str(direction).lower())
+
+
 def generate_narrative(data, analysis, insights, market_insights, analogues):
     quad = insights['phase']
     direction = insights['direction']
+    direction_prose = describe_direction(direction)
     prev_phase = analysis.get('previous_phase', 'Unknown')
     
     health_above = insights['health_above_trend']
@@ -58,7 +81,7 @@ def generate_narrative(data, analysis, insights, market_insights, analogues):
     tk_2 = f"The economy has remained in the {quad} regime for {analysis.get('current_duration_num', 0)} months, completing {analysis.get('completion_pct', 0):.0f}% of its historical average duration."
     
     highest_trans = insights['highest_transition']
-    tk_3 = f"Historical transitions from this quadrant resolve most frequently toward {highest_trans} ({insights['highest_transition_prob']:.0f}%)." if highest_trans != "N/A" else f"Directional trajectory indicates {direction} momentum."
+    tk_3 = f"Historical transitions from this quadrant resolve most frequently toward {highest_trans} ({insights['highest_transition_prob']:.0f}%)." if highest_trans != "N/A" else f"Current trajectory shows {direction_prose}."
     
     tk_4 = "Market performance exhibits a short-term divergence from underlying macro momentum." if market_resilient and not mom_above else "Market performance remains directionally aligned with leading macro indicators."
     
@@ -72,7 +95,7 @@ def generate_narrative(data, analysis, insights, market_insights, analogues):
     else:
         maturity_str = "a mid-cycle phase profile"
         
-    interp_1 = f"At {analysis.get('completion_pct', 0):.0f}% of its historical average duration, the {quad} regime displays {maturity_str}. Its prevailing directional vector is {direction}, pointing toward an eventual shift into {highest_trans}."
+    interp_1 = f"At {analysis.get('completion_pct', 0):.0f}% of its historical average duration, the {quad} regime displays {maturity_str}. The prevailing trajectory is {direction_prose}, pointing toward an eventual shift into {highest_trans}."
     
     interp_2 = ""
     if analogues and 'averages' in analogues and analogues['averages']:

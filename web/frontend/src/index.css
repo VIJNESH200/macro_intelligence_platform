@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Tokens are the dataviz reference palette. Chart colors are referenced by role
+ * (--viz-*) so the light/dark values swap in exactly one place and no component
+ * ever hardcodes a hex.
+ *
+ * Mark colors were validated with the palette validator (--pairs all, both
+ * modes): history blue vs forecast orange clears every gate with wide margin.
+ * The regime hues are the reserved status palette -- they fail CVD separation
+ * against each other (red vs green, deutan dE 4.1), so they are used ONLY as
+ * low-alpha territory washes and are always accompanied by a text label plus a
+ * swatch. Regime color never carries meaning alone.
+ */
+:root {
+  --plane: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+  --ink: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+  --hairline: rgba(11, 11, 11, 0.10);
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
+
+  --viz-history: #2a78d6;
+  --viz-history-soft: #9ec5f4;
+  --viz-forecast: #eb6834;
+  --viz-point: #0b0b0b;
+
+  --regime-expansion: #0ca30c;
+  --regime-slowdown: #fab219;
+  --regime-contraction: #d03b3b;
+  --regime-recovery: #2a78d6;
+
+  --delta-up: #006300;
+  --delta-down: #d03b3b;
+
+  --radius: 0.625rem;
+}
+
+.dark {
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-raised: #211f1e;
+  --ink: #ffffff;
+  --ink-secondary: #c3c2b7;
+  --ink-muted: #898781;
+  --hairline: rgba(255, 255, 255, 0.10);
+  --gridline: #2c2c2a;
+  --baseline: #383835;
+
+  --viz-history: #3987e5;
+  --viz-history-soft: #184f95;
+  --viz-forecast: #d95926;
+  --viz-point: #ffffff;
+
+  --regime-expansion: #0ca30c;
+  --regime-slowdown: #fab219;
+  --regime-contraction: #d03b3b;
+  --regime-recovery: #3987e5;
+
+  --delta-up: #0ca30c;
+  --delta-down: #e66767;
+}
+
+@theme inline {
+  --color-plane: var(--plane);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-hairline: var(--hairline);
+  --color-gridline: var(--gridline);
+  --color-baseline: var(--baseline);
+
+  --color-viz-history: var(--viz-history);
+  --color-viz-forecast: var(--viz-forecast);
+  --color-delta-up: var(--delta-up);
+  --color-delta-down: var(--delta-down);
+
+  --color-regime-expansion: var(--regime-expansion);
+  --color-regime-slowdown: var(--regime-slowdown);
+  --color-regime-contraction: var(--regime-contraction);
+  --color-regime-recovery: var(--regime-recovery);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--hairline);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--plane);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+
+  /* Axis ticks and table columns must align vertically. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
