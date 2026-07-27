@@ -48,13 +48,13 @@ Evaluated across a rolling **229-month out-of-sample historical window** (Jan 20
 | **Historical Analogues Only** | 63.3% | **70.6%** 🏆 | 0.598 | 0.753 | 1.053 |
 | **Macro Drivers Only** | 65.9% | 50.6% | 0.664 | 0.661 | 1.013 |
 | **Transition Matrix Only** | 47.2% | 49.4% | N/A | N/A | N/A |
-| **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.6%** 🏆 | 69.4% | **0.574** 🏆 | **0.614** 🏆 | **0.913** 🏆 |
+| **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.2%** 🏆 | 68.2% | **0.555** 🏆 | **0.594** 🏆 | **0.877** 🏆 |
 
 ### 📈 Statistical Significance & Conviction Calibration
 
-- **McNemar's Test (Classification Accuracy)**: $\chi^2 = 32.76, \quad p = 1.04 \times 10^{-8} \quad (p < 0.01)$ — Outperformance over Persistence is highly statistically significant.
-- **Diebold–Mariano Test (Continuous Error)**: $DM = 3.73, \quad p = 1.89 \times 10^{-4} \quad (p < 0.01)$ — Reduction in Distance MAE is highly statistically significant.
-- **High-Conviction Accuracy**: Signals with $\ge 58\%$ conviction score achieve **80.3% realized quadrant accuracy** ($N=127$, 95% Wilson CI: $[72.6\%, 86.3\%]$).
+- **McNemar's Test (Classification Accuracy)**: $\chi^2 = 29.26, \quad p = 6.33 \times 10^{-8} \quad (p < 0.01)$ — Outperformance over Persistence is highly statistically significant.
+- **Diebold–Mariano Test (Continuous Error)**: $DM = 5.07, \quad p = 3.94 \times 10^{-7} \quad (p < 0.01)$ — Reduction in Distance MAE is highly statistically significant.
+- **High-Conviction Accuracy**: Signals with $\ge 58\%$ conviction score achieve **89.8% realized quadrant accuracy** ($N=98$, 95% Wilson CI: $[82.2\%, 94.4\%]$).
 
 ---
 
