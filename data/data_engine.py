@@ -61,12 +61,15 @@ class DataEngine:
 
     def __init__(self, config: dict, market_series: dict,
                  macro_series: dict = None, cache_dir: str | None = None,
-                 offline: bool = False):
+                 offline: bool | None = None):
         import os
         self.config = config
         self.market_series = market_series
         self.macro_series = macro_series or {}
-        self.offline = offline or bool(os.environ.get("CI")) or bool(os.environ.get("OFFLINE"))
+        if offline is not None:
+            self.offline = offline
+        else:
+            self.offline = bool(os.environ.get("CI")) or bool(os.environ.get("OFFLINE"))
 
         self.providers = {
             'fred': FREDProvider(),
