@@ -19,6 +19,7 @@ An academically-validated, open-source **quantitative business cycle forecasting
 - [🚀 Quick Start](#-quick-start)
 - [🌐 Open Data Pipeline](#-open-data-pipeline)
 - [📄 Automated Strategy Note Export](#-automated-strategy-note-export)
+- [📚 Developer Documentation](#-developer-documentation)
 - [🤝 Contributing & License](#-contributing--license)
 
 ---
@@ -114,7 +115,7 @@ print(f"Current Regime: {result.current_regime}")
 print(f"6M Projection: {result.forecasts['6m'].quadrant} (Conviction: {result.forecasts['6m'].conviction}%)")
 ```
 
-See [notebooks/quickstart.ipynb](notebooks/quickstart.ipynb) for a interactive walkthrough notebook.
+See [notebooks/quickstart.ipynb](notebooks/quickstart.ipynb) for an interactive walkthrough notebook.
 
 ### 4. Launching the GUI App
 
@@ -187,6 +188,17 @@ Clicking the **"Export PDF"** button in the dashboard generates a publication-re
 - **Markov Transition Probabilities**: Empirical 4×4 regime transition probabilities and expected phase durations.
 - **Scenario Horizon Matrix**: 3M/6M/9M Bull, Base, and Bear probabilistic paths with expected asset returns.
 - **Methodology Appendix**: Formal mathematical definitions for Z-scores, Euclidean analogue matching, and conviction scoring.
+
+---
+
+## 📚 Developer Documentation
+
+For deep architectural details, test infrastructure, and project execution context:
+
+- 📖 **[Methodology & Specifications](METHODOLOGY.md)**: Mathematical definitions for Z-scores, velocity, analogues, and conviction scoring.
+- 🏗️ **[Developer Briefing & Architecture](docs/dev/BRIEFING.md)**: Codebase layout, layer contracts, and module specs.
+- 🧪 **[Test & Validation Infrastructure](docs/dev/TEST_INFRA.md)**: Out-of-sample backtesting methodology and benchmark quality gates.
+- 📋 **[Project Roadmap & History](docs/dev/PROJECT.md)**: Architectural phase progression and feature history.
 
 ---
 
