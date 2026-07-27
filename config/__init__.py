@@ -129,7 +129,7 @@ INDICATOR_REGISTRY = {
 
 def reload_for_market(market: str) -> None:
     """Reload configuration for a new market."""
-    global CONFIG, MARKET_SERIES, MACRO_SERIES, _CURRENT_MARKET
+    global _CURRENT_MARKET
 
     if market not in ['INDIA', 'US']:
         raise ValueError(f"Unknown market: {market}")
