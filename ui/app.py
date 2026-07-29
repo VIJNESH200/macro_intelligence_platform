@@ -65,7 +65,7 @@ class App:
          ax_market_cfg, btn_market_cfg) = create_market_panel(self.fig, self.market_series)
 
         # Slider
-        ax_slider = self.fig.add_axes([0.16, 0.10, 0.68, 0.02])
+        ax_slider = self.fig.add_axes([0.200, 0.10, 0.630, 0.02])
         self.slider = Slider(ax_slider, '', 0, self.max_frames,
                              valinit=0, valstep=1, color='#1f497d', initcolor='none')
         self.slider.valtext.set_visible(False)
@@ -78,42 +78,42 @@ class App:
         grp_y, grp_h = 0.020, 0.070
 
         # Group 1: Playback
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.16, grp_y, 0.16, grp_h, "Playback")
-        ax_play = self.fig.add_axes([0.165, 0.028, 0.045, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.200, grp_y, 0.140, grp_h, "Playback")
+        ax_play = self.fig.add_axes([0.205, 0.028, 0.040, 0.035])
         self.btn_play = self._style_button(ax_play, 'Play')
-        ax_pause = self.fig.add_axes([0.215, 0.028, 0.045, 0.035])
+        ax_pause = self.fig.add_axes([0.250, 0.028, 0.040, 0.035])
         self.btn_pause = self._style_button(ax_pause, 'Pause')
-        ax_reset = self.fig.add_axes([0.265, 0.028, 0.045, 0.035])
+        ax_reset = self.fig.add_axes([0.295, 0.028, 0.040, 0.035])
         self.btn_reset = self._style_button(ax_reset, 'Reset')
 
         # Group 2: Animation
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.33, grp_y, 0.11, grp_h, "Animation")
-        ax_1x = self.fig.add_axes([0.336, 0.028, 0.028, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.350, grp_y, 0.100, grp_h, "Animation")
+        ax_1x = self.fig.add_axes([0.355, 0.028, 0.028, 0.035])
         self.btn_1x = self._style_button(ax_1x, '1x')
         self.btn_1x.label.set_color('#1f497d')
-        ax_2x = self.fig.add_axes([0.370, 0.028, 0.028, 0.035])
+        ax_2x = self.fig.add_axes([0.386, 0.028, 0.028, 0.035])
         self.btn_2x = self._style_button(ax_2x, '2x')
-        ax_3x = self.fig.add_axes([0.404, 0.028, 0.028, 0.035])
+        ax_3x = self.fig.add_axes([0.417, 0.028, 0.028, 0.035])
         self.btn_3x = self._style_button(ax_3x, '3x')
 
         # Group 3: Display
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.45, grp_y, 0.22, grp_h, "Display")
-        ax_chk_tails = self.fig.add_axes([0.455, 0.045, 0.10, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.460, grp_y, 0.200, grp_h, "Display")
+        ax_chk_tails = self.fig.add_axes([0.465, 0.045, 0.090, 0.035])
         self.chk_tails = self._style_check(ax_chk_tails, ('Show Tails',), (True,))
-        ax_chk_labels = self.fig.add_axes([0.565, 0.045, 0.10, 0.035])
+        ax_chk_labels = self.fig.add_axes([0.560, 0.045, 0.090, 0.035])
         self.chk_labels = self._style_check(ax_chk_labels, ('Show Labels',), (True,))
-        ax_chk_forecast = self.fig.add_axes([0.455, 0.020, 0.10, 0.035])
+        ax_chk_forecast = self.fig.add_axes([0.465, 0.020, 0.090, 0.035])
         self.chk_forecast = self._style_check(ax_chk_forecast, ('Show Forecast',), (True,))
-        ax_chk_market = self.fig.add_axes([0.565, 0.020, 0.10, 0.035])
+        ax_chk_market = self.fig.add_axes([0.560, 0.020, 0.090, 0.035])
         self.chk_market = self._style_check(ax_chk_market, ('Market Context',), (True,))
 
         # Group 4: Tools
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.68, grp_y, 0.30, grp_h, "Tools & Market")
-        ax_export = self.fig.add_axes([0.685, 0.028, 0.038, 0.035])
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.670, grp_y, 0.300, grp_h, "Tools & Market")
+        ax_export = self.fig.add_axes([0.675, 0.028, 0.038, 0.035])
         self.btn_export = self._style_button(ax_export, 'Export')
-        ax_help = self.fig.add_axes([0.728, 0.028, 0.038, 0.035])
+        ax_help = self.fig.add_axes([0.718, 0.028, 0.038, 0.035])
         self.btn_help = self._style_button(ax_help, 'Help')
-        ax_cache = self.fig.add_axes([0.771, 0.028, 0.045, 0.035])
+        ax_cache = self.fig.add_axes([0.761, 0.028, 0.045, 0.035])
         self.btn_cache = self._style_button(ax_cache, 'Clr Cache')
 
         # Market selector
@@ -123,7 +123,7 @@ class App:
             from config import get_current_market
         current_market = get_current_market()
 
-        ax_market_india = self.fig.add_axes([0.821, 0.028, 0.038, 0.035])
+        ax_market_india = self.fig.add_axes([0.811, 0.028, 0.038, 0.035])
         self.btn_market_india = Button(ax_market_india, 'India', color='#ffffff', hovercolor='#e9ecef')
         self.btn_market_india.label.set_fontsize(10)
         self.btn_market_india.label.set_fontweight('bold')
@@ -131,7 +131,7 @@ class App:
         for spine in ax_market_india.spines.values():
             spine.set_color('#ced4da')
 
-        ax_market_us = self.fig.add_axes([0.864, 0.028, 0.038, 0.035])
+        ax_market_us = self.fig.add_axes([0.854, 0.028, 0.038, 0.035])
         self.btn_market_us = Button(ax_market_us, 'US', color='#ffffff', hovercolor='#e9ecef')
         self.btn_market_us.label.set_fontsize(10)
         self.btn_market_us.label.set_fontweight('bold')

@@ -22,28 +22,28 @@ def create_left_sidebar(fig: plt.Figure) -> dict:
     texts = {}
 
     texts['left_header1'] = fig.text(0.02, 0.955, "CURRENT OBSERVATION",
-                                     fontsize=11, fontweight='bold', color='#1f497d')
+                                     fontsize=10.5, fontweight='bold', color='#1f497d')
     texts['info_date'] = fig.text(0.02, 0.925, "Date: --",
-                                  fontsize=10, color='#333333')
+                                  fontsize=9.5, color='#333333')
     texts['info_val'] = fig.text(0.02, 0.900, "Value: --",
-                                 fontsize=10, color='#333333')
+                                 fontsize=9.5, color='#333333')
     texts['info_quad'] = fig.text(0.02, 0.875, "Quadrant: --",
-                                  fontsize=10, fontweight='bold', color='#333333')
+                                  fontsize=9.5, fontweight='bold', color='#333333')
 
     # Separator
     texts['left_sep'] = fig.add_artist(
-        plt.Line2D([0.02, 0.14], [0.855, 0.855], color='lightgray', linewidth=1,
+        plt.Line2D([0.02, 0.155], [0.855, 0.855], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
 
     texts['left_header2'] = fig.text(0.02, 0.825, "CYCLE STATISTICS",
-                                     fontsize=11, fontweight='bold', color='#1f497d')
+                                     fontsize=10.5, fontweight='bold', color='#1f497d')
     texts['stat_entered'] = fig.text(0.02, 0.795, "Entered: --",
-                                     fontsize=10, color='#333333')
+                                     fontsize=9.5, color='#333333')
     texts['stat_duration'] = fig.text(0.02, 0.770, "Duration: --",
-                                      fontsize=10, color='#333333')
-    texts['stat_prev'] = fig.text(0.02, 0.745, "Previous Phase: --",
-                                  fontsize=10, color='#333333')
+                                      fontsize=9.5, color='#333333')
+    texts['stat_prev'] = fig.text(0.02, 0.745, "Prev Phase: --",
+                                  fontsize=9.5, color='#333333')
 
     return texts
 
@@ -52,50 +52,50 @@ def create_right_sidebar(fig: plt.Figure) -> dict:
     """Create right sidebar text elements. Returns dict of text objects."""
     texts = {}
 
-    texts['right_header1'] = fig.text(0.845, 0.80, "MARKET INTERPRETATION",
+    texts['right_header1'] = fig.text(0.845, 0.805, "MARKET INTERPRETATION",
                                       fontsize=9.5, fontweight='bold', color='#1f497d')
-    texts['interp_phase'] = fig.text(0.845, 0.775, "Current Phase: --",
+    texts['interp_phase'] = fig.text(0.845, 0.782, "Current Phase: --",
                                      fontsize=8.5, color='#333333')
-    texts['interp_trend'] = fig.text(0.845, 0.75, "Trend: --",
+    texts['interp_trend'] = fig.text(0.845, 0.760, "Trend: --",
                                      fontsize=8.5, color='#333333')
-    texts['interp_signal'] = fig.text(0.845, 0.725, "Signal: --",
+    texts['interp_signal'] = fig.text(0.845, 0.738, "Signal: --",
                                       fontsize=8.5, color='#333333')
-    texts['interp_mom'] = fig.text(0.845, 0.70, "Momentum: --",
+    texts['interp_mom'] = fig.text(0.845, 0.716, "Momentum: --",
                                    fontsize=8.5, color='#333333')
-    texts['interp_overall'] = fig.text(0.845, 0.675, "Overall: --",
+    texts['interp_overall'] = fig.text(0.845, 0.694, "Overall: --",
                                        fontsize=8.5, color='#333333')
 
     # Separator
     texts['right_sep'] = fig.add_artist(
-        plt.Line2D([0.845, 0.985], [0.655, 0.655], color='lightgray', linewidth=1,
+        plt.Line2D([0.845, 0.985], [0.678, 0.678], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
 
-    texts['right_header2'] = fig.text(0.845, 0.63, "CURRENT READING",
+    texts['right_header2'] = fig.text(0.845, 0.655, "CURRENT READING",
                                       fontsize=9.5, fontweight='bold', color='#1f497d')
-    texts['read_health'] = fig.text(0.845, 0.605, "Health: --",
+    texts['read_health'] = fig.text(0.845, 0.632, "Health: --",
                                     fontsize=8.5, color='#333333')
-    texts['read_mom'] = fig.text(0.845, 0.58, "Momentum: --",
+    texts['read_mom'] = fig.text(0.845, 0.610, "Momentum: --",
                                  fontsize=8.5, color='#333333')
-    texts['read_dist'] = fig.text(0.845, 0.555, "Distance from Center: --",
+    texts['read_dist'] = fig.text(0.845, 0.588, "Distance from Center: --",
                                   fontsize=8.5, color='#333333')
-    texts['read_dir'] = fig.text(0.845, 0.53, "Direction: --",
+    texts['read_dir'] = fig.text(0.845, 0.566, "Direction: --",
                                  fontsize=8.5, color='#333333')
 
     # Macro Drivers Separator
     texts['right_sep2'] = fig.add_artist(
-        plt.Line2D([0.845, 0.985], [0.51, 0.51], color='lightgray', linewidth=1,
+        plt.Line2D([0.845, 0.985], [0.550, 0.550], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
 
-    texts['right_header3'] = fig.text(0.845, 0.485, "MACRO DRIVERS",
+    texts['right_header3'] = fig.text(0.845, 0.528, "MACRO DRIVERS",
                                       fontsize=9.5, fontweight='bold', color='#1f497d')
 
     try:
         from ..config import MACRO_SERIES
     except ImportError:
         from config import MACRO_SERIES
-    y_pos = 0.455
+    y_pos = 0.500
     for name in MACRO_SERIES.keys():
         if name in ['Yield 10Y', 'Yield Short']:
             continue
@@ -104,18 +104,18 @@ def create_right_sidebar(fig: plt.Figure) -> dict:
         texts[f'driver_{name}_val'] = fig.text(0.985, y_pos, "--", fontsize=8.0, fontweight='bold', color='#333333', ha='right')
         texts[f'driver_{name}_line2'] = fig.text(0.845, y_pos-0.014, "--", fontsize=7.5, color='#666666')
         texts[f'driver_{name}_pct'] = fig.text(0.985, y_pos-0.014, "--", fontsize=7.0, color='#666666', ha='right')
-        y_pos -= 0.04
+        y_pos -= 0.038
 
     # Forecast Separator
     texts['right_sep3'] = fig.add_artist(
         plt.Line2D([0.845, 0.985], [0.345, 0.345], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
-    texts['right_header4'] = fig.text(0.845, 0.32, "FORECAST (9M)",
+    texts['right_header4'] = fig.text(0.845, 0.320, "FORECAST (9M)",
                                       fontsize=9.5, fontweight='bold', color='#1f497d')
     texts['fc_base'] = fig.text(0.845, 0.295, "Base: --", fontsize=8.5, color='#333333')
-    texts['fc_bull'] = fig.text(0.845, 0.27, "Bull: --", fontsize=8.5, color='#333333')
-    texts['fc_bear'] = fig.text(0.845, 0.245, "Bear: --", fontsize=8.5, color='#333333')
+    texts['fc_bull'] = fig.text(0.845, 0.272, "Bull: --", fontsize=8.5, color='#333333')
+    texts['fc_bear'] = fig.text(0.845, 0.249, "Bear: --", fontsize=8.5, color='#333333')
 
     return texts
 
@@ -162,7 +162,7 @@ def create_market_panel(fig: plt.Figure, market_series: dict) -> tuple:
         return btn
 
     market_sep = fig.add_artist(
-        plt.Line2D([0.02, 0.14], [0.725, 0.725], color='lightgray', linewidth=1,
+        plt.Line2D([0.02, 0.155], [0.725, 0.725], color='lightgray', linewidth=1,
                    transform=fig.transFigure)
     )
     market_header = fig.text(0.02, 0.695, "MARKET CONTEXT",
@@ -171,10 +171,10 @@ def create_market_panel(fig: plt.Figure, market_series: dict) -> tuple:
     ax_market_mode = fig.add_axes([0.02, 0.645, 0.09, 0.025])
     btn_market_mode = style_button(ax_market_mode, '1M Change ▼')
 
-    ax_market_cfg = fig.add_axes([0.12, 0.645, 0.03, 0.025])
+    ax_market_cfg = fig.add_axes([0.115, 0.645, 0.03, 0.025])
     btn_market_cfg = style_button(ax_market_cfg, '⚙')
 
-    ax_market = fig.add_axes([0.02, 0.06, 0.14, 0.57])
+    ax_market = fig.add_axes([0.02, 0.06, 0.135, 0.57])
     ax_market.set_facecolor('#f8f9fa')
     for spine in ax_market.spines.values():
         spine.set_visible(False)

@@ -21,7 +21,7 @@ def create_figure(config: dict) -> plt.Figure:
 
 def create_main_axes(fig: plt.Figure, df, config: dict) -> plt.Axes:
     """Create and configure the main chart axes with quadrant fills, labels, grid."""
-    ax = fig.add_axes([0.16, 0.20, 0.68, 0.75])
+    ax = fig.add_axes([0.210, 0.20, 0.620, 0.75])
     ax.set_facecolor('white')
 
     center = config['center']
@@ -61,8 +61,9 @@ def create_main_axes(fig: plt.Figure, df, config: dict) -> plt.Axes:
     ax.text(0.02, 0.03, '■ CONTRACTION', color='darkred', ha='left', va='bottom', **font_props)
     ax.text(0.02, 0.97, '■ RECOVERY', color='darkblue', ha='left', va='top', **font_props)
 
-    ax.set_xlabel(f'Economic Health ({config["window"]}M Z-Score)', fontsize=11, labelpad=10, color='#333333')
-    ax.set_ylabel(f'Economic Momentum (1M Δ → {config["window"]}M Z-Score)', fontsize=11, labelpad=10, color='#333333')
+    ax.set_xlabel(f'Economic Health ({config["window"]}M Z-Score)', fontsize=10.5, labelpad=8, color='#333333')
+    ax.set_ylabel(f'Economic Momentum (1M Δ → {config["window"]}M Z-Score)', fontsize=10, labelpad=4, color='#333333')
+    ax.tick_params(colors='#555555')
     ax.tick_params(colors='#555555')
 
     return ax
