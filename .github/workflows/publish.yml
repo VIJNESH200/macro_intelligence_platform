@@ -28,9 +28,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
-      - name: Export Latest Forecast JSON
+      - name: Export India Forecast JSON
         run: |
-          python scripts/export_forecast.py --out docs/latest_forecast.json
+          python scripts/export_forecast.py --market INDIA --out docs/latest_forecast_india.json
+
+      - name: Export US Forecast JSON
+        run: |
+          python scripts/export_forecast.py --market US --out docs/latest_forecast_us.json
+
+      - name: Export Legacy Forecast JSON
+        run: |
+          python scripts/export_forecast.py --market INDIA --out docs/latest_forecast.json
 
       - name: Append to Live Track Record Ledger
         run: |
@@ -42,13 +50,13 @@ jobs:
 
       - name: Generate Static HTML Dashboard
         run: |
-          python scripts/generate_site.py --json docs/latest_forecast.json --out docs/index.html
+          python scripts/generate_site.py --india-json docs/latest_forecast_india.json --us-json docs/latest_forecast_us.json --out docs/index.html
 
       - name: Commit and Push Ledger to Main
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/live_track_record.csv docs/latest_forecast.json
+          git add docs/live_track_record.csv docs/latest_forecast.json docs/latest_forecast_india.json docs/latest_forecast_us.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore(ledger): update live track record [skip ci]" && (git push || true))
 
       - name: Deploy to GitHub Pages
