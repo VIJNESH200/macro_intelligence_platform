@@ -12,11 +12,13 @@ import pandas as pd
 import argparse
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 try:
-    from ..api import load_macro_data, compute_features
-except ImportError:
     from api import load_macro_data, compute_features
+except ImportError:
+    from macro_intel import load_macro_data, compute_features
 
 
 def backfill_realized_outcomes(ledger_path: str = None) -> str:
