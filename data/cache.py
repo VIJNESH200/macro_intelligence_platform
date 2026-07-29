@@ -48,12 +48,34 @@ class CacheManager:
         return None
 
     def put(self, key: str, data: pd.DataFrame | pd.Series) -> None:
-        """Store data to cache."""
+        """Store data to cache atomically."""
         path = self._cache_path(key)
         if isinstance(data, pd.Series):
             data = data.to_frame()
-        data.to_csv(path)
+        temp_path = path.with_suffix('.tmp')
+        try:
+            data.to_csv(temp_path)
+            temp_path.replace(path)
+        except Exception as e:
+            if temp_path.exists():
+                try:
+                    temp_path.unlink()
+                except Exception:
+                    pass
 
     def has_any(self, key: str) -> bool:
         """Check if any cache exists (regardless of staleness)."""
         return self._cache_path(key).exists()
+
+    def evict_expired(self, max_days: int = 30) -> int:
+        """Remove cache files older than max_days."""
+        evicted = 0
+        cutoff = datetime.now() - timedelta(days=max_days)
+        for p in self.cache_dir.glob("*.csv"):
+            try:
+                if datetime.fromtimestamp(p.stat().st_mtime) < cutoff:
+                    p.unlink()
+                    evicted += 1
+            except Exception:
+                pass
+        return evicted

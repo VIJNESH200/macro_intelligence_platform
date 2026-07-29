@@ -6,6 +6,18 @@ Exact port of report_analysis.py.
 """
 
 
+def get_quadrant(x: float, y: float, center: float = 100.0) -> str:
+    """Determine business cycle quadrant based on Health (X) and Momentum (Y)."""
+    if x >= center and y >= center:
+        return 'Expansion'
+    elif x >= center and y < center:
+        return 'Slowdown'
+    elif x < center and y < center:
+        return 'Contraction'
+    else:
+        return 'Recovery'
+
+
 def compute_statistics(df, data: dict) -> dict:
     """Compute historical cycle statistics for the current phase.
 

@@ -86,9 +86,19 @@ class FeatureEngine:
         t_all = np.arange(len(x_all))
         pts_per_seg = config.get('points_per_segment', 10)
 
-        cache_key = (len(x_all), pts_per_seg, x_all[-1] if len(x_all) else 0, y_all[-1] if len(y_all) else 0)
+        cache_key = (
+            len(x_all),
+            pts_per_seg,
+            round(float(x_all[0]), 4) if len(x_all) else 0,
+            round(float(y_all[0]), 4) if len(y_all) else 0,
+            round(float(x_all[-1]), 4) if len(x_all) else 0,
+            round(float(y_all[-1]), 4) if len(y_all) else 0,
+        )
         if cache_key in cls._spline_cache:
             return cls._spline_cache[cache_key].copy()
+
+        if len(cls._spline_cache) >= 64:
+            cls._spline_cache.clear()
 
         if len(x_all) >= 4:
             spl_x = interp.make_interp_spline(t_all, x_all, k=3)
@@ -152,12 +162,7 @@ class FeatureEngine:
             rolling_std = rolling_std.replace(0, np.nan)
 
             df[f"{name}_Z"] = (base_feature - rolling_mean) / rolling_std
-            
-            # Also calculate 1-month momentum of the base feature for simple momentum checks
-            if info.transformation == 'yoy':
-                df[f"{name}_MoM"] = base_feature.diff(1)
-            else:
-                df[f"{name}_MoM"] = base_feature.diff(1)
+            df[f"{name}_MoM"] = base_feature.diff(1)
 
         return df
 

@@ -7,6 +7,7 @@ Reads docs/latest_forecast.json and renders docs/index.html.
 import os
 import sys
 import json
+import html
 import argparse
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -42,12 +43,13 @@ def generate_static_site(json_path: str = 'docs/latest_forecast.json',
 
     health_rows = ""
     for series_name, meta in health_dict.items():
-        src = meta.get('source', 'unknown')
-        rel = meta.get('release_date', 'N/A')
-        status = meta.get('cache_status', '⚪ Unknown')
+        src = html.escape(str(meta.get('source', 'unknown')))
+        rel = html.escape(str(meta.get('release_date', 'N/A')))
+        status = html.escape(str(meta.get('cache_status', '⚪ Unknown')))
+        s_name = html.escape(str(series_name))
         health_rows += f"""
         <tr>
-            <td><strong>{series_name}</strong></td>
+            <td><strong>{s_name}</strong></td>
             <td><code>{src}</code></td>
             <td>{rel}</td>
             <td>{status}</td>

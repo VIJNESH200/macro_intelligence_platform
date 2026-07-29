@@ -211,10 +211,10 @@ class ForecastingEngine:
                 analogue_date = pd.Timestamp(m['date_str'])
                 # Find the closest index matching this date
                 matching_indices = df.index.get_indexer([analogue_date], method='nearest')
-                if len(matching_indices) > 0:
+                if len(matching_indices) > 0 and matching_indices[0] >= 0:
                     ana_idx = matching_indices[0]
                     future_idx = ana_idx + h
-                    if future_idx <= idx:
+                    if 0 <= future_idx <= idx:
                         weighted_x += sim * df['X'].iloc[future_idx]
                         weighted_y += sim * df['Y'].iloc[future_idx]
                         total_weight += sim
@@ -239,7 +239,7 @@ class ForecastingEngine:
 
         # Require historical lookback for training (strictly prior to forecast)
         train_end = idx - 6
-        if train_end < 36:
+        if train_end + 1 < 36:
             return {'path': [(x_now, y_now)] * max_h}
 
         try:

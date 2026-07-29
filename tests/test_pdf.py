@@ -67,7 +67,8 @@ class TestPDF(unittest.TestCase):
         fig.savefig(self.temp_fig)
         plt.close(fig)
 
-        build_pdf_report(data, analysis, insights, mkt_insights, narr, analogues, deltas, self.temp_fig, self.out_pdf)
+        metadata = engine.get_metadata
+        build_pdf_report(data, analysis, insights, mkt_insights, narr, analogues, deltas, self.temp_fig, self.out_pdf, data_metadata=metadata)
 
         self.assertTrue(os.path.exists(self.out_pdf))
         self.assertGreater(os.path.getsize(self.out_pdf), 0)

@@ -35,8 +35,8 @@ def create_provider_result(
     details: str = ""
 ) -> ProviderResult:
     """Helper to construct a standardized ProviderResult with metadata."""
-    from datetime import datetime
-    fetched_at = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    from datetime import datetime, timezone
+    fetched_at = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     valid = series.dropna()
     as_of = valid.index[-1].strftime('%Y-%m-%d') if not valid.empty else None
     schema_ok = (

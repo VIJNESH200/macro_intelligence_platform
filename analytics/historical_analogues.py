@@ -9,19 +9,10 @@ import numpy as np
 import pandas as pd
 
 
-def get_quadrant(x: float, y: float, center: float = 100) -> str:
-    """Assign quadrant based on X (health) and Y (momentum) relative to center.
-
-    BUG FIX: The original used hardcoded 100 for X and 0 for Y thresholds.
-    Now uses the same center-relative logic as the main FeatureEngine.
-    """
-    if x >= center and y >= center:
-        return "Expansion"
-    if x >= center and y < center:
-        return "Slowdown"
-    if x < center and y < center:
-        return "Contraction"
-    return "Recovery"
+try:
+    from .cycle_statistics import get_quadrant
+except ImportError:
+    from analytics.cycle_statistics import get_quadrant
 
 
 def generate_analogues(df, current_idx: int, data: dict,

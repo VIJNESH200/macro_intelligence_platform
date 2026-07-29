@@ -53,5 +53,27 @@ def validate_descriptive_signal(panel: pd.DataFrame) -> dict:
             
     return result
 
-def test_predictive_signal(panel, split_year, passed_gate):
-    raise NotImplementedError("Milestone 3")
+def test_predictive_signal(panel: pd.DataFrame, split_year: int = 2019, passed_gate: bool = False) -> dict:
+    """Walk-forward out-of-sample predictive test.
+    Returns structured metrics payload rather than raising exceptions.
+    """
+    if not passed_gate or panel is None or panel.empty:
+        return {
+            "N_train": 0,
+            "N_test": 0,
+            "passed_predictive_gate": False,
+            "reason": "Descriptive gate not passed or empty dataset"
+        }
+    
+    if isinstance(panel.index, pd.DatetimeIndex):
+        train = panel[panel.index.year < split_year]
+        test = panel[panel.index.year >= split_year]
+    else:
+        train, test = pd.DataFrame(), pd.DataFrame()
+
+    return {
+        "N_train": len(train),
+        "N_test": len(test),
+        "passed_predictive_gate": False,
+        "reason": "Milestone 3 RRG predictive signal pending"
+    }

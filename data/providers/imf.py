@@ -29,13 +29,19 @@ class IMFProvider(BaseProvider):
             else:
                 dataflow = 'PI'
                 
-            msg = client.data(dataflow, key=symbol, params={'startPeriod': start_date[:4]})
+            params = {'startPeriod': start_date[:4]}
+            if end_date:
+                params['endPeriod'] = end_date[:4]
+                
+            msg = client.data(dataflow, key=symbol, params=params)
             df = sdmx.to_pandas(msg).reset_index()
             
             df['TIME_PERIOD'] = pd.to_datetime(df['TIME_PERIOD'], format='%Y-M%m')
             df.set_index('TIME_PERIOD', inplace=True)
             series = df['value']
             series = series.resample('MS').first().ffill()
+            if end_date:
+                series = series[series.index <= pd.Timestamp(end_date)]
             self.last_source_used = 'IMF SDMX API'
             
         except Exception as e:

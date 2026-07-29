@@ -19,8 +19,8 @@ def calculate_rrg_metrics(asset_prices: pd.Series, benchmark_prices: pd.Series, 
     # Normalizing by rolling mean to center around 100
     rs_ratio = 100.0 * (rs / rs.rolling(window=window).mean())
     
-    # RS-Momentum: rate of change / momentum of RS-Ratio
-    rs_momentum = 100.0 * (rs_ratio / rs_ratio.rolling(window=window).mean())
+    # RS-Momentum: 1-period rate of change / momentum of RS-Ratio centered at 100
+    rs_momentum = 100.0 * (rs_ratio / rs_ratio.shift(1))
     
     return pd.DataFrame({
         'rs_ratio': rs_ratio,

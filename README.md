@@ -27,10 +27,10 @@ An academically-validated, open-source **quantitative business cycle forecasting
 ## 🌟 Highlights
 
 - **4-Phase Business Cycle Tracing**: Maps macro health ($X$) and momentum ($Y$) using rolling Z-score transformations of Composite Leading Indicators (OECD CLI) and economic drivers.
-- **Two-Signal Consensus Forecasting**: Eliminates single-model bias by blending orthogonal signals calibrated via out-of-sample backtesting:
-  1. **CLI Momentum Extrapolation** (55% weight — exponential decay pull toward long-term trend)
-  2. **Multivariate Historical Analogues** (45% weight — Euclidean distance matching across past cycle footprints)
-  3. **Auxiliary Macro Driver Assessment** (Diagnostic macro-tilt evaluation covering Real Policy Rate, Core Industries, CPI, and Yield Spreads)
+- **Three-Signal Consensus Forecasting**: Eliminates single-model bias by blending orthogonal signals calibrated via out-of-sample backtesting:
+  1. **CLI Momentum Extrapolation** (40% weight — exponential decay pull toward long-term trend)
+  2. **Multivariate Historical Analogues** (35% weight — Euclidean distance matching across past cycle footprints)
+  3. **Auxiliary Macro Driver Assessment** (25% weight — walk-forward Ridge regression covering Real Policy Rate, Core Industries, CPI, and Yield Spreads)
 - **100% Open Data & Provider Provenance**: Fully automated pipeline using public sources (FRED, DPIIT, IMF SDMX, Yahoo Finance, RBI) with explicit `ProviderMeta` tracking (`live`, `cache`, `bundled_fallback`, `schema_ok`).
 - **Python API & Notebook Integration**: Clean 3-step programmatic interface (`from macro_intel import load_macro_data, compute_features, forecast_cycle`) with typed `DataBundle` and `ForecastResult` containers.
 - **Documented JSON Output & Live Dashboard**: Automated serialization to JSON Schema draft-07 contract (`docs/latest_forecast.json`), static site generation (`docs/index.html`), and append-only live track record ledger (`docs/live_track_record.csv`).

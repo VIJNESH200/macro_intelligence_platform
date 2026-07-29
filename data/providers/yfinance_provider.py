@@ -57,9 +57,13 @@ class YFinanceProvider(BaseProvider):
             self.last_source_used = 'Yahoo Finance API (Bulk)'
             close_df = close_df.resample('MS').last().ffill()
         except Exception as e:
-            print(f"  ⚠ yfinance bulk fetch failed: {e}")
+            print(f"  ⚠ yfinance bulk fetch failed ({e}); falling back to per-symbol downloads.")
             close_df = pd.DataFrame()
-            source_type = "bundled_fallback"
+            for sym in symbols:
+                s = self.fetch(sym, start_date=start_date)
+                if not s.empty:
+                    close_df[sym] = s
+            source_type = "live" if not close_df.empty else "bundled_fallback"
 
         if return_meta:
             res_dict = {}

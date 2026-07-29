@@ -143,6 +143,7 @@ class ICIProvider(BaseProvider):
                         scale_factor = new_value_at_join / old_value_at_join
                         s11_rebased = s11_before_overlap * scale_factor
                         combined = pd.concat([s11_rebased, s22])
+                        combined = combined[~combined.index.duplicated(keep='last')].sort_index()
                     else:
                         combined = s22
                 else:

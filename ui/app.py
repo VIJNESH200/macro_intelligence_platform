@@ -714,6 +714,15 @@ class App:
         self.heartbeat.add_callback(heartbeat_step)
         self.heartbeat.start()
 
+        def on_canvas_close(event):
+            if hasattr(self, 'heartbeat') and self.heartbeat is not None:
+                try:
+                    self.heartbeat.stop()
+                except Exception:
+                    pass
+
+        fig.canvas.mpl_connect('close_event', on_canvas_close)
+
         def play(event):
             self.state['is_playing'] = True
 
@@ -1101,72 +1110,72 @@ The path transitions through four phases:
                         from research import pdf as pdf_mod
 
                     temp_fig = os.path.join(export_dir, f"temp_{timestamp}.png")
-                    for ax_ctrl in pe['control_axes']:
-                        ax_ctrl.set_visible(False)
-                    for bg_el in pe['control_bg_elements']:
-                        bg_el.set_visible(False)
+                    try:
+                        for ax_ctrl in pe['control_axes']:
+                            ax_ctrl.set_visible(False)
+                        for bg_el in pe['control_bg_elements']:
+                            bg_el.set_visible(False)
 
-                    old_text = pe['status_label'].get_text()
-                    old_color = pe['status_label'].get_color()
-                    old_weight = pe['status_label'].get_fontweight()
+                        old_text = pe['status_label'].get_text()
+                        old_color = pe['status_label'].get_color()
+                        old_weight = pe['status_label'].get_fontweight()
 
-                    pe['status_label'].set_text(pe['default_status'])
-                    pe['status_label'].set_fontweight('normal')
-                    pe['status_label'].set_color('dimgray')
-                    pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
+                        pe['status_label'].set_text(pe['default_status'])
+                        pe['status_label'].set_fontweight('normal')
+                        pe['status_label'].set_color('dimgray')
+                        pe['status_label'].set_bbox(dict(facecolor='none', edgecolor='none'))
 
-                    fig.savefig(temp_fig, dpi=300, bbox_inches='tight')
+                        fig.savefig(temp_fig, dpi=300, bbox_inches='tight')
 
-                    for ax_ctrl in pe['control_axes']:
-                        ax_ctrl.set_visible(True)
-                    for bg_el in pe['control_bg_elements']:
-                        bg_el.set_visible(True)
-                    pe['status_label'].set_text(old_text)
-                    pe['status_label'].set_color(old_color)
-                    pe['status_label'].set_fontweight(old_weight)
+                        for ax_ctrl in pe['control_axes']:
+                            ax_ctrl.set_visible(True)
+                        for bg_el in pe['control_bg_elements']:
+                            bg_el.set_visible(True)
+                        pe['status_label'].set_text(old_text)
+                        pe['status_label'].set_color(old_color)
+                        pe['status_label'].set_fontweight(old_weight)
 
-                    current_idx = int(self.slider.val)
-                    df_sliced = df.iloc[:current_idx + 1]
+                        current_idx = int(self.slider.val)
+                        df_sliced = df.iloc[:current_idx + 1]
 
-                    data = rd.extract_report_data(df, config, pe, current_idx, self.market_series)
-                    analysis = cycle_statistics.compute_statistics(df_sliced, data)
-                    ins = insights_mod.generate_insights(data, analysis)
-                    market_ins = mi_mod.generate_market_insights(data)
-                    analogues = historical_analogues.generate_analogues(
-                        df, current_idx, data, self.market_series
-                    )
-                    
-                    # --- Phase 3 Engines ---
-                    trans_matrix = tm_mod.compute_transition_matrix(df_sliced)
-                    forecast_result = fe_mod.ForecastingEngine.project(
-                        df, current_idx, config, analogues, data.get('macro_contrib')
-                    )
-                    scenarios = se_mod.ScenarioEngine.generate_scenarios(
-                        forecast_result, trans_matrix, analogues, data['quadrant'], config
-                    )
-                    
-                    data['transition_matrix'] = trans_matrix
-                    data['forecast'] = forecast_result
-                    data['scenarios'] = scenarios
-                    # -----------------------
+                        data = rd.extract_report_data(df, config, pe, current_idx, self.market_series)
+                        analysis = cycle_statistics.compute_statistics(df_sliced, data)
+                        ins = insights_mod.generate_insights(data, analysis)
+                        market_ins = mi_mod.generate_market_insights(data)
+                        analogues = historical_analogues.generate_analogues(
+                            df, current_idx, data, self.market_series
+                        )
+                        
+                        # --- Phase 3 Engines ---
+                        trans_matrix = tm_mod.compute_transition_matrix(df_sliced)
+                        forecast_result = fe_mod.ForecastingEngine.project(
+                            df, current_idx, config, analogues, data.get('macro_contrib')
+                        )
+                        scenarios = se_mod.ScenarioEngine.generate_scenarios(
+                            forecast_result, trans_matrix, analogues, data['quadrant'], config
+                        )
+                        
+                        data['transition_matrix'] = trans_matrix
+                        data['forecast'] = forecast_result
+                        data['scenarios'] = scenarios
+                        # -----------------------
 
-                    deltas = deltas_mod.calculate_deltas(
-                        df, current_idx, config, pe, self.market_series,
-                        data, analysis, ins
-                    )
-                    narrative = narrative_mod.generate_narrative(
-                        data, analysis, ins, market_ins, analogues
-                    )
-                    pdf_mod.build_pdf_report(
-                        data, analysis, ins, market_ins, narrative,
-                        analogues, deltas, temp_fig, filepath,
-                        self.data_metadata
-                    )
-
-                    if os.path.exists(temp_fig):
-                        os.remove(temp_fig)
-
-                    show_status_msg(f"✓ Saved: Exports\\{filename}", show_btn=True)
+                        deltas = deltas_mod.calculate_deltas(
+                            df, current_idx, config, pe, self.market_series,
+                            data, analysis, ins
+                        )
+                        narrative = narrative_mod.generate_narrative(
+                            data, analysis, ins, market_ins, analogues
+                        )
+                        pdf_mod.build_pdf_report(
+                            data, analysis, ins, market_ins, narrative,
+                            analogues, deltas, temp_fig, filepath,
+                            self.data_metadata
+                        )
+                        show_status_msg(f"✓ Saved: Exports\\{filename}", show_btn=True)
+                    finally:
+                        if os.path.exists(temp_fig):
+                            os.remove(temp_fig)
                 except Exception as e:
                     for ax_ctrl in pe['control_axes']:
                         ax_ctrl.set_visible(True)

@@ -49,6 +49,7 @@ export default function App() {
   const [index, setIndex] = React.useState(0)
   const [playing, setPlaying] = React.useState(false)
   const [speed, setSpeed] = React.useState(1)
+  const [reloadCount, setReloadCount] = React.useState(0)
   const [loading, setLoading] = React.useState(true)
   const [refreshing, setRefreshing] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -63,7 +64,7 @@ export default function App() {
     api.markets().then(setMarkets).catch(() => setMarkets([]))
   }, [])
 
-  // Loading a market is expensive server-side, so it is keyed only on `market`;
+  // Loading a market is expensive server-side, so it is keyed only on `market` and `reloadCount`;
   // scrubbing never refetches the series.
   React.useEffect(() => {
     const controller = new AbortController()
@@ -83,7 +84,7 @@ export default function App() {
       .finally(() => setLoading(false))
 
     return () => controller.abort()
-  }, [market])
+  }, [market, reloadCount])
 
   // Panel data follows the scrubber. Requests are aborted on change so a slow
   // response for an old frame can never overwrite a newer one.
@@ -201,7 +202,7 @@ export default function App() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-ink-secondary">{error}</p>
-            <Button onClick={() => setMarket((m) => m)}>Retry</Button>
+            <Button onClick={() => setReloadCount((c) => c + 1)}>Retry</Button>
           </CardContent>
         </Card>
       </div>

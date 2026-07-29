@@ -172,15 +172,16 @@ class MarketStore:
         non_empty = df.dropna(how='all')
         last_date = non_empty.index[-1] if len(non_empty) else pd.Timestamp.now()
 
+        import copy
         snapshot = MarketSnapshot(
             market=market,
             label=profile['label'],
             df=df,
             spline=spline,
-            config=dict(CONFIG),
-            market_series=dict(MARKET_SERIES),
-            macro_series=dict(MACRO_SERIES),
-            data_health=dict(engine.get_metadata),
+            config=copy.deepcopy(dict(CONFIG)),
+            market_series=copy.deepcopy(dict(MARKET_SERIES)),
+            macro_series=copy.deepcopy(dict(MACRO_SERIES)),
+            data_health=copy.deepcopy(engine.get_metadata),
             warnings=tuple(engine.load_warnings),
             as_of=last_date.strftime('%Y-%m-%d'),
             loaded_at=time.time(),

@@ -19,6 +19,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 
 try:
@@ -164,9 +165,8 @@ def series(names: str = Query(..., description='Comma-separated column names'),
 # Exports
 # ----------------------------------------------------------------------
 @app.get('/api/report')
-def report(market: str | None = Query(None), idx: int | None = Query(None),
-           assets: str | None = Query(None)) -> FileResponse:
-    """Generate the institutional PDF report for a frame and return it."""
+def report_pdf(market: str | None = Query(None), idx: int | None = Query(None)) -> FileResponse:
+    """Generate and return a publication-ready PDF strategy report."""
     try:
         from ..research import pdf as pdf_mod
     except ImportError:
@@ -176,7 +176,7 @@ def report(market: str | None = Query(None), idx: int | None = Query(None),
 
     with STORE.session(market) as snapshot:
         frame_idx = snapshot.clamp(idx)
-        bundle = compute.analysis_bundle(snapshot, frame_idx, _parse_assets(assets))
+        bundle = compute.report_bundle(snapshot, frame_idx)
 
         stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'BusinessCycle_Report_{snapshot.market}_{stamp}.pdf'
@@ -195,7 +195,7 @@ def report(market: str | None = Query(None), idx: int | None = Query(None),
             if os.path.exists(chart_path):
                 os.unlink(chart_path)
 
-    return FileResponse(output_path, media_type='application/pdf', filename=filename)
+    return FileResponse(output_path, media_type='application/pdf', filename=filename, background=BackgroundTask(os.unlink, output_path))
 
 
 @app.get('/api/chart.png')
@@ -209,7 +209,7 @@ def chart_png(market: str | None = Query(None), idx: int | None = Query(None)) -
         render_cycle_png(snapshot, frame_idx, path, projection)
         filename = f'cycle_{snapshot.market}_{frame_idx}.png'
 
-    return FileResponse(path, media_type='image/png', filename=filename)
+    return FileResponse(path, media_type='image/png', filename=filename, background=BackgroundTask(os.unlink, path))
 
 
 @app.post('/api/cache/clear')
