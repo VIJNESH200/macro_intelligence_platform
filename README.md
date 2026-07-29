@@ -40,7 +40,7 @@ An academically-validated, open-source **quantitative business cycle forecasting
 
 ## 📊 Backtest & Empirical Validation
 
-Evaluated across a rolling **229-month out-of-sample historical window** (Jan 2007 – Present):
+Evaluated across a rolling **229-month out-of-sample historical window** (Jan 2007 – Present). *Note: 6M is used as the primary evaluation horizon for backtest validation; 3M and 9M trajectories are projected dynamically using the same underlying consensus framework.*
 
 | Model / Baseline | Full Window 6M Quadrant Accuracy (2007–2026) | Held-Out 6M Quadrant Accuracy (2019–2026) | Health (X) MAE | Momentum (Y) MAE | Distance MAE |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -49,7 +49,9 @@ Evaluated across a rolling **229-month out-of-sample historical window** (Jan 20
 | **Historical Analogues Only** | 63.3% | **70.6%** 🏆 | 0.598 | 0.753 | 1.053 |
 | **Macro Drivers Only** | 65.9% | 50.6% | 0.664 | 0.661 | 1.013 |
 | **Transition Matrix Only** | 47.2% | 49.4% | N/A | N/A | N/A |
-| **Two-Signal Consensus (55% Mom / 45% Ana)** | **71.2%** 🏆 | 68.2% | **0.555** 🏆 | **0.594** 🏆 | **0.877** 🏆 |
+| **Two-Signal Benchmark (55% Mom / 45% Ana)** * | **71.2%** 🏆 | 68.2% | **0.555** 🏆 | **0.594** 🏆 | **0.877** 🏆 |
+
+*\* The live production system uses a calibrated 3-signal consensus (40% Momentum / 35% Analogues / 25% Macro Drivers). The 2-signal benchmark row represents historical standalone out-of-sample evaluation.*
 
 ### 📈 Statistical Significance & Conviction Calibration
 
@@ -61,13 +63,13 @@ Evaluated across a rolling **229-month out-of-sample historical window** (Jan 20
 
 ## 🏛️ System Architecture
 
-The platform follows a clean, decoupled 5-layer architecture:
+The platform follows a clean, decoupled 6-layer architecture:
 
 ```mermaid
 flowchart TD
     A[Data Ingestion Engine] --> B[Feature Engine]
     B --> C[Macro Intelligence Engine]
-    C --> D[Two-Signal Forecasting Engine]
+    C --> D[Three-Signal Forecasting Engine]
     D --> E[Python API / DataBundle & ForecastResult]
     E --> F[Interactive Matplotlib Dashboard]
     E --> G[ReportLab PDF Strategy Note Generator]
@@ -79,6 +81,7 @@ flowchart TD
 | **Data Engine** | `data/` | Live provider fetching (FRED, DPIIT, IMF, Yahoo Finance, RBI) + `ProviderMeta` provenance tracking & local caching. |
 | **Feature Engine** | `features/` | Vectorized Z-score transformations, velocity ($d^2/dt^2$), B-spline interpolation. |
 | **Analytics** | `analytics/` | Quantitative models (`MacroIntelligenceEngine`, `ForecastingEngine`, Markov `TransitionMatrix`). |
+| **Integrations** | `integrations/` | External analytics modules & visualization extensions (e.g. Relative Rotation Graphs / RRG). |
 | **API & Models** | `api.py`, `macro_intel.py`, `models.py` | Typed `DataBundle` / `ForecastResult` dataclasses and `macro_intel` import interface. |
 | **Research** | `research/` | Institutional strategy narrative synthesis and publication-ready ReportLab PDF report generator. |
 | **User Interface** | `ui/` | Interactive Matplotlib desktop dashboard with playback controls, sparklines, and market context panels. |
