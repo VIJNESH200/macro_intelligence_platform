@@ -65,7 +65,7 @@ class App:
          ax_market_cfg, btn_market_cfg) = create_market_panel(self.fig, self.market_series)
 
         # Slider
-        ax_slider = self.fig.add_axes([0.200, 0.10, 0.630, 0.02])
+        ax_slider = self.fig.add_axes([0.200, 0.10, 0.785, 0.02])
         self.slider = Slider(ax_slider, '', 0, self.max_frames,
                              valinit=0, valstep=1, color='#1f497d', initcolor='none')
         self.slider.valtext.set_visible(False)
@@ -74,70 +74,70 @@ class App:
         ax_bg = create_background_axes(self.fig)
         control_bg_elements = []
 
-        pad = 0.005
         grp_y, grp_h = 0.020, 0.070
 
-        # Group 1: Playback
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.200, grp_y, 0.140, grp_h, "Playback")
-        ax_play = self.fig.add_axes([0.205, 0.028, 0.040, 0.035])
+        # Group 1: Playback (0.200 -> 0.345)
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.200, grp_y, 0.145, grp_h, "Playback")
+        ax_play = self.fig.add_axes([0.205, 0.028, 0.041, 0.035])
         self.btn_play = self._style_button(ax_play, 'Play')
-        ax_pause = self.fig.add_axes([0.250, 0.028, 0.040, 0.035])
+        ax_pause = self.fig.add_axes([0.252, 0.028, 0.041, 0.035])
         self.btn_pause = self._style_button(ax_pause, 'Pause')
-        ax_reset = self.fig.add_axes([0.295, 0.028, 0.040, 0.035])
+        ax_reset = self.fig.add_axes([0.299, 0.028, 0.041, 0.035])
         self.btn_reset = self._style_button(ax_reset, 'Reset')
 
-        # Group 2: Animation
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.350, grp_y, 0.100, grp_h, "Animation")
-        ax_1x = self.fig.add_axes([0.355, 0.028, 0.028, 0.035])
+        # Group 2: Animation (0.355 -> 0.465)
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.355, grp_y, 0.110, grp_h, "Animation")
+        ax_1x = self.fig.add_axes([0.360, 0.028, 0.030, 0.035])
         self.btn_1x = self._style_button(ax_1x, '1x')
         self.btn_1x.label.set_color('#1f497d')
-        ax_2x = self.fig.add_axes([0.386, 0.028, 0.028, 0.035])
+        ax_2x = self.fig.add_axes([0.395, 0.028, 0.030, 0.035])
         self.btn_2x = self._style_button(ax_2x, '2x')
-        ax_3x = self.fig.add_axes([0.417, 0.028, 0.028, 0.035])
+        ax_3x = self.fig.add_axes([0.430, 0.028, 0.030, 0.035])
         self.btn_3x = self._style_button(ax_3x, '3x')
 
-        # Group 3: Display
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.460, grp_y, 0.200, grp_h, "Display")
-        ax_chk_tails = self.fig.add_axes([0.465, 0.045, 0.090, 0.035])
+        # Group 3: Display (0.475 -> 0.685)
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.475, grp_y, 0.210, grp_h, "Display")
+        ax_chk_tails = self.fig.add_axes([0.480, 0.045, 0.095, 0.035])
         self.chk_tails = self._style_check(ax_chk_tails, ('Show Tails',), (True,))
-        ax_chk_labels = self.fig.add_axes([0.560, 0.045, 0.090, 0.035])
+        ax_chk_labels = self.fig.add_axes([0.582, 0.045, 0.095, 0.035])
         self.chk_labels = self._style_check(ax_chk_labels, ('Show Labels',), (True,))
-        ax_chk_forecast = self.fig.add_axes([0.465, 0.020, 0.090, 0.035])
+        ax_chk_forecast = self.fig.add_axes([0.480, 0.020, 0.095, 0.035])
         self.chk_forecast = self._style_check(ax_chk_forecast, ('Show Forecast',), (True,))
-        ax_chk_market = self.fig.add_axes([0.560, 0.020, 0.090, 0.035])
+        ax_chk_market = self.fig.add_axes([0.582, 0.020, 0.095, 0.035])
         self.chk_market = self._style_check(ax_chk_market, ('Market Context',), (True,))
 
-        # Group 4: Tools
-        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.670, grp_y, 0.300, grp_h, "Tools & Market")
-        ax_export = self.fig.add_axes([0.675, 0.028, 0.038, 0.035])
+        # Group 4: Tools (0.695 -> 0.845)
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.695, grp_y, 0.150, grp_h, "Tools")
+        ax_export = self.fig.add_axes([0.700, 0.028, 0.042, 0.035])
         self.btn_export = self._style_button(ax_export, 'Export')
-        ax_help = self.fig.add_axes([0.718, 0.028, 0.038, 0.035])
+        ax_help = self.fig.add_axes([0.747, 0.028, 0.042, 0.035])
         self.btn_help = self._style_button(ax_help, 'Help')
-        ax_cache = self.fig.add_axes([0.761, 0.028, 0.045, 0.035])
+        ax_cache = self.fig.add_axes([0.794, 0.028, 0.046, 0.035])
         self.btn_cache = self._style_button(ax_cache, 'Clr Cache')
 
-        # Market selector
+        # Group 5: Market Region (0.855 -> 0.985)
+        control_bg_elements += draw_group_container(self.fig, ax_bg, 0.855, grp_y, 0.130, grp_h, "Market Region")
         try:
             from ..config import get_current_market
         except ImportError:
             from config import get_current_market
         current_market = get_current_market()
 
-        ax_market_india = self.fig.add_axes([0.811, 0.028, 0.038, 0.035])
-        self.btn_market_india = Button(ax_market_india, 'India', color='#ffffff', hovercolor='#e9ecef')
+        ax_market_india = self.fig.add_axes([0.862, 0.028, 0.054, 0.035])
+        self.btn_market_india = Button(ax_market_india, 'India', color='#1f497d' if current_market == 'india' else '#ffffff', hovercolor='#e9ecef')
         self.btn_market_india.label.set_fontsize(10)
         self.btn_market_india.label.set_fontweight('bold')
-        self.btn_market_india.label.set_color('#495057')
+        self.btn_market_india.label.set_color('#ffffff' if current_market == 'india' else '#495057')
         for spine in ax_market_india.spines.values():
-            spine.set_color('#ced4da')
+            spine.set_color('#1f497d' if current_market == 'india' else '#ced4da')
 
-        ax_market_us = self.fig.add_axes([0.854, 0.028, 0.038, 0.035])
-        self.btn_market_us = Button(ax_market_us, 'US', color='#ffffff', hovercolor='#e9ecef')
+        ax_market_us = self.fig.add_axes([0.921, 0.028, 0.054, 0.035])
+        self.btn_market_us = Button(ax_market_us, 'US', color='#1f497d' if current_market == 'us' else '#ffffff', hovercolor='#e9ecef')
         self.btn_market_us.label.set_fontsize(10)
         self.btn_market_us.label.set_fontweight('bold')
-        self.btn_market_us.label.set_color('#495057')
+        self.btn_market_us.label.set_color('#ffffff' if current_market == 'us' else '#495057')
         for spine in ax_market_us.spines.values():
-            spine.set_color('#ced4da')
+            spine.set_color('#1f497d' if current_market == 'us' else '#ced4da')
 
         if current_market == 'INDIA':
             self.btn_market_india.color = '#1f497d'
@@ -299,8 +299,28 @@ class App:
             label.set_fontsize(9)
         return chk
 
+    def update_sparkline(self):
+        """Re-plot the right sidebar historic sparkline graph to match current self.df."""
+        self.ax_spark.clear()
+        self.ax_spark.plot(self.df.index, self.df['CLI_Raw'], color='#1f497d', linewidth=1.5)
+        self.ax_spark.axis('off')
+        self.ax_spark.set_title(f"{self.config['name']} — History", fontsize=9, color='gray', pad=5, fontweight='bold')
+        self.spark_pt = self.ax_spark.scatter([], [], color='red', s=40, zorder=5)
+        self.plot_elements['spark_pt'] = self.spark_pt
+        self.plot_elements['ax_spark'] = self.ax_spark
+
+    def update_indicator_config(self):
+        """Update window title and main axes labels after an indicator/market switch."""
+        try:
+            if hasattr(self.fig.canvas.manager, 'set_window_title'):
+                self.fig.canvas.manager.set_window_title(f"Macro Intelligence Platform - {self.config['name']}")
+        except Exception:
+            pass
+        self.ax.set_xlabel(f"Economic Health ({self.config['window']}M Z-Score)", fontsize=10.5, labelpad=8, color='#333333')
+        self.ax.set_ylabel(f"Economic Momentum (1M Δ → {self.config['window']}M Z-Score)", fontsize=10, labelpad=4, color='#333333')
+
     def rebuild_market_panel(self):
-        """Rebuild the market-panel text artists to match self.market_series.
+        """Rebuild the market-panel text artists and sparkline graph to match current market.
 
         Needed after a market switch: the panel's texts are keyed by series
         name, and INDIA/US expose different series names, so the widgets
@@ -321,6 +341,8 @@ class App:
         self.ax_market.set_ylim(0, 1)
 
         self._update_market_layout()
+        self.update_sparkline()
+        self.update_indicator_config()
 
     def _update_market_layout(self):
         m_state = self.plot_elements['market_state']
@@ -335,7 +357,7 @@ class App:
                 texts['name'].set_visible(True)
                 texts['val'].set_visible(True)
                 texts['chg'].set_visible(True)
-                texts['sep'].set_visible(True)
+                texts['sep'].set_visible(False)
                 y_pos -= 0.095
             else:
                 texts['name'].set_visible(False)
@@ -488,14 +510,6 @@ class App:
                 pct = pe[f'driver_{name}_pct']
                 
                 display_name = name if name != 'Yield Spread' else 'Yield Curve'
-                
-                meta = self.data_metadata.get(name, {})
-                if meta:
-                    cache_status = meta.get('cache_status', '')
-                    emoji = cache_status.split(' ')[0] if cache_status else ''
-                    rel_date = meta.get('release_date', '')
-                    if rel_date:
-                        display_name = f"{display_name} {emoji} ({rel_date})"
 
                 if d['state'] != 'Unknown':
                     yoy_val = d.get('yoy_value', np.nan)
@@ -622,9 +636,9 @@ class App:
                 texts['val'].set_visible(True)
                 texts['chg'].set_visible(True)
 
-                cur_val = df[name].iloc[idx]
-                prev_val = df[name].iloc[prev_i]
-                fmt_str = series_info['format']
+                cur_val = df[name].iloc[idx] if name in df.columns else np.nan
+                prev_val = df[name].iloc[prev_i] if name in df.columns else np.nan
+                fmt_str = series_info.get('format', '{:,.2f}')
 
                 if pd.isna(cur_val):
                     texts['val'].set_text("N/A")

@@ -132,10 +132,7 @@ def build_market_texts(ax_market, market_series: dict) -> dict:
         t_chg = ax_market.text(0.98, y_pos - 0.042, "--", fontsize=8.0, ha='right',
                                color='gray', transform=ax_market.transData, clip_on=True)
 
-        sep_line, = ax_market.plot([0.02, 0.98], [y_pos - 0.075, y_pos - 0.075],
-                                   color='lightgray', linewidth=0.5,
-                                   transform=ax_market.transData)
-        sep_line.set_clip_on(True)
+        sep_line, = ax_market.plot([], [], visible=False)
 
         market_texts[name] = {'name': t_name, 'val': t_val, 'chg': t_chg,
                               'sep': sep_line, 'y0': y_pos}
