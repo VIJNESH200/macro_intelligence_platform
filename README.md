@@ -107,7 +107,9 @@ pip install -e .
 from macro_intel import load_macro_data, compute_features, forecast_cycle
 
 # 1. Load data bundle with provenance metadata
-bundle = load_macro_data(offline=True)
+# Select either built-in market profile: "INDIA" or "US".
+# Use offline=False on a first US run if no local cache exists yet.
+bundle = load_macro_data(market="INDIA", offline=True)
 
 # 2. Compute 2D cycle metrics (X Health, Y Momentum)
 bundle = compute_features(bundle)
@@ -120,7 +122,19 @@ print(f"6M Projection: {result.forecasts['6m'].quadrant} (Conviction: {result.fo
 
 See [notebooks/quickstart.ipynb](notebooks/quickstart.ipynb) for an interactive walkthrough notebook.
 
-### 4. Launching the GUI App
+### 4. India and US forecasts
+
+The public API and GitHub Pages dashboard support both India and the United States:
+
+```python
+us_bundle = load_macro_data(market="US", offline=False)
+us_features = compute_features(us_bundle)
+us_forecast = forecast_cycle(us_features)
+```
+
+The Pages dashboard publishes separate India and US JSON payloads and lets readers switch between the two markets in the browser.
+
+### 5. Launching the GUI App
 
 **Windows Launcher:**
 Double-click `run_platform.bat` or run:
