@@ -511,6 +511,12 @@ class App:
                 
                 display_name = name if name != 'Yield Spread' else 'Yield Curve'
 
+                meta = self.data_metadata.get(name, {})
+                if meta:
+                    rel_date = meta.get('release_date', '')
+                    if rel_date:
+                        display_name = f"{display_name} ({rel_date})"
+
                 if d['state'] != 'Unknown':
                     yoy_val = d.get('yoy_value', np.nan)
                     if not pd.isna(yoy_val):
