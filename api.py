@@ -15,6 +15,7 @@ import pandas as pd
 
 try:
     from .config import CONFIG, MARKET_SERIES, MACRO_SERIES, VERSION
+    from .config.markets import get_market_config
     from .data.data_engine import DataEngine
     from .features.feature_engine import FeatureEngine
     from .analytics.forecasting_engine import ForecastingEngine
@@ -24,6 +25,7 @@ try:
     from .models import DataBundle, ForecastResult, HorizonForecast
 except ImportError:
     from config import CONFIG, MARKET_SERIES, MACRO_SERIES, VERSION
+    from config.markets import get_market_config
     from data.data_engine import DataEngine
     from features.feature_engine import FeatureEngine
     from analytics.forecasting_engine import ForecastingEngine
@@ -36,11 +38,27 @@ except ImportError:
 def load_macro_data(config: dict | None = None,
                     market_series: dict | None = None,
                     macro_series: dict | None = None,
-                    offline: bool = False) -> DataBundle:
-    """Load macroeconomic and market series into a DataBundle container."""
-    cfg = config or CONFIG
-    mkt = market_series or MARKET_SERIES
-    mac = macro_series or MACRO_SERIES
+                    offline: bool = False,
+                    market: str | None = None) -> DataBundle:
+    """Load macroeconomic and market series into a :class:`DataBundle`.
+
+    Pass ``market="INDIA"`` or ``market="US"`` to select a built-in market
+    profile without changing the application-wide market preference. Custom
+    ``config``, ``market_series``, and ``macro_series`` remain available for
+    advanced callers, but cannot be combined with ``market``.
+    """
+    if market is not None:
+        if any(value is not None for value in (config, market_series, macro_series)):
+            raise ValueError("market cannot be combined with custom configuration arguments")
+        market_name = market.upper()
+        profile = get_market_config(market_name)
+        cfg = {**profile['primary_indicator'], 'version': VERSION, '_market': market_name}
+        mkt = profile['market_series']
+        mac = profile['macro_series']
+    else:
+        cfg = config or CONFIG
+        mkt = market_series or MARKET_SERIES
+        mac = macro_series or MACRO_SERIES
 
     engine = DataEngine(cfg, mkt, mac, offline=offline)
     return engine.load_all_bundle()
@@ -75,8 +93,11 @@ def forecast_cycle(bundle: DataBundle,
         idx = int(idx)
 
     plot_elements = {'market_state': {'selected': []}}
-    report_data = extract_report_data(df, cfg, plot_elements, idx, MARKET_SERIES)
-    analogues = generate_analogues(df, idx, report_data, MARKET_SERIES)
+    market_name = cfg.get('_market')
+    market_config = (get_market_config(market_name)['market_series']
+                     if market_name else MARKET_SERIES)
+    report_data = extract_report_data(df, cfg, plot_elements, idx, market_config)
+    analogues = generate_analogues(df, idx, report_data, market_config)
     macro_contrib = report_data.get('macro_contrib')
 
     raw_forecast = ForecastingEngine.project(df, idx, cfg, analogues, macro_contrib)

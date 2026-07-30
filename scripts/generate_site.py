@@ -183,11 +183,11 @@ def generate_static_site(india_json: str = 'docs/latest_forecast_india.json',
         </div>
 
         <div class="tab-bar">
-            <button class="tab-btn active" onclick="switchTab('india')">
+            <button class="tab-btn active" onclick="switchTab('india', this)">
                 <span class="flag">\U0001F1EE\U0001F1F3</span> India
                 <span class="regime-tag">{india_regime}</span>
             </button>
-            <button class="tab-btn" onclick="switchTab('us')">
+            <button class="tab-btn" onclick="switchTab('us', this)">
                 <span class="flag">\U0001F1FA\U0001F1F8</span> United States
                 <span class="regime-tag">{us_regime}</span>
             </button>
@@ -209,11 +209,11 @@ def generate_static_site(india_json: str = 'docs/latest_forecast_india.json',
     </div>
 
     <script>
-        function switchTab(market) {{
+        function switchTab(market, button) {{
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.getElementById('panel-' + market).classList.add('active');
-            event.currentTarget.classList.add('active');
+            button.classList.add('active');
         }}
     </script>
 </body>
@@ -222,7 +222,7 @@ def generate_static_site(india_json: str = 'docs/latest_forecast_india.json',
 
     os.makedirs(os.path.dirname(os.path.abspath(out_html)), exist_ok=True)
     with open(out_html, 'w', encoding='utf-8') as f:
-        f.write(html_content)
+        f.write('\n'.join(line.rstrip() for line in html_content.splitlines()) + '\n')
 
     print(f"[+] Static HTML dashboard generated -> {out_html}")
     return out_html

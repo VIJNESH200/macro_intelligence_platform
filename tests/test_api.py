@@ -70,6 +70,21 @@ class TestAPIAndModels(unittest.TestCase):
         self.assertIn('6m', forecast.forecasts)
         self.assertIn(forecast.forecasts['6m'].quadrant, ['Expansion', 'Slowdown', 'Contraction', 'Recovery'])
 
+    def test_market_argument_rejects_conflicting_custom_configuration(self):
+        """The public market shortcut must not silently mix profile and custom data."""
+        with self.assertRaises(ValueError):
+            alias_load(market='US', config={'ticker': 'custom'})
+
+    def test_us_market_shortcut_pipeline(self):
+        """The notebook-facing US shortcut loads and forecasts without global state."""
+        bundle = alias_load(market='US', offline=True)
+        self.assertEqual(bundle.config['_market'], 'US')
+        self.assertIn('USALOLITOAASTSAM', bundle.df.columns)
+
+        forecast = alias_forecast(alias_compute(bundle))
+        self.assertIsInstance(forecast, ForecastResult)
+        self.assertIn('6m', forecast.forecasts)
+
 
 if __name__ == '__main__':
     unittest.main()
