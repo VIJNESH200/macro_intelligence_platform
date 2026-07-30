@@ -176,7 +176,9 @@ def report_pdf(market: str | None = Query(None), idx: int | None = Query(None)) 
 
     with STORE.session(market) as snapshot:
         frame_idx = snapshot.clamp(idx)
-        bundle = compute.report_bundle(snapshot, frame_idx)
+        # Reuse the same cached analytics bundle used by the frame and forecast
+        # endpoints so the report and dashboard cannot diverge.
+        bundle = compute.analysis_bundle(snapshot, frame_idx)
 
         stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'BusinessCycle_Report_{snapshot.market}_{stamp}.pdf'

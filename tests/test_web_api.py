@@ -166,6 +166,16 @@ def test_series_endpoint(client):
     assert len(payload['dates']) == len(payload['series']['CLI_Raw'])
 
 
+def test_report_download_is_a_pdf(client):
+    """The Report button must download a real PDF, never a text error page."""
+    response = client.get('/api/report?market=INDIA')
+
+    assert response.status_code == 200
+    assert response.headers['content-type'].startswith('application/pdf')
+    assert '.pdf' in response.headers['content-disposition']
+    assert response.content.startswith(b'%PDF-')
+
+
 # ----------------------------------------------------------------------
 # Error handling
 # ----------------------------------------------------------------------
