@@ -439,6 +439,7 @@ class App:
 
         import matplotlib.dates as mdates
         pe['spark_pt'].set_offsets(np.c_[mdates.date2num(curr_row.name), curr_row['CLI_Raw']])
+        pe['spark_pt'].set_color(quad_color)
 
         # Right Sidebar
         c = config['center']

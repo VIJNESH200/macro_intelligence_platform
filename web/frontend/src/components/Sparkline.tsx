@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { scaleLinear } from 'd3-scale'
 import type { Frame } from '@/lib/types'
-import { fixed } from '@/lib/regime'
+import { REGIMES, fixed } from '@/lib/regime'
 
 const HEIGHT = 52
 
@@ -52,7 +52,11 @@ export function Sparkline({
 
     return {
       path: d,
-      marker: { cx: x(at), cy: y(points[at].raw as number) },
+      marker: {
+        cx: x(at),
+        cy: y(points[at].raw as number),
+        fill: REGIMES[currentFrame.quadrant].color,
+      },
       current: currentFrame,
     }
   }, [points, frames, index, width])
@@ -72,7 +76,7 @@ export function Sparkline({
             cx={marker.cx}
             cy={marker.cy}
             r={3.5}
-            fill="var(--viz-point)"
+            fill={marker.fill}
             stroke="var(--surface)"
             strokeWidth={1.5}
           />
