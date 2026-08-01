@@ -17,12 +17,19 @@ class CacheManager:
 
     def __init__(self, cache_dir: str | None = None, max_age_hours: int = 24):
         if cache_dir is None:
-            cache_dir = os.path.join(
-                os.path.expanduser('~'),
-                '.macro_intelligence_platform', 'cache'
-            )
+            import tempfile
+            if 'VERCEL' in os.environ or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
+                base = tempfile.gettempdir()
+            else:
+                base = os.path.expanduser('~')
+            cache_dir = os.path.join(base, '.macro_intelligence_platform', 'cache')
         self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            import tempfile
+            self.cache_dir = Path(os.path.join(tempfile.gettempdir(), '.macro_intelligence_platform', 'cache'))
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_age_hours = max_age_hours
 
     def _cache_path(self, key: str) -> Path:

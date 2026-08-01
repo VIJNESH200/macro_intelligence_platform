@@ -2,6 +2,11 @@
   "version": 2,
   "buildCommand": "cd web/frontend && npm install && npm run build",
   "outputDirectory": "web/frontend/dist",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "data/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",

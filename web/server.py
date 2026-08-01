@@ -40,7 +40,7 @@ except ImportError:
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIST = os.path.join(BASE_DIR, 'web', 'frontend', 'dist')
-EXPORT_DIR = os.path.join(BASE_DIR, 'exports')
+EXPORT_DIR = os.path.join(tempfile.gettempdir(), 'macro_platform_exports')
 
 app = FastAPI(
     title='Macro Intelligence Platform API',
