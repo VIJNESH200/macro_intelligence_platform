@@ -4,6 +4,8 @@ UI Layout — Figure and axes creation.
 ======================================
 Extracted from prepare_plot() in business_cycle_tracer.py.
 """
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
