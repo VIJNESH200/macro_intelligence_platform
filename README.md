@@ -3,11 +3,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![CI Pipeline](https://github.com/VIJNESH200/macro_intelligence_platform/actions/workflows/ci.yml/badge.svg)](https://github.com/VIJNESH200/macro_intelligence_platform/actions/workflows/ci.yml)
-[![Live Web Dashboard](https://img.shields.io/badge/Live%20App-Vercel-success.svg)](https://macro-intelligence-platform-p0t4438jf-vijnesh.vercel.app/)
+[![Live Web Dashboard](https://img.shields.io/badge/Live%20App-Vercel-success.svg)](https://macro-intelligence-platform-three.vercel.app/)
 [![GitHub Stars](https://img.shields.io/github/stars/VIJNESH200/macro_intelligence_platform?style=social)](https://github.com/VIJNESH200/macro_intelligence_platform)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/VIJNESH200/macro_intelligence_platform)
 
-An academically-validated, open-source **quantitative business cycle forecasting engine** and interactive macroeconomic intelligence platform. It traces economic phase shifts across 4 classical regimes (*Expansion, Slowdown, Contraction, Recovery*) and projects 3M/6M/9M forward trajectories using a 3-signal consensus framework.
+> **A live web platform for tracking business cycles, forecasting macroeconomic turning points, and generating institutional strategy reports.**  
+> 🌐 **Live Web App**: [https://macro-intelligence-platform-three.vercel.app/](https://macro-intelligence-platform-three.vercel.app/)
+
+An open-source, quantitative business cycle forecasting platform. It traces economic phase shifts across 4 classical regimes (*Expansion, Slowdown, Contraction, Recovery*) and projects 3M/6M/9M forward trajectories using a 3-signal consensus framework.
 
 ![Macro Intelligence Dashboard](docs/assets/dashboard_preview.png)
 
@@ -15,12 +18,13 @@ An academically-validated, open-source **quantitative business cycle forecasting
 
 ## 📌 Table of Contents
 - [🌟 Highlights](#-highlights)
-- [🌐 Live Web App & Hybrid Cloud Architecture](#-live-web-app--hybrid-cloud-architecture)
+- [📄 Automated Institutional Strategy Notes](#-automated-institutional-strategy-notes)
+- [🌐 Live Web App & Cloud Architecture](#-live-web-app--cloud-architecture)
 - [📊 Backtest & Empirical Validation](#-backtest--empirical-validation)
 - [🏛️ System Architecture](#️-system-architecture)
 - [🚀 Quick Start & Local Development](#-quick-start--local-development)
 - [🌐 Open Data Pipeline & Provider Engine](#-open-data-pipeline--provider-engine)
-- [📄 Automated Strategy Note Export](#-automated-strategy-note-export)
+- [🔮 Roadmap](#-roadmap)
 - [📚 Developer Documentation](#-developer-documentation)
 - [🤝 Contributing & License](#-contributing--license)
 
@@ -33,34 +37,48 @@ An academically-validated, open-source **quantitative business cycle forecasting
   1. **CLI Momentum Extrapolation** (40% weight — exponential decay pull toward long-term trend)
   2. **Multivariate Historical Analogues** (35% weight — Euclidean distance matching across past cycle footprints)
   3. **Auxiliary Macro Driver Assessment** (25% weight — walk-forward Ridge regression covering Real Policy Rate, Core Industries, CPI, and Yield Spreads)
+- **Interactive Timeline Scrubbing**: Smooth SVG chart rendering and payload caching ensure lockstep synchronization between historical dot trajectory and forward projection fan.
 - **Decoupled React SPA & FastAPI Cloud Architecture**: High-performance React 18 / TypeScript frontend hosted on **Vercel CDN** paired with a scalable **FastAPI** backend on **Render**.
-- **Instant In-Memory Scrubber Synchronization**: Atomic state updates and payload caching guarantee 0 scrub latency and perfect lockstep between historical dot trajectory and forward projection fan.
-- **Robust Quantitative Engine**: Calendar month alignment for YoY growth, decoupled CPI YoY calculation for Real Policy Rates, zero-variance guards, and complete `Unknown` state schemas.
 - **100% Open Data & Provider Provenance**: Fully automated pipeline using public sources (FRED, DPIIT, IMF SDMX, Yahoo Finance, RBI) with explicit `ProviderMeta` tracking (`live`, `cache`, `bundled_fallback`, `schema_ok`).
 - **Python API & Notebook Integration**: Programmatic interface (`from macro_intel import load_macro_data, compute_features, forecast_cycle`) with typed `DataBundle` and `ForecastResult` containers.
-- **Automated Institutional Strategy Notes**: Exports publication-ready PDF research briefs featuring Markov transition matrices, scenario distributions (Bull/Base/Bear), and narrative synthesis.
 
 ---
 
-## 🌐 Live Web App & Hybrid Cloud Architecture
+## 📄 Automated Institutional Strategy Notes
+
+Clicking the **"Export PDF"** button generates a publication-ready macroeconomic brief in `exports/`:
+
+| Page 1: Executive Summary & Thesis | Page 2: Cycle Position & Dashboard |
+| :---: | :---: |
+| ![PDF Strategy Note Page 1](docs/assets/pdf_report_preview.png) | ![PDF Strategy Note Page 2](docs/assets/pdf_report_page2.png) |
+
+- **Executive Summary & Strategy Cards**: Stance classification (*Highly Constructive, Constructive, Cautious, Defensive, Highly Defensive*).
+- **Markov Transition Probabilities**: Empirical 4×4 regime transition probabilities and expected phase durations.
+- **Scenario Horizon Matrix**: 3M/6M/9M Bull, Base, and Bear probabilistic paths with expected asset returns.
+- **Methodology Appendix**: Formal mathematical definitions for Z-scores, Euclidean analogue matching, and conviction scoring.
+
+---
+
+## 🌐 Live Web App & Cloud Architecture
 
 The platform features a production-ready, decoupled hybrid cloud deployment:
 
-- 🚀 **Live React Web Dashboard (Vercel)**: [https://macro-intelligence-platform-p0t4438jf-vijnesh.vercel.app/](https://macro-intelligence-platform-p0t4438jf-vijnesh.vercel.app/)
-- ⚙️ **FastAPI REST API (Render)**: Serves quantitative analysis endpoints, cycle calculations, and PDF strategy briefs with CORS support.
+- 🌐 **Live Web App**: [https://macro-intelligence-platform-three.vercel.app/](https://macro-intelligence-platform-three.vercel.app/)
 
-![Macro Intelligence Web UI](docs/assets/web_ui_preview.png)
+### Technology Stack & Cloud Infrastructure
+- **Frontend**: React 18 + TypeScript + Vite (Tailwind CSS, D3 SVG Charting)
+- **Backend**: FastAPI + Python 3.10 (Uvicorn, SciPy, NumPy, Pandas, ReportLab)
+- **Cloud Hosting**: **Vercel** (Global Edge CDN SPA) + **Render** (Python API Web Service)
 
-### Production Deployment Architecture
 ```
                          ┌──────────────────────────────────────────────┐
-                         │       Live Vercel Frontend (React SPA)       │
+                         │       Vercel Frontend (React 18 SPA)         │
                          │  https://macro-intelligence-platform...      │
                          └──────────────────────┬───────────────────────┘
                                                 │ VITE_API_BASE_URL
                                                 ▼
                          ┌──────────────────────────────────────────────┐
-                         │       Render FastAPI Backend (Python API)    │
+                         │       Render Backend (FastAPI Web Service)   │
                          │  https://macro-intelligence-api.onrender.com │
                          └──────────────────────┬───────────────────────┘
                                                 │
@@ -201,18 +219,13 @@ Unlike proprietary macro engines, this platform operates on 100% open public dat
 
 ---
 
-## 📄 Automated Strategy Note Export
+## 🔮 Roadmap
 
-Clicking the **"Export PDF"** button in the dashboard generates a publication-ready macroeconomic brief in `exports/`:
-
-| Page 1: Executive Summary & Thesis | Page 2: Cycle Position & Dashboard |
-| :---: | :---: |
-| ![PDF Strategy Note Page 1](docs/assets/pdf_report_preview.png) | ![PDF Strategy Note Page 2](docs/assets/pdf_report_page2.png) |
-
-- **Executive Summary & Strategy Cards**: Stance classification (*Highly Constructive, Constructive, Cautious, Defensive, Highly Defensive*).
-- **Markov Transition Probabilities**: Empirical 4×4 regime transition probabilities and expected phase durations.
-- **Scenario Horizon Matrix**: 3M/6M/9M Bull, Base, and Bear probabilistic paths with expected asset returns.
-- **Methodology Appendix**: Formal mathematical definitions for Z-scores, Euclidean analogue matching, and conviction scoring.
+- [ ] **Relative Rotation Graphs (RRG)**: Sector-rotation matrix and asset momentum rotation.
+- [ ] **Additional International Markets**: Expanding beyond US & India to Eurozone, Japan, and UK profiles.
+- [ ] **Portfolio Allocation Overlays**: Regime-conditioned asset allocation weights and risk parity triggers.
+- [ ] **Economic Event Calendar**: High-frequency macroeconomic event schedules and release tracking.
+- [ ] **Ensemble Forecasting Expansion**: Incorporating non-linear machine learning models into the auxiliary driver consensus.
 
 ---
 
