@@ -498,8 +498,10 @@ class App:
         # Macro Drivers
         try:
             from ..analytics.macro_intelligence_engine import MacroIntelligenceEngine
+            from ..config import MACRO_SERIES
         except ImportError:
             from analytics.macro_intelligence_engine import MacroIntelligenceEngine
+            from config import MACRO_SERIES
         
         macro_contrib = MacroIntelligenceEngine.assign_contribution(df, idx)
         
