@@ -88,31 +88,55 @@ export default function App() {
 
   // Panel data follows the scrubber. Requests are aborted on change so a slow
   // response for an old frame can never overwrite a newer one. Both frame and
-  // forecast update atomically so the chart projection never desyncs from the historical dot.
+  // forecast update atomically so the chart projection never desyncs from the
+  // historical dot. We also clear stale state immediately so the UI never
+  // renders a forecast from a previous index while waiting for the new one.
   React.useEffect(() => {
     if (!cycle) return
-    const controller = new AbortController()
-    let active = true
 
-    const pFrame = api.frame(market, index, controller.signal)
-    const pForecast = api.forecast(market, index, controller.signal)
+    // Immediately clear stale forecast so the chart and panels never show
+    // a projection from a different frame while the new one loads.
+    setForecast(null)
+
+    const controller = new AbortController()
+    const requestedIndex = index
+    const requestedMarket = market
+
+    const pFrame = api.frame(requestedMarket, requestedIndex, controller.signal)
+    const pForecast = api.forecast(requestedMarket, requestedIndex, controller.signal)
 
     Promise.all([pFrame, pForecast])
       .then(([fFrame, fForecast]) => {
-        if (!active) return
+        if (controller.signal.aborted) return
+
+        // Guard: only commit if the response matches what we asked for.
+        // Cached responses resolve instantly and could race with a new request.
+        if (
+          fFrame.index !== requestedIndex ||
+          fForecast.index !== requestedIndex ||
+          fFrame.market !== requestedMarket ||
+          fForecast.market !== requestedMarket
+        ) {
+          return
+        }
+
         setFrame(fFrame)
         setForecast(fForecast)
       })
       .catch((err: Error) => {
-        if (!active || err?.name === 'AbortError') return
-        pFrame.then((f) => active && setFrame(f)).catch(() => undefined)
-        pForecast.then((f) => active && setForecast(f)).catch(() => undefined)
+        if (controller.signal.aborted || err?.name === 'AbortError') return
+        // If one leg failed, try to at least show the frame (without forecast)
+        // but never mix indices — only commit if still on the same request.
+        pFrame
+          .then((f) => {
+            if (!controller.signal.aborted && f.index === requestedIndex && f.market === requestedMarket) {
+              setFrame(f)
+            }
+          })
+          .catch(() => undefined)
       })
 
-    return () => {
-      active = false
-      controller.abort()
-    }
+    return () => controller.abort()
   }, [cycle, market, index])
 
   React.useEffect(() => {

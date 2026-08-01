@@ -23,9 +23,8 @@ export const api = {
 
   frame: (market: string, idx: number, signal?: AbortSignal): Promise<FramePayload> => {
     const key = `${market}:${idx}`
-    if (frameCache.has(key)) {
-      return Promise.resolve(frameCache.get(key)!)
-    }
+    const cached = frameCache.get(key)
+    if (cached) return Promise.resolve(cached)
     return get<FramePayload>(`/api/frame/${idx}?market=${encodeURIComponent(market)}`, signal).then(
       (data) => {
         frameCache.set(key, data)
@@ -36,9 +35,8 @@ export const api = {
 
   forecast: (market: string, idx: number, signal?: AbortSignal): Promise<ForecastPayload> => {
     const key = `${market}:${idx}`
-    if (forecastCache.has(key)) {
-      return Promise.resolve(forecastCache.get(key)!)
-    }
+    const cached = forecastCache.get(key)
+    if (cached) return Promise.resolve(cached)
     return get<ForecastPayload>(
       `/api/forecast?market=${encodeURIComponent(market)}&idx=${idx}`,
       signal,
