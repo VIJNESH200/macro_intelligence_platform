@@ -5,7 +5,7 @@ Unit & Schema Validation Tests for Top-Level Python API & Models.
 """
 import unittest
 import pandas as pd
-from api import load_macro_data, compute_features, forecast_cycle
+from core_api import load_macro_data, compute_features, forecast_cycle
 from macro_intel import load_macro_data as alias_load, compute_features as alias_compute, forecast_cycle as alias_forecast
 from models import DataBundle, ForecastResult, HorizonForecast
 from config.markets import get_market_config

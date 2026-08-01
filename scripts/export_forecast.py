@@ -12,7 +12,7 @@ import argparse
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 from config import reload_for_market
-from api import load_macro_data, compute_features, forecast_cycle
+from core_api import load_macro_data, compute_features, forecast_cycle
 
 def export_latest_forecast(out_path: str = 'docs/latest_forecast.json', market: str = 'INDIA', offline: bool = True) -> str:
     """Run pipeline for specified market and write serialized ForecastResult JSON to out_path."""

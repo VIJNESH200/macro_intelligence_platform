@@ -5,7 +5,7 @@ import numpy as np
 pytestmark = pytest.mark.skip(reason="Milestone 3 feature un-implemented")
 
 try:
-    from api import sector_rotation_signal, SectorRotationResult
+    from core_api import sector_rotation_signal, SectorRotationResult
     from exports import export_to_notebook, export_to_json
 except ImportError:
     pass

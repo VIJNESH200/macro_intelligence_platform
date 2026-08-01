@@ -16,7 +16,7 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 try:
-    from api import load_macro_data, compute_features
+    from core_api import load_macro_data, compute_features
 except ImportError:
     from macro_intel import load_macro_data, compute_features
 

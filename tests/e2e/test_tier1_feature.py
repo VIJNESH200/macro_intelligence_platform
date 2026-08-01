@@ -10,7 +10,7 @@ pytestmark = pytest.mark.skip(reason="Milestone 3 RRG integration un-implemented
 try:
     from analytics.rrg import classify_rrg_quadrant, build_aligned_panel
     from features.validation import validate_descriptive_signal, test_predictive_signal
-    from api import SectorRotationResult, sector_rotation_signal
+    from core_api import SectorRotationResult, sector_rotation_signal
 except ImportError:
     pass
 
@@ -147,7 +147,7 @@ def test_f5_dataclass_to_dict():
     assert d["target_sector"] == "XLF"
 
 def test_f5_notebook_mock_workflow():
-    code = "from api import sector_rotation_signal\nres = sector_rotation_signal()\n"
+    code = "from core_api import sector_rotation_signal\nres = sector_rotation_signal()\n"
     local_vars = {}
     exec(code, {}, local_vars)
     assert "res" in local_vars
