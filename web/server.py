@@ -25,14 +25,12 @@ try:
     from ..config import VERSION
     from ..config.markets import MARKET_PROFILES
     from . import compute
-    from .chart import render_cycle_png
     from .serialization import to_jsonable
     from .store import STORE, UnknownMarketError, normalize_market
 except ImportError:
     from config import VERSION
     from config.markets import MARKET_PROFILES
     from web import compute
-    from web.chart import render_cycle_png
     from web.serialization import to_jsonable
     from web.store import STORE, UnknownMarketError, normalize_market
 
@@ -163,13 +161,30 @@ def series(names: str = Query(..., description='Comma-separated column names'),
 # ----------------------------------------------------------------------
 # Exports
 # ----------------------------------------------------------------------
+def _get_render_cycle_png():
+    """Lazily import render_cycle_png to allow headless environments without matplotlib to serve core API endpoints."""
+    try:
+        try:
+            from .chart import render_cycle_png
+        except ImportError:
+            from web.chart import render_cycle_png
+        return render_cycle_png
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f'Chart rendering is unavailable on this server instance ({exc}).'
+        )
+
+
 @app.get('/api/report')
-def report_pdf(market: str | None = Query(None), idx: int | None = Query(None)) -> FileResponse:
-    """Generate and return a publication-ready PDF strategy report."""
+def report(market: str | None = Query(None), idx: int | None = Query(None)) -> FileResponse:
+    """Generate and return a PDF report for `idx` (or latest)."""
     try:
         from ..research import pdf as pdf_mod
     except ImportError:
         from research import pdf as pdf_mod
+
+    render_cycle_png_func = _get_render_cycle_png()
 
     os.makedirs(EXPORT_DIR, exist_ok=True)
 
@@ -186,7 +201,7 @@ def report_pdf(market: str | None = Query(None), idx: int | None = Query(None)) 
         chart_fd, chart_path = tempfile.mkstemp(suffix='.png', prefix='cycle_chart_')
         os.close(chart_fd)
         try:
-            render_cycle_png(snapshot, frame_idx, chart_path, bundle['forecast'])
+            render_cycle_png_func(snapshot, frame_idx, chart_path, bundle['forecast'])
             pdf_mod.build_pdf_report(
                 bundle['data'], bundle['analysis'], bundle['insights'],
                 bundle['market_insights'], bundle['narrative'], bundle['analogues'],
@@ -202,12 +217,13 @@ def report_pdf(market: str | None = Query(None), idx: int | None = Query(None)) 
 @app.get('/api/chart.png')
 def chart_png(market: str | None = Query(None), idx: int | None = Query(None)) -> FileResponse:
     """Server-rendered PNG of the cycle chart, for sharing or embedding."""
+    render_cycle_png_func = _get_render_cycle_png()
     with STORE.session(market) as snapshot:
         frame_idx = snapshot.clamp(idx)
         projection = compute.forecast_payload(snapshot, frame_idx)
         fd, path = tempfile.mkstemp(suffix='.png', prefix='cycle_')
         os.close(fd)
-        render_cycle_png(snapshot, frame_idx, path, projection)
+        render_cycle_png_func(snapshot, frame_idx, path, projection)
         filename = f'cycle_{snapshot.market}_{frame_idx}.png'
 
     return FileResponse(path, media_type='image/png', filename=filename, background=BackgroundTask(os.unlink, path))
