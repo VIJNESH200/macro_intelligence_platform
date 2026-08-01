@@ -1,9 +1,5 @@
 import os
 import sys
-import matplotlib
-
-# Force headless Agg backend for serverless environments
-matplotlib.use('Agg')
 
 # Ensure project root is on sys.path for serverless environment
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
