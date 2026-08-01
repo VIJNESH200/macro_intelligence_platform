@@ -87,15 +87,32 @@ export default function App() {
   }, [market, reloadCount])
 
   // Panel data follows the scrubber. Requests are aborted on change so a slow
-  // response for an old frame can never overwrite a newer one.
+  // response for an old frame can never overwrite a newer one. Both frame and
+  // forecast update atomically so the chart projection never desyncs from the historical dot.
   React.useEffect(() => {
     if (!cycle) return
     const controller = new AbortController()
+    let active = true
 
-    api.frame(market, index, controller.signal).then(setFrame).catch(() => undefined)
-    api.forecast(market, index, controller.signal).then(setForecast).catch(() => undefined)
+    const pFrame = api.frame(market, index, controller.signal)
+    const pForecast = api.forecast(market, index, controller.signal)
 
-    return () => controller.abort()
+    Promise.all([pFrame, pForecast])
+      .then(([fFrame, fForecast]) => {
+        if (!active) return
+        setFrame(fFrame)
+        setForecast(fForecast)
+      })
+      .catch((err: Error) => {
+        if (!active || err?.name === 'AbortError') return
+        pFrame.then((f) => active && setFrame(f)).catch(() => undefined)
+        pForecast.then((f) => active && setForecast(f)).catch(() => undefined)
+      })
+
+    return () => {
+      active = false
+      controller.abort()
+    }
   }, [cycle, market, index])
 
   React.useEffect(() => {

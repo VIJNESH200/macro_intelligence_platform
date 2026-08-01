@@ -1,5 +1,8 @@
 import type { CyclePayload, ForecastPayload, FramePayload, MarketProfile } from './types'
 
+const frameCache = new Map<string, FramePayload>()
+const forecastCache = new Map<string, ForecastPayload>()
+
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(path, { signal })
   if (!response.ok) {
@@ -15,14 +18,32 @@ export const api = {
   cycle: (market: string, signal?: AbortSignal) =>
     get<CyclePayload>(`/api/cycle?market=${encodeURIComponent(market)}`, signal),
 
-  frame: (market: string, idx: number, signal?: AbortSignal) =>
-    get<FramePayload>(`/api/frame/${idx}?market=${encodeURIComponent(market)}`, signal),
+  frame: (market: string, idx: number, signal?: AbortSignal): Promise<FramePayload> => {
+    const key = `${market}:${idx}`
+    if (frameCache.has(key)) {
+      return Promise.resolve(frameCache.get(key)!)
+    }
+    return get<FramePayload>(`/api/frame/${idx}?market=${encodeURIComponent(market)}`, signal).then(
+      (data) => {
+        frameCache.set(key, data)
+        return data
+      },
+    )
+  },
 
-  forecast: (market: string, idx: number, signal?: AbortSignal) =>
-    get<ForecastPayload>(
+  forecast: (market: string, idx: number, signal?: AbortSignal): Promise<ForecastPayload> => {
+    const key = `${market}:${idx}`
+    if (forecastCache.has(key)) {
+      return Promise.resolve(forecastCache.get(key)!)
+    }
+    return get<ForecastPayload>(
       `/api/forecast?market=${encodeURIComponent(market)}&idx=${idx}`,
       signal,
-    ),
+    ).then((data) => {
+      forecastCache.set(key, data)
+      return data
+    })
+  },
 
   reportUrl: (market: string, idx: number) =>
     `/api/report?market=${encodeURIComponent(market)}&idx=${idx}`,
@@ -31,6 +52,8 @@ export const api = {
     `/api/chart.png?market=${encodeURIComponent(market)}&idx=${idx}`,
 
   clearCache: async (market?: string) => {
+    frameCache.clear()
+    forecastCache.clear()
     const query = market ? `?market=${encodeURIComponent(market)}` : ''
     const response = await fetch(`/api/cache/clear${query}`, { method: 'POST' })
     if (!response.ok) throw new Error(`Cache clear failed: ${response.status}`)
