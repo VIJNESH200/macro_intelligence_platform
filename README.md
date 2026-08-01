@@ -18,7 +18,7 @@ An open-source, quantitative business cycle forecasting platform. It traces econ
 
 ## 📌 Table of Contents
 - [🌟 Highlights](#-highlights)
-- [📄 Automated Institutional Strategy Notes](#-automated-institutional-strategy-notes)
+- [📄 One-Click Institutional PDF Reports](#-one-click-institutional-pdf-reports)
 - [🌐 Live Web App & Cloud Architecture](#-live-web-app--cloud-architecture)
 - [📊 Backtest & Empirical Validation](#-backtest--empirical-validation)
 - [🏛️ System Architecture](#️-system-architecture)
@@ -44,9 +44,12 @@ An open-source, quantitative business cycle forecasting platform. It traces econ
 
 ---
 
-## 📄 Automated Institutional Strategy Notes
+## 📄 One-Click Institutional PDF Reports
 
-Clicking the **"Export PDF"** button generates a publication-ready macroeconomic brief in `exports/`:
+Generating a publication-ready macroeconomic research brief is instant across both web and local environments:
+
+- 🌐 **Live Web App (Vercel)**: Click the **"Export PDF"** button in the top navigation bar at [macro-intelligence-platform-three.vercel.app](https://macro-intelligence-platform-three.vercel.app/). The React frontend calls the Render FastAPI `/api/report` endpoint, generating and streaming a multi-page PDF brief directly to your browser downloads.
+- 💻 **Desktop App / Python API**: Click **"Export PDF"** in the Matplotlib GUI or execute `python -m research.pdf` to generate strategy notes saved locally in `exports/`.
 
 | Page 1: Executive Summary & Thesis | Page 2: Cycle Position & Dashboard |
 | :---: | :---: |
