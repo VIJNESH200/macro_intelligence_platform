@@ -4,15 +4,7 @@
   "outputDirectory": "web/frontend/dist",
   "functions": {
     "api/index.py": {
-      "includeFiles": [
-        "analytics/**",
-        "config/**",
-        "data/**",
-        "features/**",
-        "research/**",
-        "ui/**",
-        "web/**"
-      ]
+      "includeFiles": "{analytics,config,data,features,research,ui,web}/**"
     }
   },
   "rewrites": [
