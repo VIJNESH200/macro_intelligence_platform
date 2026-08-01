@@ -24,7 +24,7 @@ class YieldProvider(BaseProvider):
         
     def fetch(self, symbol: str, start_date: str = '2000-01-01', end_date: str | None = None, return_meta: bool = False) -> pd.Series | ProviderResult:
         source_type = "live"
-        if symbol and symbol not in ['YIELD_SPREAD', 'Yield Spread', '']:
+        if symbol and symbol not in ['YIELD_SPREAD', 'Yield Spread', 'SPREAD', '']:
             series = self.rbi.fetch(symbol, start_date, end_date)
             self.last_source_used = self.rbi.last_source_used
             if return_meta:
