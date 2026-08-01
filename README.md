@@ -48,7 +48,7 @@ An open-source, quantitative business cycle forecasting platform. It traces econ
 
 Generating a publication-ready macroeconomic research brief is instant across both web and local environments:
 
-- 🌐 **Live Web App (Vercel)**: Click the **"Export PDF"** button in the top navigation bar at [macro-intelligence-platform-three.vercel.app](https://macro-intelligence-platform-three.vercel.app/). The React frontend calls the Render FastAPI `/api/report` endpoint, generating and streaming a multi-page PDF brief directly to your browser downloads.
+- 🌐 **Live Web App (Vercel)**: Click the **"Report"** button in the top navigation bar at [macro-intelligence-platform-three.vercel.app](https://macro-intelligence-platform-three.vercel.app/). The React frontend calls the Render FastAPI `/api/report` endpoint, generating and streaming a multi-page PDF brief directly to your browser downloads.
 - 💻 **Desktop App / Python API**: Click **"Export PDF"** in the Matplotlib GUI or execute `python -m research.pdf` to generate strategy notes saved locally in `exports/`.
 
 | Page 1: Executive Summary & Thesis | Page 2: Cycle Position & Dashboard |
