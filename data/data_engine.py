@@ -69,7 +69,7 @@ class DataEngine:
         if offline is not None:
             self.offline = offline
         else:
-            self.offline = bool(os.environ.get("CI")) or bool(os.environ.get("OFFLINE"))
+            self.offline = bool(os.environ.get("CI")) or bool(os.environ.get("OFFLINE")) or bool(os.environ.get("VERCEL"))
 
         self.providers = {
             'fred': FREDProvider(),

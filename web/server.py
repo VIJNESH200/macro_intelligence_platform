@@ -224,5 +224,5 @@ def clear_cache(market: str | None = Query(None)) -> JSONResponse:
 # ----------------------------------------------------------------------
 # Static frontend (mounted last so /api/* always wins)
 # ----------------------------------------------------------------------
-if os.path.isdir(FRONTEND_DIST):
+if 'VERCEL' not in os.environ and os.path.isdir(FRONTEND_DIST):
     app.mount('/', StaticFiles(directory=FRONTEND_DIST, html=True), name='frontend')
