@@ -40,6 +40,26 @@ class InstitutionalDocTemplate(BaseDocTemplate):
     def on_page(self, canvas, doc):
         header_footer(canvas, doc, self.data)
 
+import html
+import re
+
+def clean_xml_text(val) -> str:
+    """Sanitize strings for ReportLab Paragraphs (XML escape raw & and convert Non-WinAnsi symbols)."""
+    if val is None:
+        return ""
+    text = str(val)
+    symbol_map = {
+        '▲': '+', '▼': '-', '►': '=', '█': '|',
+        '↑': '^', '↓': 'v', '⚠': '[!]', '→': '->',
+        '•': '&bull;'
+    }
+    for sym, rep in symbol_map.items():
+        text = text.replace(sym, rep)
+    
+    # Escape raw '&' that is not part of a valid XML entity
+    text = re.sub(r'&(?!(amp|lt|gt|quot|apos|bull|#\d+|#x[0-9a-fA-F]+);)', '&amp;', text)
+    return text
+
 def format_delta(val, is_pct=False):
     if pd.isna(val): return "N/A"
     sign = "+" if val > 0 else ("" if val == 0 else "")
@@ -77,13 +97,13 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     # PAGE 1: The Macro Thesis (The "Now")
     # =========================================================================
     elements.append(Paragraph("Macroeconomic Strategy Note", title_style))
-    elements.append(Paragraph(f"Macro Intelligence Platform | {data['indicator']}", subtitle_style))
+    elements.append(Paragraph(f"Macro Intelligence Platform | {clean_xml_text(data['indicator'])}", subtitle_style))
     
     meta_data = [
-        [Paragraph("<b>Report Date:</b>", body_style), Paragraph(data['date'], body_style),
-         Paragraph("<b>Source:</b>", body_style), Paragraph(data['source'], body_style)],
-        [Paragraph("<b>Generated:</b>", body_style), Paragraph(data['timestamp'], body_style),
-         Paragraph("<b>Window:</b>", body_style), Paragraph(data['window'], body_style)]
+        [Paragraph("<b>Report Date:</b>", body_style), Paragraph(clean_xml_text(data['date']), body_style),
+         Paragraph("<b>Source:</b>", body_style), Paragraph(clean_xml_text(data['source']), body_style)],
+        [Paragraph("<b>Generated:</b>", body_style), Paragraph(clean_xml_text(data['timestamp']), body_style),
+         Paragraph("<b>Window:</b>", body_style), Paragraph(clean_xml_text(data['window']), body_style)]
     ]
     meta_table = Table(meta_data, colWidths=[1.1*inch, 2.4*inch, 1.1*inch, 2.4*inch])
     meta_table.setStyle(TableStyle([
@@ -116,9 +136,9 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     conf_disp = f"{conf_score:.0f}%" if conf_score > 0 else f"{valid_count} of 5 indicators"
     
     snap_data = [
-        [Paragraph("<b>Current Regime:</b>", body_style), Paragraph(data['quadrant'], body_style), Paragraph(f"<b>{conf_label}</b>", body_style), Paragraph(f"{conf_disp}<br/><font size=7 color='#666666'><i>{data.get('macro_contrib', {}).get('confidence_rationale', '')}</i></font>", body_style)],
-        [Paragraph("<b>Macro Score:</b>", body_style), Paragraph(f"{m_score:+.2f}" if m_score is not None else "N/A", body_style), Paragraph("<b>Primary Risk:</b>", body_style), Paragraph(primary_risk, body_style)],
-        [Paragraph("<b>Research View:</b>", body_style), Paragraph(data.get('macro_contrib', {}).get('macro_interpretation', 'Neutral'), body_style), Paragraph("<b>Next Likely Phase:</b><br/><font size=7 color='#666666'><i>(Historical Matrix)</i></font>", body_style), Paragraph(highest_prob_phase, body_style)]
+        [Paragraph("<b>Current Regime:</b>", body_style), Paragraph(clean_xml_text(data['quadrant']), body_style), Paragraph(f"<b>{conf_label}</b>", body_style), Paragraph(f"{conf_disp}<br/><font size=7 color='#666666'><i>{clean_xml_text(data.get('macro_contrib', {}).get('confidence_rationale', ''))}</i></font>", body_style)],
+        [Paragraph("<b>Macro Score:</b>", body_style), Paragraph(f"{m_score:+.2f}" if m_score is not None else "N/A", body_style), Paragraph("<b>Primary Risk:</b>", body_style), Paragraph(clean_xml_text(primary_risk), body_style)],
+        [Paragraph("<b>Research View:</b>", body_style), Paragraph(clean_xml_text(data.get('macro_contrib', {}).get('macro_interpretation', 'Neutral')), body_style), Paragraph("<b>Next Likely Phase:</b><br/><font size=7 color='#666666'><i>(Historical Matrix)</i></font>", body_style), Paragraph(clean_xml_text(highest_prob_phase), body_style)]
     ]
     snap_table = Table(snap_data, colWidths=[1.5*inch, 2.0*inch, 1.5*inch, 2.0*inch])
     snap_table.setStyle(TableStyle([
@@ -132,11 +152,11 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     
     # 1. Executive Summary & Takeaways
     elements.append(Paragraph("<font color='#888888'>1.</font> Executive Summary", h1_style))
-    elements.append(Paragraph(narrative['executive_summary'], body_style))
+    elements.append(Paragraph(clean_xml_text(narrative['executive_summary']), body_style))
     
     takeaways_data = [[Paragraph("<b>Key Takeaways</b>", ParagraphStyle('TK', parent=body_style, textColor=navy, fontSize=10.5))]]
     for tk in narrative['takeaways']:
-        takeaways_data.append([Paragraph(f"<bullet>&bull;</bullet> {tk}", bullet_style)])
+        takeaways_data.append([Paragraph(f"<bullet>&bull;</bullet> {clean_xml_text(tk)}", bullet_style)])
         
     tk_table = Table(takeaways_data, colWidths=[7.0*inch])
     tk_table.setStyle(TableStyle([
@@ -268,8 +288,8 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
                 raw_disp = f"{raw_val:.2f}\n({pct_str})"
                 
             sign = "+" if d['score'] > 0 else ""
-            
-            md_data.append([name, raw_disp, f"{d['symbol']} {level_str}", trend_str, f"{sign}{d['score']:.2f}"])
+            sym_clean = clean_xml_text(d.get('symbol', ''))
+            md_data.append([clean_xml_text(name), clean_xml_text(raw_disp), f"{sym_clean} {clean_xml_text(level_str)}", clean_xml_text(trend_str), f"{sign}{d['score']:.2f}"])
             md_style.append(('TEXTCOLOR', (2,row_idx), (2,row_idx), signal_color))
             if row_idx % 2 == 1: md_style.append(('BACKGROUND', (0,row_idx), (-1,row_idx), light_grey))
             row_idx += 1
@@ -287,7 +307,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     shifts = data.get('macro_shifts', [])
     if shifts:
         for s in shifts:
-            elements.append(Paragraph(f"<bullet>&bull;</bullet> {s}", bullet_style))
+            elements.append(Paragraph(f"<bullet>&bull;</bullet> {clean_xml_text(s)}", bullet_style))
     else:
         elements.append(Paragraph("No major structural regime shifts detected this month.", body_style))
     elements.append(Spacer(1, 0.15*inch))
@@ -304,8 +324,8 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
                     narrative_text = f"{item.get('observation', '')} {item.get('interpretation', '')} {item.get('implication', '')}"
                 
                 card_data = [
-                    [Paragraph(f"<b>{title}</b>", ParagraphStyle('ITitle', parent=body_style, textColor=navy, fontSize=9.5, fontName='Helvetica-Bold'))],
-                    [Paragraph(narrative_text, body_style)]
+                    [Paragraph(f"<b>{clean_xml_text(title)}</b>", ParagraphStyle('ITitle', parent=body_style, textColor=navy, fontSize=9.5, fontName='Helvetica-Bold'))],
+                    [Paragraph(clean_xml_text(narrative_text), body_style)]
                 ]
                 card_table = Table(card_data, colWidths=[7.0*inch])
                 card_table.setStyle(TableStyle([
@@ -320,13 +340,13 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
                 elements.append(card_table)
                 elements.append(Spacer(1, 0.1*inch))
     else:
-        elements.append(Paragraph(str(narrative_list), body_style))
+        elements.append(Paragraph(clean_xml_text(str(narrative_list)), body_style))
         
     elements.append(Spacer(1, 0.2*inch))
     
     # 7. Cycle Timeline & Transition Outlook
     elements.append(Paragraph("<font color='#888888'>7.</font> Cycle Timeline & Transition Outlook", h1_style))
-    c_d = Paragraph(f"<b>{analysis.get('current_duration', 'N/A')}</b>", ParagraphStyle('HI', parent=body_style, textColor=highlight_text))
+    c_d = Paragraph(f"<b>{clean_xml_text(analysis.get('current_duration', 'N/A'))}</b>", ParagraphStyle('HI', parent=body_style, textColor=highlight_text))
     p_pct = Paragraph(f"<b>{analysis.get('completion_pct', 0):.0f}%</b> of historical average", ParagraphStyle('HI', parent=body_style, textColor=highlight_text))
     
     t_probs = analysis.get('transition_probs', {})
@@ -334,9 +354,9 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     if t_probs:
         for ph, prob in t_probs.items():
             blocks = int(prob / 10)
-            bar = '█' * blocks
+            bar = '|' * blocks
             t_dash_data.append([
-                Paragraph(f"<b>{ph}</b>", body_style),
+                Paragraph(f"<b>{clean_xml_text(ph)}</b>", body_style),
                 Paragraph(f"<font color='#002b5e'>{bar}</font> {prob:.0f}%", body_style)
             ])
         t_dash_data.append([Paragraph("<font size=8 color='#888888'><i>Conditional probabilities based on historical transitions from the current phase.</i></font>", body_style), ""])
@@ -503,12 +523,12 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
     
     # 10. Integrated Market Interpretation
     elements.append(Paragraph("<font color='#888888'>10.</font> Integrated Market Interpretation", h1_style))
-    elements.append(Paragraph(narrative['interpretation'], body_style))
+    elements.append(Paragraph(clean_xml_text(narrative['interpretation']), body_style))
     
     # 11. Core Macro Risks
     elements.append(Paragraph("<font color='#888888'>11.</font> Core Macro Risks", h1_style))
     for r in narrative['risks']:
-        elements.append(Paragraph(f"<bullet>&bull;</bullet> {r}", bullet_style))
+        elements.append(Paragraph(f"<bullet>&bull;</bullet> {clean_xml_text(r)}", bullet_style))
         
     # =========================================================================
     # PAGE 5: Forward Projections & Scenarios
@@ -588,12 +608,12 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
             ret_val = sc.get('expected_market_return_6m')
             ret_str = f"{ret_val:.1f}%" if not pd.isna(ret_val) else "N/A"
             row = [
-                sc['name'],
+                clean_xml_text(sc['name']),
                 f"{sc['probability']:.0f}%",
-                sc.get('projected_quadrant_3m', 'N/A'),
-                sc.get('projected_quadrant_6m', 'N/A'),
+                clean_xml_text(sc.get('projected_quadrant_3m', 'N/A')),
+                clean_xml_text(sc.get('projected_quadrant_6m', 'N/A')),
                 ret_str,
-                Paragraph(sc.get('key_assumption', ''), body_style)
+                Paragraph(clean_xml_text(sc.get('key_assumption', '')), body_style)
             ]
             sc_data.append(row)
             if i % 2 == 1:
@@ -654,7 +674,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
         
     # 15. Methodology & Disclaimers
     elements.append(Paragraph("<font color='#888888'>15.</font> Methodology", h1_style))
-    elements.append(Paragraph(narrative['methodology'], body_style))
+    elements.append(Paragraph(clean_xml_text(narrative['methodology']), body_style))
     elements.append(Spacer(1, 0.2*inch))
     
     # 16. Data Provenance & Freshness
@@ -668,19 +688,17 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative, analo
                 source = meta.get('source', 'Unknown')
                 cache = meta.get('cache_status', 'Unknown')
                 
-                # Format value string depending on indicator
                 if val != 'N/A':
                     val_str = f"{val}%" if any(x in name for x in ['Yield', 'Spread', 'Rate']) else str(val)
                 else:
                     val_str = 'N/A'
                     
-                prov_text += f"<b>{name}</b>: {val_str} | {source} (As of {date}) [{cache}]<br/>"
+                prov_text += f"<b>{clean_xml_text(name)}</b>: {clean_xml_text(val_str)} | {clean_xml_text(source)} (As of {clean_xml_text(date)}) [{clean_xml_text(cache)}]<br/>"
             else:
-                # Fallback for old cache structure just in case
                 source = meta.get('source', 'Unknown') if isinstance(meta, dict) else 'Unknown'
                 date = meta.get('last_date', 'N/A') if isinstance(meta, dict) else 'N/A'
-                prov_text += f"<b>{name}</b>: {source} (As of {date})<br/>"
-        elements.append(Paragraph(prov_text, body_style))
+                prov_text += f"<b>{clean_xml_text(name)}</b>: {clean_xml_text(source)} (As of {clean_xml_text(date)})<br/>"
+        elements.append(Paragraph(clean_xml_text(prov_text), body_style))
     
     disclaimer_text = (
         "This document has been generated by the Macro Intelligence Platform using publicly available "

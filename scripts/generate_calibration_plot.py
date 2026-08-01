@@ -49,8 +49,8 @@ def generate_calibration_plot(out_path: str = 'docs/assets/calibration_reliabili
         })
 
     res_df = pd.DataFrame(results)
-    bins = [10, 45, 52, 58, 66]
-    labels = ['Low (10-45%)', 'Moderate (45-52%)', 'Strong (52-58%)', 'High (58-65%)']
+    bins = [10, 45, 55, 65, 100]
+    labels = ['Low (10-45%)', 'Moderate (45-55%)', 'Strong (55-65%)', 'High (>65%)']
     res_df['bin'] = pd.cut(res_df['conviction'], bins=bins, labels=labels)
 
     avg_convs = []

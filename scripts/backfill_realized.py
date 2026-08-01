@@ -66,10 +66,12 @@ def backfill_realized_outcomes(ledger_path: str = None) -> str:
                     r[col_name] = realized_quad
                     updated_count += 1
 
-    with open(ledger_path, 'w', newline='', encoding='utf-8') as f:
+    tmp_ledger = ledger_path + '.tmp'
+    with open(tmp_ledger, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+    os.replace(tmp_ledger, ledger_path)
 
     print(f"[+] Successfully back-filled {updated_count} realized outcomes in {ledger_path}")
     return ledger_path
