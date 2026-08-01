@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "installCommand": "npm install --prefix web/frontend",
   "buildCommand": "npm run build --prefix web/frontend",
   "outputDirectory": "web/frontend/dist",
   "rewrites": [
