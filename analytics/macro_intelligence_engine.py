@@ -65,15 +65,18 @@ class MacroIntelligenceEngine:
             
             yoy_val = np.nan
             base_col = f"{name}_Base"
+            info = MACRO_SERIES.get(name)
             if base_col in df.columns:
-                info = MACRO_SERIES.get(name)
                 if info and info.transformation == 'yoy':
                     yoy_val = df[base_col].iloc[idx]
-                elif info and info.transformation == 'real_rate':
+                elif info and info.transformation in ['real_rate', 'spread', 'level']:
                     raw_val = df[base_col].iloc[idx]
+                    yoy_val = np.nan
             else:
                 # Fallback for tests or legacy
-                if idx >= 12:
+                if info and info.transformation in ['real_rate', 'spread', 'level']:
+                    yoy_val = np.nan
+                elif idx >= 12:
                     prev_12m = df[name].iloc[idx-12]
                     if not pd.isna(prev_12m) and prev_12m != 0 and not pd.isna(raw_val):
                         if raw_val == prev_12m and raw_val == df[name].iloc[idx-6]:

@@ -520,12 +520,12 @@ class App:
 
                 if d['state'] != 'Unknown':
                     yoy_val = d.get('yoy_value', np.nan)
-                    if not pd.isna(yoy_val):
+                    if name in ['Yield 10Y', 'Yield Short', 'Yield Spread', 'Real Policy Rate']:
+                        raw_str = f"{d['raw_value']:.2f}%" if not pd.isna(d['raw_value']) else "N/A"
+                    elif not pd.isna(yoy_val):
                         raw_str = f"{yoy_val:.2f}%"
-                    elif name in ['Yield 10Y', 'Yield Short', 'Yield Spread', 'Real Policy Rate']:
-                        raw_str = f"{d['raw_value']:.2f}%"
                     else:
-                        raw_str = f"{d['raw_value']:.2f}"
+                        raw_str = f"{d['raw_value']:.2f}" if not pd.isna(d['raw_value']) else "N/A"
                         
                     line1.set_text(f"{display_name}")
                     val.set_text(raw_str)
