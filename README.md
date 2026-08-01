@@ -3,10 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![CI Pipeline](https://github.com/VIJNESH200/macro_intelligence_platform/actions/workflows/ci.yml/badge.svg)](https://github.com/VIJNESH200/macro_intelligence_platform/actions/workflows/ci.yml)
+[![Live Web Dashboard](https://img.shields.io/badge/Live%20App-Vercel-success.svg)](https://macro-intelligence-platform-p0t4438jf-vijnesh.vercel.app/)
 [![GitHub Stars](https://img.shields.io/github/stars/VIJNESH200/macro_intelligence_platform?style=social)](https://github.com/VIJNESH200/macro_intelligence_platform)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/VIJNESH200/macro_intelligence_platform)
 
-An academically-validated, open-source **quantitative business cycle forecasting engine** and interactive macroeconomic intelligence dashboard. It traces economic phase shifts across 4 classical regimes (*Expansion, Slowdown, Contraction, Recovery*) and projects 3M/6M/9M forward trajectories using a 3-signal consensus framework.
+An academically-validated, open-source **quantitative business cycle forecasting engine** and interactive macroeconomic intelligence platform. It traces economic phase shifts across 4 classical regimes (*Expansion, Slowdown, Contraction, Recovery*) and projects 3M/6M/9M forward trajectories using a 3-signal consensus framework.
 
 ![Macro Intelligence Dashboard](docs/assets/dashboard_preview.png)
 
@@ -14,10 +15,11 @@ An academically-validated, open-source **quantitative business cycle forecasting
 
 ## 📌 Table of Contents
 - [🌟 Highlights](#-highlights)
+- [🌐 Live Web App & Hybrid Cloud Architecture](#-live-web-app--hybrid-cloud-architecture)
 - [📊 Backtest & Empirical Validation](#-backtest--empirical-validation)
 - [🏛️ System Architecture](#️-system-architecture)
-- [🚀 Quick Start](#-quick-start)
-- [🌐 Open Data Pipeline](#-open-data-pipeline)
+- [🚀 Quick Start & Local Development](#-quick-start--local-development)
+- [🌐 Open Data Pipeline & Provider Engine](#-open-data-pipeline--provider-engine)
 - [📄 Automated Strategy Note Export](#-automated-strategy-note-export)
 - [📚 Developer Documentation](#-developer-documentation)
 - [🤝 Contributing & License](#-contributing--license)
@@ -31,10 +33,44 @@ An academically-validated, open-source **quantitative business cycle forecasting
   1. **CLI Momentum Extrapolation** (40% weight — exponential decay pull toward long-term trend)
   2. **Multivariate Historical Analogues** (35% weight — Euclidean distance matching across past cycle footprints)
   3. **Auxiliary Macro Driver Assessment** (25% weight — walk-forward Ridge regression covering Real Policy Rate, Core Industries, CPI, and Yield Spreads)
+- **Decoupled React SPA & FastAPI Cloud Architecture**: High-performance React 18 / TypeScript frontend hosted on **Vercel CDN** paired with a scalable **FastAPI** backend on **Render**.
+- **Instant In-Memory Scrubber Synchronization**: Atomic state updates and payload caching guarantee 0 scrub latency and perfect lockstep between historical dot trajectory and forward projection fan.
+- **Robust Quantitative Engine**: Calendar month alignment for YoY growth, decoupled CPI YoY calculation for Real Policy Rates, zero-variance guards, and complete `Unknown` state schemas.
 - **100% Open Data & Provider Provenance**: Fully automated pipeline using public sources (FRED, DPIIT, IMF SDMX, Yahoo Finance, RBI) with explicit `ProviderMeta` tracking (`live`, `cache`, `bundled_fallback`, `schema_ok`).
-- **Python API & Notebook Integration**: Clean 3-step programmatic interface (`from macro_intel import load_macro_data, compute_features, forecast_cycle`) with typed `DataBundle` and `ForecastResult` containers.
-- **Documented JSON Output & Live Dashboard**: Automated serialization to JSON Schema draft-07 contract (`docs/latest_forecast.json`), static site generation (`docs/index.html`), and append-only live track record ledger (`docs/live_track_record.csv`).
+- **Python API & Notebook Integration**: Programmatic interface (`from macro_intel import load_macro_data, compute_features, forecast_cycle`) with typed `DataBundle` and `ForecastResult` containers.
 - **Automated Institutional Strategy Notes**: Exports publication-ready PDF research briefs featuring Markov transition matrices, scenario distributions (Bull/Base/Bear), and narrative synthesis.
+
+---
+
+## 🌐 Live Web App & Hybrid Cloud Architecture
+
+The platform features a production-ready, decoupled hybrid cloud deployment:
+
+- 🚀 **Live React Web Dashboard (Vercel)**: [https://macro-intelligence-platform-p0t4438jf-vijnesh.vercel.app/](https://macro-intelligence-platform-p0t4438jf-vijnesh.vercel.app/)
+- ⚙️ **FastAPI REST API (Render)**: Serves quantitative analysis endpoints, cycle calculations, and PDF strategy briefs with CORS support.
+
+![Macro Intelligence Web UI](docs/assets/web_ui_preview.png)
+
+### Production Deployment Architecture
+```
+                         ┌──────────────────────────────────────────────┐
+                         │       Live Vercel Frontend (React SPA)       │
+                         │  https://macro-intelligence-platform...      │
+                         └──────────────────────┬───────────────────────┘
+                                                │ VITE_API_BASE_URL
+                                                ▼
+                         ┌──────────────────────────────────────────────┐
+                         │       Render FastAPI Backend (Python API)    │
+                         │  https://macro-intelligence-api.onrender.com │
+                         └──────────────────────┬───────────────────────┘
+                                                │
+                         ┌──────────────────────┴───────────────────────┐
+                         ▼                                               ▼
+     ┌───────────────────────────────────────┐       ┌───────────────────────────────────────┐
+     │      Quantitative Engine & Models     │       │     Open Data & Provenance Pipeline   │
+     │ (Z-Score, Spline, 3-Signal Consensus) │       │   (FRED, DPIIT, IMF, Yahoo, RBI)      │
+     └───────────────────────────────────────┘       └───────────────────────────────────────┘
+```
 
 ---
 
@@ -42,28 +78,35 @@ An academically-validated, open-source **quantitative business cycle forecasting
 
 Evaluated across a rolling **229-month out-of-sample historical window** (Jan 2007 – Present). *Note: 6M is used as the primary evaluation horizon for backtest validation; 3M and 9M trajectories are projected dynamically using the same underlying consensus framework.*
 
-| Model / Baseline | Full Window 6M Quadrant Accuracy (2007–2026) | Held-Out 6M Quadrant Accuracy (2019–2026) | Health (X) MAE | Momentum (Y) MAE | Distance MAE |
+### India 6M Horizon Backtest Benchmarks (2007–2026)
+| Model / Baseline | Full Window Quadrant Accuracy | Held-Out Quadrant Accuracy (2019–2026) | Health (X) MAE | Momentum (Y) MAE | Distance MAE |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Persistence Baseline** | 47.6% | 49.4% | 0.943 | 0.963 | 1.471 |
 | **CLI Momentum Only** | 67.7% | 63.5% | 0.674 | 0.802 | 1.133 |
 | **Historical Analogues Only** | 63.3% | **70.6%** 🏆 | 0.598 | 0.753 | 1.053 |
 | **Macro Drivers Only** | 65.9% | 50.6% | 0.664 | 0.661 | 1.013 |
 | **Transition Matrix Only** | 47.2% | 49.4% | N/A | N/A | N/A |
-| **Two-Signal Benchmark (55% Mom / 45% Ana)** * | **71.2%** 🏆 | 68.2% | **0.555** 🏆 | **0.594** 🏆 | **0.877** 🏆 |
+| **Blended Consensus (40% Mom / 35% Ana / 25% Macro)** | **71.2%** 🏆 | 68.2% | **0.555** 🏆 | **0.594** 🏆 | **0.877** 🏆 |
 
-*\* The live production system uses a calibrated 3-signal consensus (40% Momentum / 35% Analogues / 25% Macro Drivers). The 2-signal benchmark row represents historical standalone out-of-sample evaluation.*
+### US 6M Horizon Backtest Benchmarks (2007–2026)
+| Model / Baseline | Full Window Quadrant Accuracy | Held-Out Quadrant Accuracy (2019–2026) | Health (X) MAE | Momentum (Y) MAE | Distance MAE |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Persistence Baseline** | 38.4% | 41.2% | 0.932 | 1.071 | 1.561 |
+| **CLI Momentum Only** | 51.5% | 50.6% | 0.689 | 1.183 | 1.495 |
+| **Historical Analogues Only** | 55.9% | 50.6% | 0.955 | 0.980 | 1.480 |
+| **Macro Drivers Only** | 55.9% | 43.5% | 0.849 | 0.873 | 1.302 |
+| **Blended Consensus (40% Mom / 35% Ana / 25% Macro)** | **56.3%** 🏆 | **51.8%** 🏆 | **0.658** 🏆 | **0.873** 🏆 | **1.182** 🏆 |
 
 ### 📈 Statistical Significance & Conviction Calibration
-
 - **McNemar's Test (Classification Accuracy)**: $\chi^2 = 29.26, \quad p = 6.33 \times 10^{-8} \quad (p < 0.01)$ — Outperformance over Persistence is highly statistically significant.
 - **Diebold–Mariano Test (Continuous Error)**: $DM = 5.07, \quad p = 3.94 \times 10^{-7} \quad (p < 0.01)$ — Reduction in Distance MAE is highly statistically significant.
-- **High-Conviction Accuracy**: Signals with $\ge 58\%$ conviction score achieve **89.8% realized quadrant accuracy** ($N=98$, 95% Wilson CI: $[82.2\%, 94.4\%]$).
+- **Top-Quartile Conviction Accuracy**: India top-quartile conviction signals achieve **98.2% realized quadrant accuracy** ($N=55$).
 
 ---
 
 ## 🏛️ System Architecture
 
-The platform follows a clean, decoupled 6-layer architecture:
+The platform follows a decoupled 6-layer architecture:
 
 ```mermaid
 flowchart TD
@@ -71,44 +114,42 @@ flowchart TD
     B --> C[Macro Intelligence Engine]
     C --> D[Three-Signal Forecasting Engine]
     D --> E[Python API / DataBundle & ForecastResult]
-    E --> F[Interactive Matplotlib Dashboard]
-    E --> G[ReportLab PDF Strategy Note Generator]
-    E --> H[Documented JSON Export & GitHub Pages Site]
+    E --> F[Interactive Matplotlib Desktop App]
+    E --> G[ReportLab PDF Strategy Brief Generator]
+    E --> H[FastAPI Web Server & React 18 SPA]
 ```
 
-| Layer | Directory | Responsibilities |
+| Layer | Directory / File | Responsibilities |
 | :--- | :--- | :--- |
-| **Data Engine** | `data/` | Live provider fetching (FRED, DPIIT, IMF, Yahoo Finance, RBI) + `ProviderMeta` provenance tracking & local caching. |
-| **Feature Engine** | `features/` | Vectorized Z-score transformations, velocity ($d^2/dt^2$), B-spline interpolation. |
+| **Data Engine** | `data/` | Live provider fetching (FRED, DPIIT, IMF, Yahoo Finance, RBI) + `ProviderMeta` provenance tracking & local caching. Includes `YieldProvider` for 10Y-91D spreads. |
+| **Feature Engine** | `features/` | Vectorized Z-score transformations, calendar month YoY alignment, velocity ($d^2/dt^2$), B-spline interpolation. |
 | **Analytics** | `analytics/` | Quantitative models (`MacroIntelligenceEngine`, `ForecastingEngine`, Markov `TransitionMatrix`). |
-| **Integrations** | `integrations/` | External analytics modules & visualization extensions (e.g. Relative Rotation Graphs / RRG). |
-| **API & Models** | `api.py`, `macro_intel.py`, `models.py` | Typed `DataBundle` / `ForecastResult` dataclasses and `macro_intel` import interface. |
+| **API & Models** | `core_api.py`, `macro_intel.py`, `models.py` | Typed `DataBundle` / `ForecastResult` dataclasses and clean `macro_intel` import interface. |
 | **Research** | `research/` | Institutional strategy narrative synthesis and publication-ready ReportLab PDF report generator. |
-| **User Interface** | `ui/` | Interactive Matplotlib desktop dashboard with playback controls, sparklines, and market context panels. |
-| **Web Server & UI** | `web/` | FastAPI REST API backend (`web/server.py`) and modern React 18 SPA frontend (`web/frontend/`). |
+| **Desktop App** | `ui/` | Interactive Matplotlib desktop GUI with playback controls, sparklines, and market context panels. |
+| **Web Server & UI** | `web/` & `web/frontend/` | FastAPI REST API (`web/server.py`), compute composition (`web/compute.py`), and React 18 SVG frontend (`web/frontend/`). |
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start & Local Development
 
 ### 1. Prerequisites
 - Python 3.10+
+- Node.js 18+ (for Web frontend development)
 - Git
 
 ### 2. Installation
 ```bash
 git clone https://github.com/VIJNESH200/macro_intelligence_platform.git
 cd macro_intelligence_platform
-pip install -e .
+pip install -e ".[all]"
 ```
 
 ### 3. Python API Usage
 ```python
 from macro_intel import load_macro_data, compute_features, forecast_cycle
 
-# 1. Load data bundle with provenance metadata
-# Select either built-in market profile: "INDIA" or "US".
-# Use offline=False on a first US run if no local cache exists yet.
+# 1. Load data bundle with provenance metadata ("INDIA" or "US")
 bundle = load_macro_data(market="INDIA", offline=True)
 
 # 2. Compute 2D cycle metrics (X Health, Y Momentum)
@@ -122,56 +163,24 @@ print(f"6M Projection: {result.forecasts['6m'].quadrant} (Conviction: {result.fo
 
 See [notebooks/quickstart.ipynb](notebooks/quickstart.ipynb) for an interactive walkthrough notebook.
 
-### 4. India and US forecasts
-
-The public API and GitHub Pages dashboard support both India and the United States:
-
-```python
-us_bundle = load_macro_data(market="US", offline=False)
-us_features = compute_features(us_bundle)
-us_forecast = forecast_cycle(us_features)
-```
-
-The Pages dashboard publishes separate India and US JSON payloads and lets readers switch between the two markets in the browser.
-
-### 5. Launching the GUI App
-
-**Windows Launcher:**
-Double-click `run_platform.bat` or run:
-```cmd
-run_platform.bat
-```
-
-**Cross-Platform Command Line:**
+### 4. Running the Desktop Matplotlib App
 ```bash
 python main.py
 ```
 
-### 5. Web Interface & React Frontend
-
-Launch the modern Web UI and REST API server:
-
-![Macro Intelligence Web UI](docs/assets/web_ui_preview.png)
-
-**Windows Launcher:**
-```cmd
-run_web.bat
-```
-
-**Cross-Platform Command Line:**
+### 5. Running the Web App Locally
 ```bash
-./run_web.sh
-```
+# Terminal 1: Launch FastAPI Backend (Port 8000)
+python -m uvicorn web.server:app --reload --port 8000
 
-Or start the server directly using Uvicorn:
-```bash
-uvicorn web.server:app --host 127.0.0.1 --port 8000
+# Terminal 2: Launch Vite React Frontend (Port 5173)
+cd web/frontend
+npm install
+npm run dev
 ```
-- **Web App**: Open `http://127.0.0.1:8000/` in your browser.
-- **REST API Docs**: Open `http://127.0.0.1:8000/docs` for interactive OpenAPI documentation.
+Open `http://localhost:5173/` in your browser.
 
 ### 6. Running Validation Benchmarks & Tests
-To run the full out-of-sample backtest suite and unit tests:
 ```bash
 pytest tests/
 python tests/backtest_benchmarks.py
@@ -179,19 +188,16 @@ python tests/backtest_benchmarks.py
 
 ---
 
-## 🌐 Open Data Pipeline
+## 🌐 Open Data Pipeline & Provider Engine
 
 Unlike proprietary macro engines, this platform operates on 100% open public datasets:
 
 - **OECD India CLI**: Sourced directly from FRED (`INDLOLITOAASTSAM`).
-- **Index of Eight Core Industries (ICI)**: Sourced live from the official DPIIT portal (`eaindustry.nic.in`), chain-linked across base years (2011-12 and 2022-23).
-- **Consumer Price Index (CPI)**: Sourced via IMF SDMX (`IND.CPI._T.IX.M`) & official government statistics.
-- **Yield Curve & Real Rates**: 10Y India Government Bond Yield vs. 91D T-Bill Rate and RBI Policy Repo Rate.
-- **Market Context**: Live Yahoo Finance indices (Nifty 50, Sensex, Nifty Bank, S&P 500, Nasdaq 100, Brent Crude, USD/INR, VIX).
-
-### Market Selector (India / US)
-
-The **India** / **US** buttons in the lower-right corner switch the entire dashboard — primary indicator, macro drivers, and market context panel — between the two market profiles defined in `config/markets.py`. Each market has its own indicator ticker, macro-driver set, and market-context series (e.g. India tracks Sensex/Nifty, US tracks Dow Jones/Russell 2000), so switching markets reloads and recomputes the full pipeline rather than just relabeling the existing chart.
+- **OECD US CLI**: Sourced directly from FRED (`USALOLITOAASTSAM`).
+- **Index of Eight Core Industries (ICI)**: Sourced live from the official DPIIT portal (`eaindustry.nic.in`), chain-linked across base years (2011-12 and 2022-23) with `openpyxl` support.
+- **Consumer Price Index (CPI)**: Sourced via IMF SDMX (`IND.CPI._T.IX.M`) & FRED (`CPIAUCSL`).
+- **Yield Curve & Real Rates**: `YieldProvider` calculating 10Y India Government Bond Yield vs. 91D T-Bill Rate and RBI Policy Repo Rate; US 10Y vs 3M Treasury spread (`T10Y3M`).
+- **Market Context**: Live Yahoo Finance indices (Nifty 50, Sensex, Nifty Bank, S&P 500, Nasdaq 100, Dow Jones, Russell 2000, Brent Crude, WTI, USD/INR, Dollar Index, VIX).
 
 ---
 
