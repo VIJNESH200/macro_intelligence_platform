@@ -28,7 +28,17 @@ class MacroIntelligenceEngine:
                 
             z_val = df[z_col].iloc[idx]
             if pd.isna(z_val):
-                evaluations[name] = {'score': 0.0, 'state': "Unknown", 'symbol': "►", 'momentum': 0.0}
+                evaluations[name] = {
+                    'score': 0.0,
+                    'state': "Unknown",
+                    'level': "Unknown",
+                    'trend': "Unknown",
+                    'raw_value': np.nan,
+                    'yoy_value': np.nan,
+                    'percentile': "N/A",
+                    'symbol': "►",
+                    'momentum': 0.0
+                }
                 continue
                 
             # CPI and Real Policy Rate are structurally inverse to growth (tighter/restrictive drags cycle down)
@@ -48,17 +58,18 @@ class MacroIntelligenceEngine:
                 
             # Trend Evaluation
             mom_col = f"{name}_MoM"
-            mom_val = df[mom_col].iloc[idx] if mom_col in df.columns else 0
+            mom_val = df[mom_col].iloc[idx] if mom_col in df.columns else np.nan
             
-            # Meaning of trend depends on the multiplier
-            trend_impact = mom_val * multiplier
-            # If the change is very small, call it Flat
-            if abs(trend_impact) < 0.01:
+            if pd.isna(mom_val):
                 trend_state = "Flat"
-            elif trend_impact > 0:
-                trend_state = "Improving"
             else:
-                trend_state = "Weakening"
+                trend_impact = mom_val * multiplier
+                if abs(trend_impact) < 0.01:
+                    trend_state = "Flat"
+                elif trend_impact > 0:
+                    trend_state = "Improving"
+                else:
+                    trend_state = "Weakening"
                 
             # Raw Value, YoY & Percentile
             raw_val = df[name].iloc[idx]
@@ -81,8 +92,6 @@ class MacroIntelligenceEngine:
                     if not pd.isna(prev_12m) and prev_12m != 0 and not pd.isna(raw_val):
                         if raw_val == prev_12m and raw_val == df[name].iloc[idx-6]:
                             yoy_val = np.nan
-                        elif name == 'Yield Spread':
-                            yoy_val = (raw_val - prev_12m) * 100
                         else:
                             yoy_val = (raw_val - prev_12m) / abs(prev_12m) * 100
             

@@ -520,7 +520,8 @@ class App:
 
                 if d['state'] != 'Unknown':
                     yoy_val = d.get('yoy_value', np.nan)
-                    if name in ['Yield 10Y', 'Yield Short', 'Yield Spread', 'Real Policy Rate']:
+                    info = MACRO_SERIES.get(name)
+                    if info and info.transformation in ('level', 'spread', 'real_rate'):
                         raw_str = f"{d['raw_value']:.2f}%" if not pd.isna(d['raw_value']) else "N/A"
                     elif not pd.isna(yoy_val):
                         raw_str = f"{yoy_val:.2f}%"
@@ -558,6 +559,7 @@ class App:
                     line1.set_color('#333333')
                     val.set_color('#333333')
                     line2.set_color('#666666')
+                    pct.set_color('#666666')
                     
         # Forecast and Scenarios
         try:

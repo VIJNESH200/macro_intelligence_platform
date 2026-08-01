@@ -128,6 +128,11 @@ class FeatureEngine:
         if 'Yield 10Y' in df.columns and 'Yield Short' in df.columns:
             df['Yield Spread'] = df['Yield 10Y'] - df['Yield Short']
 
+        # Pre-compute CPI YoY so Real Policy Rate calculation is independent of MACRO_SERIES iteration order
+        cpi_yoy = None
+        if 'CPI' in df.columns:
+            cpi_yoy = df['CPI'].pct_change(12, fill_method=None) * 100
+
         for name, info in MACRO_SERIES.items():
             if name not in df.columns or name in ['Yield 10Y', 'Yield Short']:
                 continue
@@ -137,22 +142,23 @@ class FeatureEngine:
 
             # 2. Normalize based on transformation type
             if info.transformation == 'yoy':
-                base_feature = series.dropna().pct_change(12) * 100
+                # Preserve full calendar index for 12-month YoY change
+                base_feature = series.pct_change(12, fill_method=None) * 100
             elif info.transformation == 'real_rate':
                 # Repo rate level - CPI YoY rate
-                if 'CPI_Base' in df.columns:
-                    cpi_yoy = df['CPI_Base']
-                elif 'CPI' in df.columns:
-                    print("  [!] Notice: CPI_Base not found for Real Policy Rate; computing CPI YoY directly from raw series.")
-                    cpi_yoy = df['CPI'].pct_change(12) * 100
+                if cpi_yoy is not None:
+                    eff_cpi_yoy = cpi_yoy
+                elif 'CPI_Base' in df.columns:
+                    eff_cpi_yoy = df['CPI_Base']
                 else:
-                    cpi_yoy = pd.Series(np.nan, index=df.index)
+                    print(f"  [!] Notice: CPI not found in DataFrame for Real Policy Rate calculation; setting CPI YoY to NaN.")
+                    eff_cpi_yoy = pd.Series(np.nan, index=df.index)
                 repo_rate = series.reindex(df.index).ffill()
-                base_feature = repo_rate - cpi_yoy
+                base_feature = repo_rate - eff_cpi_yoy
             elif info.transformation == 'spread':
-                base_feature = series.dropna()
+                base_feature = series
             else:  # level
-                base_feature = series.dropna()
+                base_feature = series
 
             # Align back to main index and forward fill the feature so Z-score calculation is stable
             base_feature = base_feature.reindex(df.index).ffill()
@@ -161,7 +167,7 @@ class FeatureEngine:
             # 3. Features: Compute Rolling Z-score
             rolling_mean = base_feature.rolling(window=window, min_periods=window).mean()
             rolling_std = base_feature.rolling(window=window, min_periods=window).std(ddof=0)
-            rolling_std = rolling_std.replace(0, np.nan)
+            rolling_std = rolling_std.mask(rolling_std.abs() < 1e-12, np.nan)
 
             df[f"{name}_Z"] = (base_feature - rolling_mean) / rolling_std
             df[f"{name}_MoM"] = base_feature.diff(1)
