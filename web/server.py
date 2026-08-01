@@ -45,14 +45,17 @@ app = FastAPI(
     description='Economic regime tracing, forecasting, and market context.',
 )
 
-raw_origins = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000')
-allowed_origins = [o.strip() for o in raw_origins.split(',') if o.strip()]
+raw_origins = os.getenv('ALLOWED_ORIGINS', '*')
+if raw_origins == '*':
+    allowed_origins = ['*']
+else:
+    allowed_origins = [o.strip() for o in raw_origins.split(',') if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=False,
-    allow_methods=['GET', 'POST', 'OPTIONS'],
+    allow_methods=['*'],
     allow_headers=['*'],
 )
 

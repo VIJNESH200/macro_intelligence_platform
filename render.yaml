@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: macro-intelligence-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -e ".[all]"
+    startCommand: python -m uvicorn web.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10.12"
+      - key: ALLOWED_ORIGINS
+        value: "*"
