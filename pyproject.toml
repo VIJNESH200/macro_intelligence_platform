@@ -29,13 +29,17 @@ dependencies = [
 [project.optional-dependencies]
 gui = [
     "matplotlib>=3.7.0",
-    "reportlab>=4.0.0"
+    "reportlab>=4.0.0",
+    "qrcode>=7.4",
+    "Pillow>=9.0"
 ]
 web = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.34.0",
     "matplotlib>=3.7.0",
-    "reportlab>=4.0.0"
+    "reportlab>=4.0.0",
+    "qrcode>=7.4",
+    "Pillow>=9.0"
 ]
 data = [
     "yfinance>=0.2.18",
