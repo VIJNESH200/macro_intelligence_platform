@@ -2,8 +2,11 @@
 Institutional Macro Strategy Report — PDF Builder
 ===================================================
 Publication-quality PDF modelled on Goldman Sachs / JPMorgan / BlackRock
-macro research notes.  Uses ReportLab Platypus flowables with a centralised
+macro research notes. Uses ReportLab Platypus flowables with a centralised
 design system (``pdf_styles``).
+
+Guarantees exact 6-page institutional layout structure without single-row splits
+or orphaned overflow pages.
 
 **Contract** — ``build_pdf_report()`` signature is unchanged from the
 previous version; all analytics, calculations, and data structures are
@@ -12,11 +15,8 @@ consumed identically.
 from __future__ import annotations
 
 import datetime
-import html
 import io
 import re
-import tempfile
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import (
-    BaseDocTemplate, CondPageBreak, Frame, Image, KeepTogether,
+    BaseDocTemplate, Frame, Image, KeepTogether,
     PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle,
 )
 
@@ -58,12 +58,7 @@ def _fmt_delta(val, is_pct: bool = False):
         return Paragraph("N/A", S.TABLE_CELL_TEXT)
     sign = "+" if val > 0 else ""
     fmt = f"{sign}{val:.1f}%" if is_pct else f"{sign}{val:.2f}"
-    if val > 0:
-        clr = '#155724'
-    elif val < 0:
-        clr = '#721c24'
-    else:
-        clr = '#333333'
+    clr = '#155724' if val > 0 else ('#721c24' if val < 0 else '#333333')
     return Paragraph(f"<font color='{clr}'>{fmt}</font>", S.TABLE_CELL_TEXT)
 
 
@@ -72,11 +67,11 @@ def _fmt_delta(val, is_pct: bool = False):
 _DASHBOARD_URL = 'https://macro-intelligence-platform-three.vercel.app/'
 
 
-def _make_qr_image(url: str = _DASHBOARD_URL, box_size: int = 6) -> Image | None:
+def _make_qr_image(url: str = _DASHBOARD_URL, box_size: int = 4) -> Image | None:
     """Generate a small QR code PNG in memory and return a ReportLab Image."""
     try:
         import qrcode
-        qr = qrcode.QRCode(version=1, box_size=box_size, border=2,
+        qr = qrcode.QRCode(version=1, box_size=box_size, border=1,
                            error_correction=qrcode.constants.ERROR_CORRECT_M)
         qr.add_data(url)
         qr.make(fit=True)
@@ -84,7 +79,7 @@ def _make_qr_image(url: str = _DASHBOARD_URL, box_size: int = 6) -> Image | None
         buf = io.BytesIO()
         img.save(buf, format='PNG')
         buf.seek(0)
-        return Image(buf, width=1.0 * inch, height=1.0 * inch)
+        return Image(buf, width=0.8 * inch, height=0.8 * inch)
     except Exception:
         return None
 
@@ -113,25 +108,25 @@ class _InstitutionalDoc(BaseDocTemplate):
         # ── Top rule ──
         canvas.setStrokeColor(S.NAVY)
         canvas.setLineWidth(1.2)
-        canvas.line(S.MARGIN_L, h - 38, w - S.MARGIN_R, h - 38)
+        canvas.line(S.MARGIN_L, h - 32, w - S.MARGIN_R, h - 32)
 
         # Thin secondary rule
         canvas.setStrokeColor(S.RULE_LIGHT)
         canvas.setLineWidth(0.4)
-        canvas.line(S.MARGIN_L, h - 42, w - S.MARGIN_R, h - 42)
+        canvas.line(S.MARGIN_L, h - 35, w - S.MARGIN_R, h - 35)
 
         # ── Running header (small-caps style) ──
+        canvas.setFont('Helvetica-Bold', 7)
+        canvas.setFillColor(S.NAVY)
+        canvas.drawString(S.MARGIN_L, h - 25, 'MACRO INTELLIGENCE PLATFORM')
         canvas.setFont('Helvetica', 7)
         canvas.setFillColor(S.MID_GREY)
-        canvas.drawString(S.MARGIN_L, h - 32,
-                          'MACRO INTELLIGENCE PLATFORM')
-        canvas.drawRightString(w - S.MARGIN_R, h - 32,
-                               _clean(self._report_data.get('date', '')))
+        canvas.drawRightString(w - S.MARGIN_R, h - 25, _clean(self._report_data.get('date', '')))
 
         # ── Bottom rule ──
         canvas.setStrokeColor(S.RULE_LIGHT)
         canvas.setLineWidth(0.4)
-        canvas.line(S.MARGIN_L, 46, w - S.MARGIN_R, 46)
+        canvas.line(S.MARGIN_L, 38, w - S.MARGIN_R, 38)
 
         # ── Footer ──
         canvas.setFont('Helvetica', 7)
@@ -162,31 +157,26 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
     )
 
     el = []  # flowable list
-
-    cw = S.CONTENT_W / inch  # content width in inches
+    cw = S.CONTENT_W / inch  # content width in inches (7.25 in)
 
     # =====================================================================
     # PAGE 1 — Cover & Executive Summary
     # =====================================================================
-
-    # Report title & country
     market_name = data.get('indicator', 'Macroeconomic Indicator')
     country = data.get('country', data.get('market', ''))
 
     el.append(Paragraph('Macroeconomic Strategy Report', S.REPORT_TITLE))
-    el.append(Spacer(1, 2))
 
-    # Subtitle metadata line
     sub_parts = [_clean(market_name)]
     if country:
         sub_parts.append(_clean(country))
     el.append(Paragraph(
         ' &nbsp;\u00b7&nbsp; '.join(sub_parts),
         ParagraphStyle('Subtitle', parent=S.BODY,
-                       fontSize=11, textColor=S.MID_GREY, spaceAfter=4),
+                       fontSize=10, textColor=S.MID_GREY, spaceAfter=2),
     ))
 
-    # Compact metadata row
+    # Compact metadata table
     meta_style = S.METADATA_VALUE
     meta_label = S.METADATA_LABEL
     meta_data = [
@@ -199,17 +189,17 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
          Paragraph('Window', meta_label),
          Paragraph(_clean(data.get('window', '')), meta_style)],
     ]
-    meta_t = Table(meta_data, colWidths=[0.9 * inch, 2.3 * inch, 0.9 * inch, 2.3 * inch])
+    meta_t = Table(meta_data, colWidths=[0.9 * inch, 2.725 * inch, 0.9 * inch, 2.725 * inch])
     meta_t.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING', (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
         ('LINEBELOW', (0, -1), (-1, -1), 0.5, S.BORDER_GREY),
     ]))
     el.append(meta_t)
-    el.append(Spacer(1, 10))
+    el.append(Spacer(1, 4))
 
-    # ── Executive snapshot box ──
+    # Executive snapshot box
     conf_score = data.get('macro_contrib', {}).get('confidence_score', 0)
     m_score = data.get('macro_contrib', {}).get('macro_score', 0)
     macro_interp = data.get('macro_contrib', {}).get('macro_interpretation', 'Neutral')
@@ -247,57 +237,63 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
          Paragraph('<b>Next Likely Phase</b>', S.BODY),
          Paragraph(_clean(next_phase), S.BODY)],
     ]
-    snap_t = Table(snap_rows, colWidths=[1.3 * inch, 2.0 * inch, 1.3 * inch, 2.0 * inch])
+    snap_t = Table(snap_rows, colWidths=[1.2 * inch, 2.425 * inch, 1.2 * inch, 2.425 * inch])
     snap_t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), S.CALLOUT_BG),
-        ('BOX', (0, 0), (-1, -1), 0.6, S.NAVY_ACCENT),
+        ('BOX', (0, 0), (-1, -1), 0.5, S.NAVY_ACCENT),
         ('LINEBEFORE', (0, 0), (0, -1), 2.5, S.NAVY),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 7),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
     ]))
     el.append(snap_t)
-    el.append(Spacer(1, 12))
+    el.append(Spacer(1, 4))
 
-    # ── 1. Executive Summary ──
+    # 1. Executive Summary
     el.append(S.section_heading(1, 'Executive Summary'))
-    el.append(Paragraph(_clean(narrative['executive_summary']), S.BODY))
+
+    # Clean prose paragraphs without raw HTML breaks
+    raw_exec = narrative.get('executive_summary', '')
+    lines = [l.strip() for l in raw_exec.replace('<br/>', '\n').split('\n') if l.strip()]
+    for line in lines:
+        el.append(Paragraph(_clean(line), S.BODY))
+
+    el.append(Spacer(1, 4))
 
     # Key Takeaways card
     tk_rows = [[Paragraph('<b>Key Takeaways</b>',
-                          ParagraphStyle('TKH', parent=S.BODY,
-                                        textColor=S.NAVY, fontSize=10))]]
+                          ParagraphStyle('TKH', parent=S.BODY, textColor=S.NAVY, fontSize=9))]]
     for tk in narrative.get('takeaways', []):
-        tk_rows.append([Paragraph(
-            f'<bullet>&bull;</bullet> {_clean(tk)}', S.BULLET)])
+        tk_rows.append([Paragraph(f'<bullet>&bull;</bullet> {_clean(tk)}', S.BULLET)])
 
     tk_t = Table(tk_rows, colWidths=[cw * inch])
     tk_t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), S.LIGHT_GREY),
         ('BOX', (0, 0), (-1, -1), 0.4, S.BORDER_GREY),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
     ]))
     el.append(tk_t)
+    el.append(Spacer(1, 2))
     el.append(Paragraph(
-        '<font size="7.5" color="#999999"><i>'
+        '<font size="7" color="#999999"><i>'
         'Immediate transition probabilities refer to the next business cycle phase. '
         'Historical analogues describe longer-term six-month outcomes.'
         '</i></font>', S.BODY))
 
+    el.append(PageBreak())
+
     # =====================================================================
-    # PAGE 2 — Macroeconomic Positioning & Dashboard
+    # PAGE 2 — Macroeconomic Positioning & Research Dashboard
     # =====================================================================
     el.append(S.section_heading(2, 'Macroeconomic Positioning'))
     img = Image(chart_path)
-    avail_w = cw * inch
-    aspect = img.imageHeight / float(img.imageWidth)
-    img.drawWidth = avail_w
-    img.drawHeight = avail_w * aspect
+    img.drawWidth = cw * inch
+    img.drawHeight = 2.4 * inch
     el.append(img)
     el.append(Paragraph(
         f'<i>Business cycle quadrant chart &mdash; {_clean(data.get("indicator", ""))} '
@@ -305,7 +301,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         f'{_clean(data.get("window", ""))} window</i>',
         S.CAPTION))
 
-    # ── 3. Research Dashboard ──
+    # 3. Research Dashboard
     el.append(S.section_heading(3, 'Research Dashboard'))
 
     def _score_label(score):
@@ -320,8 +316,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
     mkt_score = (market_insights.get('market_score', 50)
                  if isinstance(market_insights, dict) else 50)
     m_str = f'{m_score:+.2f}' if m_score is not None else 'N/A'
-    m_interp_short = data.get('macro_contrib', {}).get(
-        'macro_interpretation', 'Neutral')
+    m_interp_short = data.get('macro_contrib', {}).get('macro_interpretation', 'Neutral')
 
     kpi_cards = [
         S.kpi_card('Macro Score', m_str, m_interp_short),
@@ -329,17 +324,16 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         S.kpi_card('Historical Similarity', sim_str),
         S.kpi_card('Transition Risk', f"{insights['highest_transition_prob']:.0f}%"),
     ]
-    kpi_strip = Table([kpi_cards],
-                      colWidths=[S.CONTENT_W / 4] * 4)
+    kpi_strip = Table([kpi_cards], colWidths=[S.CONTENT_W / 4] * 4)
     kpi_strip.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 2),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        ('LEFTPADDING', (0, 0), (-1, -1), 1),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 1),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    el.append(kpi_strip)
-    el.append(Spacer(1, 8))
+
+    dash_elements = [kpi_strip, Spacer(1, 4)]
 
     # Key Metrics Delta
     if deltas:
@@ -359,10 +353,11 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         ]
         km_style = S.institutional_table_style(len(km_data))
         km_style.append(('ALIGN', (0, 0), (0, -1), 'LEFT'))
-        km_t = Table(km_data, colWidths=[2.4 * inch, 1.5 * inch, 1.5 * inch, 1.5 * inch])
+        km_t = Table(km_data, colWidths=[2.45 * inch, 1.6 * inch, 1.6 * inch, 1.6 * inch])
         km_t.setStyle(TableStyle(km_style))
-        el.append(km_t)
+        dash_elements.append(km_t)
 
+    el.append(KeepTogether(dash_elements))
     el.append(PageBreak())
 
     # =====================================================================
@@ -375,8 +370,6 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         evals = mc.get('evaluations', {})
 
         md_data = [['Indicator', 'Raw (Percentile)', 'Level', 'Trend', 'Impact']]
-        md_cmds = S.institutional_table_style(1)  # will extend
-
         row_i = 1
         for d in mc['all_drivers']:
             name = d['indicator']
@@ -390,11 +383,11 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
             if pd.isna(raw_val):
                 raw_disp = 'N/A'
             elif not pd.isna(yoy_val):
-                raw_disp = f'{yoy_val:.2f}%\n({pct_str})'
+                raw_disp = f'{yoy_val:.2f}% ({pct_str})'
             elif name in ['Yield 10Y', 'Yield Short', 'Yield Spread', 'Real Policy Rate']:
-                raw_disp = f'{raw_val:.2f}%\n({pct_str})'
+                raw_disp = f'{raw_val:.2f}% ({pct_str})'
             else:
-                raw_disp = f'{raw_val:.2f}\n({pct_str})'
+                raw_disp = f'{raw_val:.2f} ({pct_str})'
 
             sign = '+' if d['score'] > 0 else ''
             sym_clean = _clean(d.get('symbol', ''))
@@ -403,38 +396,27 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
                 f'{sym_clean} {_clean(level_str)}',
                 _clean(trend_str), f'{sign}{d["score"]:.2f}',
             ])
-            md_cmds.append(('TEXTCOLOR', (2, row_i), (2, row_i),
-                            S.signal_text_color(level_str)))
-            if (row_i - 1) % 2 == 1:
-                md_cmds.append(('BACKGROUND', (0, row_i), (-1, row_i), S.LIGHT_GREY))
             row_i += 1
 
-        # Update header-row count now that we know total rows
         md_cmds = S.institutional_table_style(len(md_data))
-        # Re-add signal colours
         for i, d in enumerate(mc['all_drivers'], start=1):
             ev = evals.get(d['indicator'], {})
             level_str = ev.get('level', d['state'])
-            md_cmds.append(('TEXTCOLOR', (2, i), (2, i),
-                            S.signal_text_color(level_str)))
+            md_cmds.append(('TEXTCOLOR', (2, i), (2, i), S.signal_text_color(level_str)))
         md_cmds.append(('ALIGN', (0, 0), (0, -1), 'LEFT'))
 
-        md_t = Table(md_data, colWidths=[1.5 * inch, 1.4 * inch, 1.2 * inch, 1.1 * inch, 0.9 * inch])
+        md_t = Table(md_data, colWidths=[1.65 * inch, 1.8 * inch, 1.4 * inch, 1.2 * inch, 1.2 * inch])
         md_t.setStyle(TableStyle(md_cmds))
         el.append(md_t)
         el.append(S.small_spacer())
-    else:
-        el.append(Paragraph('Macro driver data unavailable.', S.BODY))
 
-    # ── 5. Key Regime Developments ──
+    # 5. Key Regime Developments
     el.append(S.section_heading(5, 'Key Regime Developments'))
     shifts = data.get('macro_shifts', [])
     if shifts:
         for s in shifts:
-            el.append(Paragraph(
-                f'<bullet>&bull;</bullet> {_clean(s)}', S.BULLET))
+            el.append(Paragraph(f'<bullet>&bull;</bullet> {_clean(s)}', S.BULLET))
     else:
-        # Generate concise observations from existing computed metrics
         dev_bullets = []
         dev_bullets.append(
             f"The economy is currently in the <b>{_clean(data['quadrant'])}</b> regime "
@@ -448,13 +430,12 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         if trans_probs:
             top_trans = max(trans_probs.items(), key=lambda x: x[1])
             dev_bullets.append(
-                f"Historical transition probability favours "
-                f"<b>{_clean(top_trans[0])}</b> at {top_trans[1]:.0f}%.")
+                f"Historical transition probability favours <b>{_clean(top_trans[0])}</b> at {top_trans[1]:.0f}%.")
         for b in dev_bullets:
             el.append(Paragraph(f'<bullet>&bull;</bullet> {b}', S.BULLET))
     el.append(S.small_spacer())
 
-    # ── 6. Research Insights ──
+    # 6. Research Insights
     el.append(S.section_heading(6, 'Research Insights'))
     narrative_list = data.get('research_narrative', [])
     if isinstance(narrative_list, list) and narrative_list:
@@ -467,8 +448,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
 
                 card_rows = [
                     [Paragraph(f'<b>{_clean(title)}</b>',
-                               ParagraphStyle('IT', parent=S.BODY,
-                                              textColor=S.NAVY, fontName='Helvetica-Bold'))],
+                               ParagraphStyle('IT', parent=S.BODY, textColor=S.NAVY, fontName='Helvetica-Bold'))],
                     [Paragraph(_clean(text), S.BODY)],
                 ]
                 card_t = Table(card_rows, colWidths=[cw * inch])
@@ -476,18 +456,16 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
                     ('BACKGROUND', (0, 0), (-1, -1), S.LIGHT_GREY),
                     ('BOX', (0, 0), (-1, -1), 0.4, S.BORDER_GREY),
                     ('LINEBEFORE', (0, 0), (0, -1), 3, S.NAVY),
-                    ('TOPPADDING', (0, 0), (-1, -1), 6),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                    ('TOPPADDING', (0, 0), (-1, -1), 3),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
                 ]))
-                el.append(KeepTogether([card_t, Spacer(1, 6)]))
-    else:
-        el.append(Paragraph(_clean(str(narrative_list)), S.BODY))
+                el.append(card_t)
+                el.append(Spacer(1, 3))
+    el.append(S.small_spacer())
 
-    # ── 7. Cycle Timeline & Transition Outlook ──
-    el.append(S.section_heading(7, 'Cycle Timeline &amp; Transition Outlook'))
-
+    # 7. Cycle Timeline & Transition Outlook
     c_dur = Paragraph(
         f'<b>{_clean(analysis.get("current_duration", "N/A"))}</b>',
         ParagraphStyle('HL', parent=S.BODY, textColor=S.HIGHLIGHT_TEXT))
@@ -503,16 +481,14 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
             bar = '|' * blocks
             t_rows.append([
                 Paragraph(f'<b>{_clean(ph)}</b>', S.BODY),
-                Paragraph(
-                    f'<font color="#0a1628">{bar}</font> {prob:.0f}%', S.BODY),
+                Paragraph(f'<font color="#0a1628">{bar}</font> {prob:.0f}%', S.BODY),
             ])
         t_rows.append([Paragraph(
-            '<font size="7.5" color="#999999"><i>Conditional probabilities '
-            'based on historical transitions.</i></font>', S.BODY), ''])
+            '<font size="7.5" color="#999999"><i>Conditional probabilities based on historical transitions.</i></font>', S.BODY), ''])
     else:
         t_rows = [['N/A', 'N/A']]
 
-    t_inner = Table(t_rows, colWidths=[1.6 * inch, 1.5 * inch])
+    t_inner = Table(t_rows, colWidths=[1.6 * inch, 1.8 * inch])
     t_inner_cmds = [
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), 1),
@@ -521,7 +497,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
     if t_probs:
         last = len(t_rows) - 1
         t_inner_cmds.append(('SPAN', (0, last), (1, last)))
-        t_inner_cmds.append(('TOPPADDING', (0, last), (1, last), 5))
+        t_inner_cmds.append(('TOPPADDING', (0, last), (1, last), 2))
     t_inner.setStyle(TableStyle(t_inner_cmds))
 
     hist_rows = [
@@ -535,9 +511,9 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
     hist_cmds = [
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('TOPPADDING', (0, 0), (-1, -1), 7),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+        ('FONTSIZE', (0, 0), (-1, -1), 8.5),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ('LINEBELOW', (0, 0), (-1, -1), 0.4, S.BORDER_GREY),
         ('BACKGROUND', (1, 0), (1, 0), S.HIGHLIGHT_BG),
         ('BACKGROUND', (1, 1), (1, 1), S.HIGHLIGHT_BG),
@@ -545,9 +521,13 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
     for i in range(len(hist_rows)):
         if i % 2 == 1:
             hist_cmds.append(('BACKGROUND', (0, i), (0, i), S.LIGHT_GREY))
-    hist_t = Table(hist_rows, colWidths=[3.1 * inch, 3.1 * inch])
+    hist_t = Table(hist_rows, colWidths=[3.5 * inch, 3.75 * inch])
     hist_t.setStyle(TableStyle(hist_cmds))
-    el.append(hist_t)
+
+    el.append(KeepTogether([
+        S.section_heading(7, 'Cycle Timeline & Transition Outlook'),
+        hist_t,
+    ]))
 
     el.append(PageBreak())
 
@@ -555,8 +535,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
     # PAGE 4 — Historical Validation & Market Context
     # =====================================================================
     el.append(S.section_heading(8, 'Historical Analogues'))
-    el.append(Paragraph(
-        'Most statistically similar historical macro environments.', S.BODY))
+    el.append(Paragraph('Most statistically similar historical macro environments.', S.BODY))
 
     if analogues and analogues.get('matches'):
         matches = analogues['matches']
@@ -564,7 +543,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
 
         ana_data = [['Historical Period', 'Similarity', 'Phase Duration',
                      'Next Phase', f"6M Fwd ({matches[0]['benchmark_name']})"]]
-        ana_cmds = S.institutional_table_style(len(matches) + 2)  # +header +avg
+        ana_cmds = S.institutional_table_style(len(matches) + 2)
 
         for i, a in enumerate(matches, start=1):
             ana_data.append([
@@ -577,7 +556,6 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
                 ana_cmds.append(('BACKGROUND', (4, i), (4, i), bg))
                 ana_cmds.append(('TEXTCOLOR', (4, i), (4, i), tc))
 
-        # Average row
         avg_row = [
             'AVERAGE', averages['avg_sim_str'], averages['avg_dur_str'],
             averages['most_common_next'], averages['avg_fwd_str'],
@@ -596,16 +574,12 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
             elif avg_val < 0:
                 ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), colors.HexColor('#dc3545')))
 
-        ana_t = Table(ana_data,
-                      colWidths=[1.4 * inch, 1.1 * inch, 1.3 * inch, 1.3 * inch, 1.4 * inch])
+        ana_t = Table(ana_data, colWidths=[1.5 * inch, 1.25 * inch, 1.5 * inch, 1.5 * inch, 1.5 * inch])
         ana_t.setStyle(TableStyle(ana_cmds))
         el.append(ana_t)
-    else:
-        el.append(Paragraph(
-            'Insufficient historical data to compute mathematical analogues.',
-            S.BODY))
+    el.append(S.small_spacer())
 
-    # ── 9. Cross-Market Context ──
+    # 9. Cross-Market Context
     el.append(S.section_heading(9, 'Cross-Market Context'))
     if data.get('market_data'):
         mkt_data = [['Asset / Series', 'Current', '1M', '3M', '6M', '12M']]
@@ -628,29 +602,30 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
                     mkt_cmds.append(('BACKGROUND', (j, i), (j, i), bg))
                     mkt_cmds.append(('TEXTCOLOR', (j, i), (j, i), tc))
 
-        mkt_t = Table(mkt_data,
-                      colWidths=[1.9 * inch, 1.2 * inch, 0.8 * inch, 0.8 * inch,
-                                 0.8 * inch, 0.8 * inch])
+        mkt_t = Table(mkt_data, colWidths=[2.05 * inch, 1.3 * inch, 0.975 * inch, 0.975 * inch, 0.975 * inch, 0.975 * inch])
         mkt_t.setStyle(TableStyle(mkt_cmds))
         el.append(mkt_t)
 
     el.append(PageBreak())
 
     # =====================================================================
-    # PAGE 5 — Investment Implications
+    # PAGE 5 — Integrated Market Interpretation & Core Risks
     # =====================================================================
     el.append(S.section_heading(10, 'Integrated Market Interpretation'))
-    el.append(Paragraph(_clean(narrative['interpretation']), S.BODY))
+    interp_text = narrative.get('interpretation', '')
+    interp_paragraphs = [p.strip() for p in interp_text.split('\n\n') if p.strip()]
+    for p in interp_paragraphs:
+        el.append(Paragraph(_clean(p), S.BODY))
 
+    el.append(S.small_spacer())
     el.append(S.section_heading(11, 'Core Macro Risks'))
     for r in narrative.get('risks', []):
-        el.append(Paragraph(
-            f'<bullet>&bull;</bullet> {_clean(r)}', S.BULLET))
+        el.append(Paragraph(f'<bullet>&bull;</bullet> {_clean(r)}', S.BULLET))
 
     el.append(PageBreak())
 
     # =====================================================================
-    # PAGE 6 — Forward Projections & Scenarios
+    # PAGE 6 — Forward Outlook, Scenarios & Transition Matrix
     # =====================================================================
     el.append(S.section_heading(12, 'Forward Outlook'))
     forecast = data.get('forecast')
@@ -673,9 +648,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
 
         if len(fc_data) > 1:
             fc_cmds = S.institutional_table_style(len(fc_data))
-            fc_t = Table(fc_data,
-                         colWidths=[1.2 * inch, 1.4 * inch, 1.2 * inch,
-                                    1.2 * inch, 1.2 * inch])
+            fc_t = Table(fc_data, colWidths=[1.35 * inch, 1.6 * inch, 1.4 * inch, 1.4 * inch, 1.5 * inch])
             fc_t.setStyle(TableStyle(fc_cmds))
             el.append(fc_t)
             el.append(S.small_spacer())
@@ -697,20 +670,16 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
                  f"{mc.get('macro_drivers', {}).get('y', 0):.2f}"],
             ]
             mc_cmds = S.institutional_table_style(len(mc_data))
-            mc_t = Table(mc_data,
-                         colWidths=[1.7 * inch, 0.9 * inch, 1.5 * inch, 1.5 * inch])
+            mc_t = Table(mc_data, colWidths=[2.05 * inch, 1.1 * inch, 2.05 * inch, 2.05 * inch])
             mc_t.setStyle(TableStyle(mc_cmds))
             el.append(mc_t)
             el.append(S.small_spacer())
-    else:
-        el.append(Paragraph('Forecasting data unavailable.', S.BODY))
 
-    # ── 13. Scenario Analysis ──
+    # 13. Scenario Analysis
     el.append(S.section_heading(13, 'Scenario Analysis'))
     scenarios = data.get('scenarios', [])
     if scenarios:
-        sc_data = [['Scenario', 'Prob.', '3M Phase', '6M Phase',
-                     '6M Exp. Return', 'Key Assumption']]
+        sc_data = [['Scenario', 'Prob.', '3M Phase', '6M Phase', '6M Exp. Return', 'Key Assumption']]
         for sc in scenarios:
             ret_val = sc.get('expected_market_return_6m')
             ret_str = f'{ret_val:.1f}%' if not pd.isna(ret_val) else 'N/A'
@@ -723,17 +692,12 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
             ])
         sc_cmds = S.institutional_table_style(len(sc_data))
         sc_cmds.append(('ALIGN', (5, 1), (5, -1), 'LEFT'))
-        sc_t = Table(sc_data,
-                     colWidths=[0.8 * inch, 0.65 * inch, 0.95 * inch, 0.95 * inch,
-                                0.95 * inch, 2.3 * inch])
+        sc_t = Table(sc_data, colWidths=[0.9 * inch, 0.7 * inch, 1.05 * inch, 1.05 * inch, 1.05 * inch, 2.5 * inch])
         sc_t.setStyle(TableStyle(sc_cmds))
         el.append(sc_t)
         el.append(S.small_spacer())
-    else:
-        el.append(Paragraph('Scenario analysis data unavailable.', S.BODY))
 
-    # ── 14. Transition Matrix ──
-    el.append(S.section_heading(14, 'Regime Transition Matrix'))
+    # 14. Transition Matrix (Wrapped in KeepTogether so matrix NEVER splits)
     tm = data.get('transition_matrix')
     if tm and 'matrix' in tm and 'labels' in tm:
         labels = tm['labels']
@@ -748,9 +712,9 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
             ('ALIGN',      (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN',     (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME',   (0, 0), (-1, -1), 'Helvetica-Bold'),
-            ('FONTSIZE',   (0, 0), (-1, -1), 9),
-            ('TOPPADDING', (0, 0), (-1, -1), S.TABLE_CELL_PAD_V),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), S.TABLE_CELL_PAD_V),
+            ('FONTSIZE',   (0, 0), (-1, -1), 8.5),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
             ('GRID',       (0, 0), (-1, -1), 0.4, S.BORDER_GREY),
         ]
 
@@ -759,7 +723,6 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
             for j in range(len(labels)):
                 prob = matrix[i, j] * 100
                 row.append(f'{prob:.1f}%')
-                # Subtle 4-tier opacity gradient
                 if prob > 50:
                     bg = S.HEAT_HIGH
                     tc = colors.white
@@ -779,20 +742,26 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         col_w = S.CONTENT_W / (len(labels) + 1)
         tm_t = Table(tm_data, colWidths=[col_w] * (len(labels) + 1))
         tm_t.setStyle(TableStyle(tm_cmds))
-        el.append(tm_t)
-    else:
-        el.append(Paragraph('Transition matrix data unavailable.', S.BODY))
+
+        el.append(KeepTogether([
+            S.section_heading(14, 'Regime Transition Matrix'),
+            tm_t,
+        ]))
 
     el.append(PageBreak())
 
     # =====================================================================
-    # PAGE 7 — Methodology, Provenance & Metadata
+    # PAGE 6 — Methodology, Data Provenance & Metadata
     # =====================================================================
     el.append(S.section_heading(15, 'Methodology'))
-    el.append(Paragraph(_clean(narrative['methodology']), S.BODY))
+    meth_text = narrative.get('methodology', '')
+    meth_lines = [l.strip() for l in meth_text.split('\n') if l.strip()]
+    for line in meth_lines:
+        el.append(Paragraph(_clean(line), S.BODY))
+
     el.append(S.small_spacer())
 
-    # ── 16. Data Provenance ──
+    # 16. Data Provenance
     if data_metadata:
         el.append(S.section_heading(16, 'Data Provenance &amp; Freshness'))
         prov_data = [['Indicator', 'Value', 'Source', 'As Of', 'Cache']]
@@ -820,15 +789,16 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         prov_cmds = S.institutional_table_style(len(prov_data))
         prov_cmds.append(('ALIGN', (0, 0), (0, -1), 'LEFT'))
         prov_cmds.append(('FONTSIZE', (0, 0), (-1, -1), 8))
-        prov_t = Table(prov_data,
-                       colWidths=[1.5 * inch, 1.0 * inch, 1.2 * inch, 1.0 * inch, 0.7 * inch])
+        prov_t = Table(prov_data, colWidths=[1.8 * inch, 1.15 * inch, 1.4 * inch, 1.5 * inch, 1.4 * inch])
         prov_t.setStyle(TableStyle(prov_cmds))
         el.append(prov_t)
 
     el.append(S.small_spacer())
 
-    # ── Generation metadata ──
-    el.append(S.thin_rule())
+    # Metadata & QR code & Disclaimer
+    final_block = []
+    final_block.append(S.thin_rule())
+
     gen_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
     meta_lines = [
         f'<b>Generated:</b> {gen_time}',
@@ -837,35 +807,35 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
         '<b>Report generated automatically.</b> Not investment advice.',
     ]
     for line in meta_lines:
-        el.append(Paragraph(line, S.CAPTION))
+        final_block.append(Paragraph(line, S.CAPTION))
 
-    # ── QR Code ──
     qr_img = _make_qr_image()
     if qr_img:
-        el.append(Spacer(1, 10))
+        final_block.append(Spacer(1, 3))
         qr_row = Table(
             [[qr_img, Paragraph(
                 '<b>Open Interactive Dashboard</b><br/>'
                 f'<font size="7" color="#636e72">{_DASHBOARD_URL}</font>',
                 ParagraphStyle('QR', parent=S.BODY, alignment=0, spaceAfter=0))]],
-            colWidths=[1.15 * inch, 3.0 * inch],
+            colWidths=[0.9 * inch, 3.6 * inch],
         )
         qr_row.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('LEFTPADDING', (0, 0), (-1, -1), 4),
         ]))
-        el.append(qr_row)
+        final_block.append(qr_row)
 
-    # ── Disclaimer ──
-    el.append(Spacer(1, 14))
-    el.append(S.thin_rule())
-    el.append(Paragraph(
+    final_block.append(Spacer(1, 4))
+    final_block.append(S.thin_rule())
+    final_block.append(Paragraph(
         'This document has been generated by the Macro Intelligence Platform '
         'using publicly available macroeconomic data. It is intended for '
         'informational and research purposes only and should not be construed '
         'as investment advice.',
         S.DISCLAIMER,
     ))
+
+    el.append(KeepTogether(final_block))
 
     # ── Build ──
     doc.build(el)

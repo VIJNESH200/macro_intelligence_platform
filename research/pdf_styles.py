@@ -5,7 +5,7 @@ Centralised colors, typography, table presets, and layout constants for
 the Macro Intelligence Platform's publication-quality PDF reports.
 
 All visual tokens live here so ``pdf.py`` never contains ad-hoc colours
-or font sizes.  Change one value and every page updates.
+or font sizes. Change one value and every page updates.
 """
 from __future__ import annotations
 
@@ -19,13 +19,13 @@ from reportlab.platypus import (
 
 # ─── Page geometry ────────────────────────────────────────────────────────────
 PAGE_W, PAGE_H = letter                          # 612 × 792 pt
-MARGIN_L   = 50
-MARGIN_R   = 50
-MARGIN_T   = 58
-MARGIN_B   = 62
-CONTENT_W  = PAGE_W - MARGIN_L - MARGIN_R        # 512 pt ≈ 7.11 in
-CONTENT_H  = PAGE_H - MARGIN_T - MARGIN_B
-FOOTER_Y   = 32                                   # baseline for running footer
+MARGIN_L   = 45
+MARGIN_R   = 45
+MARGIN_T   = 45
+MARGIN_B   = 50
+CONTENT_W  = PAGE_W - MARGIN_L - MARGIN_R        # 522 pt ≈ 7.25 in
+CONTENT_H  = PAGE_H - MARGIN_T - MARGIN_B        # 697 pt
+FOOTER_Y   = 28                                   # baseline for running footer
 
 # ─── Colour palette ──────────────────────────────────────────────────────────
 # Primary
@@ -64,57 +64,57 @@ HEAT_MED       = colors.HexColor('#5dade2')
 HEAT_LOW       = colors.HexColor('#d6eaf8')
 
 # ─── Spacing tokens ──────────────────────────────────────────────────────────
-SECTION_GAP       = 18       # vertical space between sections
-SUBSECTION_GAP    = 10
-TABLE_GAP         = 8
-PARAGRAPH_GAP     = 6
-CARD_PAD_H        = 10       # horizontal padding inside cards
-CARD_PAD_V        = 8        # vertical padding inside cards
-TABLE_CELL_PAD_V  = 7        # vertical padding in table cells
-TABLE_CELL_PAD_H  = 6
+SECTION_GAP       = 12       # vertical space before section headings
+SUBSECTION_GAP    = 6
+TABLE_GAP         = 6
+PARAGRAPH_GAP     = 4
+CARD_PAD_H        = 8        # horizontal padding inside cards
+CARD_PAD_V        = 5        # vertical padding inside cards
+TABLE_CELL_PAD_V  = 4        # vertical padding in table cells
+TABLE_CELL_PAD_H  = 5
 
 # ─── Typography hierarchy ────────────────────────────────────────────────────
 REPORT_TITLE = ParagraphStyle(
     'ReportTitle',
-    fontName='Helvetica-Bold', fontSize=24, leading=28,
-    textColor=NAVY, spaceAfter=4,
+    fontName='Helvetica-Bold', fontSize=22, leading=26,
+    textColor=NAVY, spaceAfter=2,
 )
 
 SECTION_HEADING = ParagraphStyle(
     'SectionHeading',
-    fontName='Helvetica-Bold', fontSize=12.5, leading=16,
-    textColor=NAVY, spaceBefore=SECTION_GAP, spaceAfter=10,
+    fontName='Helvetica-Bold', fontSize=11.5, leading=14,
+    textColor=NAVY, spaceBefore=SECTION_GAP, spaceAfter=6,
 )
 
 SUBHEADING = ParagraphStyle(
     'Subheading',
-    fontName='Helvetica-Bold', fontSize=10, leading=13,
-    textColor=NAVY_ACCENT, spaceBefore=10, spaceAfter=6,
+    fontName='Helvetica-Bold', fontSize=9.5, leading=12,
+    textColor=NAVY_ACCENT, spaceBefore=6, spaceAfter=4,
 )
 
 BODY = ParagraphStyle(
     'Body',
-    fontName='Helvetica', fontSize=9.5, leading=15,
+    fontName='Helvetica', fontSize=9, leading=13,
     textColor=CHARCOAL, spaceAfter=PARAGRAPH_GAP, alignment=4,  # justified
 )
 
 BODY_CENTER = ParagraphStyle(
     'BodyCenter',
-    fontName='Helvetica', fontSize=9.5, leading=15,
+    fontName='Helvetica', fontSize=9, leading=13,
     textColor=CHARCOAL, spaceAfter=PARAGRAPH_GAP, alignment=1,
 )
 
 BULLET = ParagraphStyle(
     'Bullet',
-    fontName='Helvetica', fontSize=9.5, leading=15,
-    textColor=CHARCOAL, spaceAfter=5,
-    leftIndent=18, bulletIndent=8,
+    fontName='Helvetica', fontSize=8.5, leading=12,
+    textColor=CHARCOAL, spaceAfter=3,
+    leftIndent=14, bulletIndent=6,
 )
 
 CAPTION = ParagraphStyle(
     'Caption',
-    fontName='Helvetica', fontSize=8, leading=11,
-    textColor=MID_GREY, spaceAfter=4, alignment=1,
+    fontName='Helvetica', fontSize=8, leading=10,
+    textColor=MID_GREY, spaceBefore=2, spaceAfter=4, alignment=1,
 )
 
 FOOTER_STYLE = ParagraphStyle(
@@ -126,30 +126,30 @@ FOOTER_STYLE = ParagraphStyle(
 DISCLAIMER = ParagraphStyle(
     'Disclaimer',
     fontName='Helvetica-Oblique', fontSize=7.5, leading=10,
-    textColor=MID_GREY, spaceBefore=12, alignment=1,
+    textColor=MID_GREY, spaceBefore=6, alignment=1,
 )
 
 TABLE_HEADER_TEXT = ParagraphStyle(
     'TableHeaderText',
-    fontName='Helvetica-Bold', fontSize=9, leading=12,
+    fontName='Helvetica-Bold', fontSize=8.5, leading=11,
     textColor=colors.white, alignment=1,
 )
 
 TABLE_CELL_TEXT = ParagraphStyle(
     'TableCellText',
-    fontName='Helvetica', fontSize=9, leading=12,
+    fontName='Helvetica', fontSize=8.5, leading=11,
     textColor=CHARCOAL, alignment=1,
 )
 
 TABLE_CELL_LEFT = ParagraphStyle(
     'TableCellLeft',
-    fontName='Helvetica', fontSize=9, leading=12,
+    fontName='Helvetica', fontSize=8.5, leading=11,
     textColor=CHARCOAL, alignment=0,
 )
 
 KPI_VALUE = ParagraphStyle(
     'KPIValue',
-    fontName='Helvetica-Bold', fontSize=16, leading=20,
+    fontName='Helvetica-Bold', fontSize=15, leading=18,
     textColor=NAVY, alignment=1,
 )
 
@@ -161,19 +161,19 @@ KPI_LABEL = ParagraphStyle(
 
 KPI_SUBLABEL = ParagraphStyle(
     'KPISublabel',
-    fontName='Helvetica', fontSize=7.5, leading=10,
+    fontName='Helvetica', fontSize=7.5, leading=9,
     textColor=MID_GREY, alignment=1,
 )
 
 METADATA_LABEL = ParagraphStyle(
     'MetadataLabel',
-    fontName='Helvetica-Bold', fontSize=8.5, leading=12,
+    fontName='Helvetica-Bold', fontSize=8, leading=11,
     textColor=MID_GREY,
 )
 
 METADATA_VALUE = ParagraphStyle(
     'MetadataValue',
-    fontName='Helvetica', fontSize=8.5, leading=12,
+    fontName='Helvetica', fontSize=8, leading=11,
     textColor=CHARCOAL,
 )
 
@@ -188,7 +188,7 @@ def institutional_table_style(n_rows: int, *, has_header: bool = True) -> list:
         ('ALIGN',         (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME',      (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE',      (0, 0), (-1, -1), 9),
+        ('FONTSIZE',      (0, 0), (-1, -1), 8.5),
         ('TOPPADDING',    (0, 0), (-1, -1), TABLE_CELL_PAD_V),
         ('BOTTOMPADDING', (0, 0), (-1, -1), TABLE_CELL_PAD_V),
         ('LEFTPADDING',   (0, 0), (-1, -1), TABLE_CELL_PAD_H),
@@ -200,9 +200,9 @@ def institutional_table_style(n_rows: int, *, has_header: bool = True) -> list:
             ('BACKGROUND',    (0, 0), (-1, 0), NAVY),
             ('TEXTCOLOR',     (0, 0), (-1, 0), colors.white),
             ('FONTNAME',      (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE',      (0, 0), (-1, 0), 9),
-            ('TOPPADDING',    (0, 0), (-1, 0), 9),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 9),
+            ('FONTSIZE',      (0, 0), (-1, 0), 8.5),
+            ('TOPPADDING',    (0, 0), (-1, 0), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
         ]
     # Alternating row shading (skip header row)
     start = 1 if has_header else 0
@@ -218,8 +218,8 @@ def summary_row_style(row_idx: int) -> list:
         ('BACKGROUND', (0, row_idx), (-1, row_idx), DEEP_NAVY),
         ('TEXTCOLOR',  (0, row_idx), (-1, row_idx), colors.white),
         ('FONTNAME',   (0, row_idx), (-1, row_idx), 'Helvetica-Bold'),
-        ('TOPPADDING', (0, row_idx), (-1, row_idx), 10),
-        ('BOTTOMPADDING', (0, row_idx), (-1, row_idx), 10),
+        ('TOPPADDING', (0, row_idx), (-1, row_idx), 6),
+        ('BOTTOMPADDING', (0, row_idx), (-1, row_idx), 6),
     ]
 
 
@@ -228,7 +228,7 @@ def summary_row_style(row_idx: int) -> list:
 def section_heading(number: int | str, title: str) -> Paragraph:
     """Numbered section heading with muted number prefix."""
     return Paragraph(
-        f'<font color="#9eaab5" size="11">{number}.</font>&nbsp;&nbsp;{title}',
+        f'<font color="#9eaab5" size="10">{number}.</font>&nbsp;&nbsp;{title}',
         SECTION_HEADING,
     )
 
@@ -237,7 +237,7 @@ def thin_rule() -> HRFlowable:
     """Thin horizontal divider line."""
     return HRFlowable(
         width='100%', thickness=0.5,
-        color=RULE_LIGHT, spaceBefore=6, spaceAfter=6,
+        color=RULE_LIGHT, spaceBefore=4, spaceAfter=4,
     )
 
 
@@ -259,7 +259,7 @@ def kpi_card(label: str, value: str, sublabel: str = '') -> Table:
     ]
     if sublabel:
         cell_data.append([Paragraph(sublabel, KPI_SUBLABEL)])
-    card = Table(cell_data, colWidths=[CONTENT_W / 4 - 6])
+    card = Table(cell_data, colWidths=[CONTENT_W / 4 - 5])
     card.setStyle(TableStyle([
         ('ALIGN',         (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
