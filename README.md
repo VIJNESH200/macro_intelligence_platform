@@ -105,12 +105,12 @@ The platform features a production-ready, decoupled hybrid cloud deployment:
                                                 │ VITE_API_BASE_URL
                                                 ▼
                          ┌──────────────────────────────────────────────┐
-                         │       Render Backend (FastAPI Web Service)   │
-                         │  https://macro-intelligence-api.onrender.com │
+                         │      Render Backend (FastAPI Web Service)    │
+                         │ https://macro-intelligence-platform-e0uk.onrender.com │
                          └──────────────────────┬───────────────────────┘
                                                 │
                          ┌──────────────────────┴───────────────────────┐
-                         ▼                                               ▼
+                         ▼                                              ▼
      ┌───────────────────────────────────────┐       ┌───────────────────────────────────────┐
      │      Quantitative Engine & Models     │       │     Open Data & Provenance Pipeline   │
      │ (Z-Score, Spline, 3-Signal Consensus) │       │   (FRED, DPIIT, IMF, Yahoo, RBI)      │

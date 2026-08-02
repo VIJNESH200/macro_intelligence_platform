@@ -1,2 +1,13 @@
 date,current_regime,forecast_3m,forecast_6m,forecast_9m,conviction,model_version,realized_3m,realized_6m,realized_9m
-2026-07-01,Slowdown,Slowdown,Slowdown,Slowdown,32.0,2.5,,,
+2025-08-01,Expansion,Expansion,Slowdown,Slowdown,44.2,2.5.0,Expansion,Expansion,Slowdown
+2025-09-01,Expansion,Expansion,Slowdown,Slowdown,44.3,2.5.0,Expansion,Expansion,Slowdown
+2025-10-01,Expansion,Expansion,Slowdown,Slowdown,44.7,2.5.0,Expansion,Expansion,Slowdown
+2025-11-01,Expansion,Expansion,Slowdown,Slowdown,44.8,2.5.0,Expansion,Slowdown,
+2025-12-01,Expansion,Expansion,Slowdown,Slowdown,44.7,2.5.0,Expansion,Slowdown,
+2026-01-01,Expansion,Slowdown,Slowdown,Slowdown,63.2,2.5.0,Expansion,Slowdown,
+2026-02-01,Expansion,Slowdown,Slowdown,Slowdown,63.4,2.5.0,Slowdown,,
+2026-03-01,Expansion,Slowdown,Slowdown,Slowdown,63.3,2.5.0,Slowdown,,
+2026-04-01,Expansion,Slowdown,Slowdown,Slowdown,63.1,2.5.0,Slowdown,,
+2026-05-01,Slowdown,Slowdown,Slowdown,Slowdown,63.6,2.5.0,,,
+2026-06-01,Slowdown,Slowdown,Slowdown,Slowdown,63.5,2.5.0,,,
+2026-07-01,Slowdown,Slowdown,Slowdown,Slowdown,44.2,2.5.0,,,
