@@ -243,35 +243,37 @@ class ForecastingEngine:
             return {'path': [(x_now, y_now)] * max_h}
 
         try:
-            from sklearn.linear_model import Ridge
-            train_df = df.iloc[:train_end + 1].copy()
-            train_df_feats = train_df[feature_cols].fillna(0.0)
-
+            train_df = df.iloc[:train_end + 1]
             if len(train_df) < 36:
                 return {'path': [(x_now, y_now)] * max_h}
 
-            X_train, y_train_dx, y_train_dy = [], [], []
-            for i in range(len(train_df) - 6):
-                X_train.append(train_df_feats.iloc[i].values)
-                target_date = train_df.index[i] + pd.DateOffset(months=6)
-                m_idx = df.index.get_indexer([target_date], method='nearest')[0]
-                dx = df['X'].iloc[m_idx] - train_df['X'].iloc[i]
-                dy = df['Y'].iloc[m_idx] - train_df['Y'].iloc[i]
-                y_train_dx.append(dx)
-                y_train_dy.append(dy)
-
-            if len(X_train) < 30:
+            df_feats = df[feature_cols].fillna(0.0).to_numpy()
+            N = train_end - 5  # training sample count (strictly prior to idx)
+            if N < 30:
                 return {'path': [(x_now, y_now)] * max_h}
 
-            X_tr = np.array(X_train)
-            curr_feat = df[feature_cols].iloc[idx].fillna(0.0).values.reshape(1, -1)
+            X_train = df_feats[:N]
+            y_dx = df['X'].iloc[6:train_end + 1].to_numpy() - df['X'].iloc[:N].to_numpy()
+            y_dy = df['Y'].iloc[6:train_end + 1].to_numpy() - df['Y'].iloc[:N].to_numpy()
 
-            # Fit 6-month relative delta regression (alpha=10.0 for strong regularization)
-            model_dx = Ridge(alpha=10.0).fit(X_tr, np.array(y_train_dx))
-            model_dy = Ridge(alpha=10.0).fit(X_tr, np.array(y_train_dy))
+            # Centered L2 Ridge solve (alpha=10.0 for strong regularization)
+            X_mean = X_train.mean(axis=0)
+            X_centered = X_train - X_mean
+            y_dx_mean = float(y_dx.mean())
+            y_dy_mean = float(y_dy.mean())
 
-            pred_dx_6m = float(model_dx.predict(curr_feat)[0])
-            pred_dy_6m = float(model_dy.predict(curr_feat)[0])
+            y_dx_centered = y_dx - y_dx_mean
+            y_dy_centered = y_dy - y_dy_mean
+
+            XtX = X_centered.T @ X_centered + 10.0 * np.eye(X_train.shape[1])
+            w_dx = np.linalg.solve(XtX, X_centered.T @ y_dx_centered)
+            w_dy = np.linalg.solve(XtX, X_centered.T @ y_dy_centered)
+
+            curr_feat = df_feats[idx]
+            curr_centered = curr_feat - X_mean
+
+            pred_dx_6m = float(curr_centered @ w_dx + y_dx_mean)
+            pred_dy_6m = float(curr_centered @ w_dy + y_dy_mean)
 
             # Construct mean-reverting path scaling up to 6M prediction
             decay = 0.85
