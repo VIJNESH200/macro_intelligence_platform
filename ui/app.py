@@ -44,10 +44,14 @@ class App:
     # UI Construction
     # ------------------------------------------------------------------
     def _build_ui(self):
+        import matplotlib
+        print(f"[DEBUG APP INIT] start of _build_ui backend: {matplotlib.get_backend()}")
         df, config = self.df, self.config
 
         # Figure + main axes
         self.fig = create_figure(config)
+        print(f"[DEBUG APP INIT] after create_figure canvas manager: {type(self.fig.canvas.manager)}")
+        print(f"[DEBUG APP INIT] after create_figure canvas: {type(self.fig.canvas)}")
         self.ax = create_main_axes(self.fig, df, config)
 
         # Sparkline
@@ -1335,4 +1339,8 @@ The path transitions through four phases:
     # ------------------------------------------------------------------
     def run(self):
         """Start the matplotlib event loop."""
+        import matplotlib
+        print(f"[DEBUG APP] immediately before plt.show() backend: {matplotlib.get_backend()}")
+        print(f"[DEBUG APP] figure canvas manager: {type(self.fig.canvas.manager)}")
+        print(f"[DEBUG APP] figure canvas: {type(self.fig.canvas)}")
         plt.show()

@@ -8,6 +8,7 @@ Runs the complete pipeline:
   DataEngine → FeatureEngine → App (GUI)
 """
 import matplotlib
+print(f"[DEBUG MAIN] start of main.py backend: {matplotlib.get_backend()}")
 
 # Ensure an interactive backend is used for the desktop GUI application
 if matplotlib.get_backend().lower() == 'agg':
@@ -17,6 +18,13 @@ if matplotlib.get_backend().lower() == 'agg':
             break
         except Exception:
             pass
+print(f"[DEBUG MAIN] after forced backend selection: {matplotlib.get_backend()}")
+
+import ui.layout
+print(f"[DEBUG MAIN] after importing ui.layout: {matplotlib.get_backend()}")
+
+import web.chart
+print(f"[DEBUG MAIN] after importing web.chart: {matplotlib.get_backend()}")
 
 try:
     from .config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market, save_market_preference
@@ -28,6 +36,7 @@ except ImportError:
     from data.data_engine import DataEngine
     from features.feature_engine import FeatureEngine
     from ui.app import App
+print(f"[DEBUG MAIN] after importing ui.app: {matplotlib.get_backend()}")
 
 
 def main():
