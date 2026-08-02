@@ -4,6 +4,7 @@ Cycle Statistics — Phase durations, transition probabilities.
 ==============================================================
 Exact port of report_analysis.py.
 """
+import pandas as pd
 
 
 def get_quadrant(x: float, y: float, center: float = 100.0) -> str:
