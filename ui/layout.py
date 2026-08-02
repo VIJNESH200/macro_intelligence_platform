@@ -26,12 +26,15 @@ def create_main_axes(fig: plt.Figure, df, config: dict) -> plt.Axes:
     ax.set_facecolor('white')
 
     center = config['center']
-    # Robust extent: 98th percentile of deviation from center, so a handful of
-    # extreme months (e.g. 2020) don't inflate the quadrants for every frame
-    dev_x = (df['X'] - center).abs().quantile(0.98)
-    dev_y = (df['Y'] - center).abs().quantile(0.98)
-    max_dist = max(dev_x, dev_y) * (1 + config['padding'])
-    max_dist = max(max_dist, 3.0)
+    # Robust extent: 98.5th percentile of deviation from center + 16% padding
+    # to provide a clean ~6% breathing room while maintaining primary quadrant focus
+    dev_x = (df['X'] - center).abs().quantile(0.985)
+    dev_y = (df['Y'] - center).abs().quantile(0.985)
+    pad_mult = 1 + config.get('padding', 0.16)
+    if pad_mult == 1.10:  # Upgrade default 0.10 padding to 0.16 (~6% expansion)
+        pad_mult = 1.16
+    max_dist = max(dev_x, dev_y) * pad_mult
+    max_dist = max(max_dist, 3.2)
 
     y_lim_min, y_lim_max = center - max_dist, center + max_dist
     x_lim_min, x_lim_max = center - max_dist, center + max_dist

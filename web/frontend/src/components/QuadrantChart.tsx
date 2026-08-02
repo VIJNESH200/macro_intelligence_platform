@@ -183,6 +183,11 @@ export function QuadrantChart({
         <title>
           {`Economic health vs momentum, ${current.label}. Current regime: ${current.quadrant}.`}
         </title>
+        <defs>
+          <clipPath id="chart-area-clip">
+            <rect x={0} y={0} width={Math.max(0, plotW)} height={Math.max(0, plotH)} />
+          </clipPath>
+        </defs>
 
         <g transform={`translate(${offsetX},${MARGIN.top})`}>
           {/* Quadrant territory: low-alpha washes, never the sole cue for regime. */}
@@ -234,38 +239,41 @@ export function QuadrantChart({
             )
           })}
 
-          {/* Ghost of the full path, when enabled */}
-          {showFullHistory && historyPath ? (
-            <path
-              d={historyPath}
-              fill="none"
-              stroke="var(--viz-history)"
-              strokeOpacity={0.18}
-              strokeWidth={1.25}
-              strokeLinecap="round"
-            />
-          ) : null}
+          {/* Clipped trajectory layer -- guarantees history lines stay inside plotting area */}
+          <g clipPath="url(#chart-area-clip)">
+            {/* Ghost of the full path, when enabled */}
+            {showFullHistory && historyPath ? (
+              <path
+                d={historyPath}
+                fill="none"
+                stroke="var(--viz-history)"
+                strokeOpacity={0.16}
+                strokeWidth={1.25}
+                strokeLinecap="round"
+              />
+            ) : null}
 
-          {/* Emphasised trail: one hue, oldest faint -> newest solid */}
-          {showTrail
-            ? trailPoints.slice(0, -1).map((p, i) => {
-                const next = trailPoints[i + 1]
-                const t = trailPoints.length > 1 ? i / (trailPoints.length - 1) : 1
-                return (
-                  <line
-                    key={`trail-${i}`}
-                    x1={x(p.x)}
-                    y1={y(p.y)}
-                    x2={x(next.x)}
-                    y2={y(next.y)}
-                    stroke="var(--viz-history)"
-                    strokeOpacity={TRAIL_MIN_OPACITY + t * (TRAIL_MAX_OPACITY - TRAIL_MIN_OPACITY)}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                  />
-                )
-              })
-            : null}
+            {/* Emphasised trail: one hue, oldest faint -> newest solid */}
+            {showTrail
+              ? trailPoints.slice(0, -1).map((p, i) => {
+                  const next = trailPoints[i + 1]
+                  const t = trailPoints.length > 1 ? i / (trailPoints.length - 1) : 1
+                  return (
+                    <line
+                      key={`trail-${i}`}
+                      x1={x(p.x)}
+                      y1={y(p.y)}
+                      x2={x(next.x)}
+                      y2={y(next.y)}
+                      stroke="var(--viz-history)"
+                      strokeOpacity={TRAIL_MIN_OPACITY + t * (TRAIL_MAX_OPACITY - TRAIL_MIN_OPACITY)}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                    />
+                  )
+                })
+              : null}
+          </g>
 
           {/* Forecast: distinct hue, dashed to read as "not observed" */}
           {showForecast && forecast ? (

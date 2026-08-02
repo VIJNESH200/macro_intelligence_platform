@@ -63,15 +63,15 @@ def resolve_assets(snapshot: MarketSnapshot, assets: Sequence[str] | None) -> li
 def axis_bounds(snapshot: MarketSnapshot) -> dict:
     """Compute chart extents the same way `ui/layout.create_main_axes` does.
 
-    Uses the 98th percentile of deviation from centre so a handful of extreme
-    months (2020, say) don't inflate the quadrants for every other frame.
+    Uses 98.5th percentile + 16% padding for ~6% extra visual breathing room.
     """
     df, config = snapshot.df, snapshot.config
     center = float(config.get('center', 100))
-    padding = float(config.get('padding', 0.10))
+    raw_pad = float(config.get('padding', 0.16))
+    padding = 0.16 if raw_pad == 0.10 else raw_pad
 
-    dev_x = float((df['X'] - center).abs().quantile(0.98))
-    dev_y = float((df['Y'] - center).abs().quantile(0.98))
+    dev_x = float((df['X'] - center).abs().quantile(0.985))
+    dev_y = float((df['Y'] - center).abs().quantile(0.985))
     max_dist = max(dev_x, dev_y) * (1 + padding)
     max_dist = max(max_dist, MIN_AXIS_EXTENT)
 

@@ -186,8 +186,8 @@ class App:
                                      edgecolor='white', linewidth=1.5)
         current_label = self.ax.text(0, 0, '', color='black', fontsize=11,
                                      fontweight='bold', ha='left', va='bottom', zorder=7)
-        tail_dots = self.ax.scatter([], [], color='dimgray', s=25, zorder=4)
-        lc = LineCollection([], linewidth=2.5, zorder=3)
+        tail_dots = self.ax.scatter([], [], color='dimgray', s=25, zorder=4, clip_on=True)
+        lc = LineCollection([], linewidth=2.5, zorder=3, clip_on=True)
         self.ax.add_collection(lc)
         
         # Forecast chart elements
@@ -684,8 +684,15 @@ class App:
 
             n_dots = len(dots_x)
             colors = np.zeros((n_dots, 4))
-            colors[:, :3] = 0.4
-            colors[:, 3] = np.linspace(0.15, 0.7, n_dots)
+            colors[:, :3] = 0.35
+            if start_idx == 0 and n_dots > 36:
+                # Full History: Smooth non-linear time decay (0.12 -> 0.75)
+                norm_pos = np.linspace(0, 1, n_dots)
+                colors[:, 3] = 0.12 + 0.63 * (norm_pos ** 2.2)
+            else:
+                # Trailing tail: Linear fade (0.15 -> 0.70)
+                colors[:, 3] = np.linspace(0.15, 0.70, n_dots)
+
             pe['tail_dots'].set_facecolors(colors)
             pe['tail_dots'].set_edgecolors(colors)
 
@@ -700,8 +707,13 @@ class App:
 
             n_segs = len(segments)
             line_colors = np.zeros((n_segs, 4))
-            line_colors[:, :3] = 0.25
-            line_colors[:, 3] = np.linspace(0.1, 0.9, n_segs)
+            line_colors[:, :3] = 0.20
+            if start_idx == 0 and n_segs > 100:
+                # Full History: Elegant power-decay opacity (0.12 -> 0.88)
+                norm_seg = np.linspace(0, 1, n_segs)
+                line_colors[:, 3] = 0.12 + 0.76 * (norm_seg ** 2.2)
+            else:
+                line_colors[:, 3] = np.linspace(0.10, 0.90, n_segs)
             pe['lc'].set_color(line_colors)
         else:
             pe['tail_dots'].set_offsets(np.empty((0, 2)))
