@@ -46,19 +46,37 @@ An open-source, quantitative business cycle forecasting platform. It traces econ
 
 ## 📄 One-Click Institutional PDF Reports
 
-Generating a publication-ready macroeconomic research brief is instant across both web and local environments:
+Publication-quality macroeconomic strategy reports modelled on Goldman Sachs, JPMorgan, and BlackRock institutional research. Generated instantly from live analytics — no manual formatting required.
 
-- 🌐 **Live Web App (Vercel)**: Click the **"Report"** button in the top navigation bar at [macro-intelligence-platform-three.vercel.app](https://macro-intelligence-platform-three.vercel.app/). The React frontend calls the Render FastAPI `/api/report` endpoint, generating and streaming a multi-page PDF brief directly to your browser downloads.
-- 💻 **Desktop App / Python API**: Click **"Export PDF"** in the Matplotlib GUI or execute `python -m research.pdf` to generate strategy notes saved locally in `exports/`.
+### How to Generate
 
-| Page 1: Executive Summary & Thesis | Page 2: Cycle Position & Dashboard |
-| :---: | :---: |
-| ![PDF Strategy Note Page 1](docs/assets/pdf_report_preview.png) | ![PDF Strategy Note Page 2](docs/assets/pdf_report_page2.png) |
+- 🌐 **Live Web App**: Click the **"Report"** button in the top navigation bar at [macro-intelligence-platform-three.vercel.app](https://macro-intelligence-platform-three.vercel.app/). The PDF streams directly to your browser.
+- 💻 **Desktop App**: Click **"Export PDF"** in the Matplotlib GUI, or run `python -m research.pdf` to generate locally in `exports/`.
+- 🔗 **API**: `GET /api/report?market=INDIA&idx=latest` returns the PDF as a file download.
 
-- **Executive Summary & Strategy Cards**: Stance classification (*Highly Constructive, Constructive, Cautious, Defensive, Highly Defensive*).
-- **Markov Transition Probabilities**: Empirical 4×4 regime transition probabilities and expected phase durations.
-- **Scenario Horizon Matrix**: 3M/6M/9M Bull, Base, and Bear probabilistic paths with expected asset returns.
-- **Methodology Appendix**: Formal mathematical definitions for Z-scores, Euclidean analogue matching, and conviction scoring.
+### Report Contents (7 Pages)
+
+| Page | Section | Contents |
+|:----:|---------|----------|
+| **1** | **Cover & Executive Summary** | Report header with small-caps branding, metadata table, executive snapshot callout box (Current Regime, Macro Score, Confidence, Primary Risk, Investment View, Next Likely Phase), key takeaways card |
+| **2** | **Positioning & Dashboard** | Business cycle quadrant chart (300 DPI), 4 KPI metric cards (Macro Score, Market Score, Historical Similarity, Transition Risk), key metrics delta comparison |
+| **3** | **Macro Drivers & Dynamics** | Quantitative macro driver table with signal-coloured levels, key regime developments (auto-generated from computed metrics when sparse), research insight cards, cycle timeline & transition outlook |
+| **4** | **Historical Validation** | Top-5 historical analogue table with similarity scores and 6M forward returns, cross-market context with multi-horizon return heatmap |
+| **5** | **Forward Projections** | 3M/6M/9M forecast table, signal contribution weights, scenario analysis (Bull/Base/Bear paths with expected returns), regime transition matrix heatmap |
+| **6** | **Interpretation & Risks** | Integrated market interpretation narrative, core macro risk factors |
+| **7** | **Methodology & Provenance** | Analytical methodology, data provenance table, generation metadata, QR code linking to live dashboard, disclaimer |
+
+### Design System
+
+All styling is centralized in [`research/pdf_styles.py`](research/pdf_styles.py) — a single source of truth for:
+
+- **6-level typography hierarchy** (Title → Section → Subheading → Body → Caption → Footer)
+- **Institutional colour palette** (Navy primary, charcoal body, monochrome signal tones)
+- **Reusable table factories** (`institutional_table_style()`, `summary_row_style()`)
+- **Flowable helpers** (`section_heading()`, `kpi_card()`, `thin_rule()`)
+- **Consistent spacing tokens** across all pages
+
+Every page follows the same layout grid with consistent margins, padding, and section spacing. Running footer on all pages: *Macro Intelligence Platform · Institutional Strategy Report · Page X · Generated automatically*.
 
 ---
 
