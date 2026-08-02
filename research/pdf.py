@@ -237,7 +237,7 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
          Paragraph('<b>Next Likely Phase</b>', S.BODY),
          Paragraph(_clean(next_phase), S.BODY)],
     ]
-    snap_t = Table(snap_rows, colWidths=[1.2 * inch, 2.425 * inch, 1.2 * inch, 2.425 * inch])
+    snap_t = Table(snap_rows, colWidths=[1.15 * inch, 2.15 * inch, 1.65 * inch, 2.3 * inch])
     snap_t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), S.CALLOUT_BG),
         ('BOX', (0, 0), (-1, -1), 0.5, S.NAVY_ACCENT),
