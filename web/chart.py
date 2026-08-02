@@ -11,7 +11,8 @@ This is the only place the web stack touches matplotlib.
 """
 import matplotlib
 
-matplotlib.use('Agg')
+if matplotlib.get_backend().lower() not in ('tkagg', 'qt5agg', 'qtagg', 'macosx'):
+    matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402

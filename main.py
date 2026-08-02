@@ -7,6 +7,9 @@ python -m macro_intelligence_platform.main
 Runs the complete pipeline:
   DataEngine → FeatureEngine → App (GUI)
 """
+import matplotlib
+matplotlib.use('TkAgg', force=True)
+
 try:
     from .config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market, save_market_preference
     from .data.data_engine import DataEngine
