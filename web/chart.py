@@ -10,10 +10,6 @@ so the PDF's chart geometry stays identical to the desktop app's.
 This is the only place the web stack touches matplotlib.
 """
 import matplotlib
-
-if matplotlib.get_backend().lower() not in ('tkagg', 'qt5agg', 'qtagg', 'macosx'):
-    matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.collections import LineCollection  # noqa: E402

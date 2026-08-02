@@ -8,7 +8,15 @@ Runs the complete pipeline:
   DataEngine → FeatureEngine → App (GUI)
 """
 import matplotlib
-matplotlib.use('TkAgg', force=True)
+
+# Ensure an interactive backend is used for the desktop GUI application
+if matplotlib.get_backend().lower() == 'agg':
+    for backend in ('TkAgg', 'QtAgg', 'Qt5Agg', 'WXAgg'):
+        try:
+            matplotlib.use(backend, force=True)
+            break
+        except Exception:
+            pass
 
 try:
     from .config import CONFIG, MARKET_SERIES, MACRO_SERIES, reload_for_market, save_market_preference

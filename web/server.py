@@ -16,6 +16,9 @@ import os
 import tempfile
 from typing import Any
 
+import matplotlib
+matplotlib.use('Agg', force=True)
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
