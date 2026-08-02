@@ -18,12 +18,15 @@ market's DataFrame is computed once and cached. Cache entries are immutable
 snapshots: callers get a private copy of the config dicts and must not mutate
 the frame.
 """
+import logging
 import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from contextlib import contextmanager
 from typing import Callable, Iterator
+
+logger = logging.getLogger(__name__)
 
 import pandas as pd
 
@@ -148,9 +151,20 @@ class MarketStore:
         because they read `config.MACRO_SERIES` and friends at call time.
         """
         resolved = normalize_market(market)
+        t_req = time.perf_counter()
         with self._lock:
+            t_acq = time.perf_counter()
+            wait_ms = (t_acq - t_req) * 1000
             self._activate(resolved)
-            yield self._load_locked(resolved)
+            try:
+                yield self._load_locked(resolved)
+            finally:
+                t_rel = time.perf_counter()
+                held_ms = (t_rel - t_acq) * 1000
+                logger.info(
+                    "[STORE.session] market=%s | lock held for %.2f ms (wait time: %.2f ms)",
+                    resolved, held_ms, wait_ms
+                )
 
     # ------------------------------------------------------------------
     # Loading & caching

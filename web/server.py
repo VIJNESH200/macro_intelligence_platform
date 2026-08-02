@@ -191,28 +191,32 @@ def report(market: str | None = Query(None), idx: int | None = Query(None)) -> F
 
     os.makedirs(EXPORT_DIR, exist_ok=True)
 
+    # Retrieve snapshot & compute analytics bundle under session lock
     with STORE.session(market) as snapshot:
         frame_idx = snapshot.clamp(idx)
         # Reuse the same cached analytics bundle used by the frame and forecast
         # endpoints so the report and dashboard cannot diverge.
         bundle = compute.analysis_bundle(snapshot, frame_idx)
+        market_name = snapshot.market
+        data_health = snapshot.data_health
 
-        stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'BusinessCycle_Report_{snapshot.market}_{stamp}.pdf'
-        output_path = os.path.join(EXPORT_DIR, filename)
+    # Lock is now RELEASED. Chart rendering & PDF compilation run un-locked.
+    stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'BusinessCycle_Report_{market_name}_{stamp}.pdf'
+    output_path = os.path.join(EXPORT_DIR, filename)
 
-        chart_fd, chart_path = tempfile.mkstemp(suffix='.png', prefix='cycle_chart_')
-        os.close(chart_fd)
-        try:
-            render_cycle_png_func(snapshot, frame_idx, chart_path, bundle['forecast'])
-            pdf_mod.build_pdf_report(
-                bundle['data'], bundle['analysis'], bundle['insights'],
-                bundle['market_insights'], bundle['narrative'], bundle['analogues'],
-                bundle['deltas'], chart_path, output_path, snapshot.data_health,
-            )
-        finally:
-            if os.path.exists(chart_path):
-                os.unlink(chart_path)
+    chart_fd, chart_path = tempfile.mkstemp(suffix='.png', prefix='cycle_chart_')
+    os.close(chart_fd)
+    try:
+        render_cycle_png_func(snapshot, frame_idx, chart_path, bundle['forecast'])
+        pdf_mod.build_pdf_report(
+            bundle['data'], bundle['analysis'], bundle['insights'],
+            bundle['market_insights'], bundle['narrative'], bundle['analogues'],
+            bundle['deltas'], chart_path, output_path, data_health,
+        )
+    finally:
+        if os.path.exists(chart_path):
+            os.unlink(chart_path)
 
     return FileResponse(output_path, media_type='application/pdf', filename=filename, background=BackgroundTask(os.unlink, output_path))
 
@@ -224,10 +228,12 @@ def chart_png(market: str | None = Query(None), idx: int | None = Query(None)) -
     with STORE.session(market) as snapshot:
         frame_idx = snapshot.clamp(idx)
         projection = compute.forecast_payload(snapshot, frame_idx)
-        fd, path = tempfile.mkstemp(suffix='.png', prefix='cycle_')
-        os.close(fd)
-        render_cycle_png_func(snapshot, frame_idx, path, projection)
-        filename = f'cycle_{snapshot.market}_{frame_idx}.png'
+
+    # Lock is now RELEASED. Render PNG un-locked.
+    fd, path = tempfile.mkstemp(suffix='.png', prefix='cycle_')
+    os.close(fd)
+    render_cycle_png_func(snapshot, frame_idx, path, projection)
+    filename = f'cycle_{snapshot.market}_{frame_idx}.png'
 
     return FileResponse(path, media_type='image/png', filename=filename, background=BackgroundTask(os.unlink, path))
 
