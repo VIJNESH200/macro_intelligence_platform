@@ -18,7 +18,25 @@ def get_quadrant(x: float, y: float, center: float = 100.0) -> str:
         return 'Recovery'
 
 
-def compute_statistics(df, data: dict) -> dict:
+def compute_statistics(df: pd.DataFrame, data: dict) -> dict:
+    """Compute phase duration, transition history, and cycle metrics."""
+    if df.empty or len(df) == 0:
+        return {
+            'current_duration': "0 months",
+            'avg_duration': "0.0 months",
+            'longest_duration': "0 months",
+            'shortest_duration': "0 months",
+            'occurrences': 0,
+            'transition_after': "N/A",
+            'entered_date': "N/A",
+            'previous_phase': "N/A",
+            'current_duration_num': 0,
+            'avg_duration_num': 0,
+            'duration_diff_num': 0,
+            'completion_pct': 0,
+            'most_common_next_str': "N/A",
+            'transition_probs': {}
+        }
     """Compute historical cycle statistics for the current phase.
 
     Segments the full Quadrant history into consecutive phase runs.

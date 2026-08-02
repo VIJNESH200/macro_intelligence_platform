@@ -540,11 +540,12 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
 
     if analogues and analogues.get('matches'):
         matches = analogues['matches']
-        averages = analogues['averages']
+        averages = analogues.get('averages')
 
+        bench_label = matches[0].get('benchmark_name', 'Benchmark') if matches else 'Benchmark'
         ana_data = [['Historical Period', 'Similarity', 'Phase Duration',
-                     'Next Phase', f"6M Fwd ({matches[0]['benchmark_name']})"]]
-        ana_cmds = S.institutional_table_style(len(matches) + 2)
+                     'Next Phase', f"6M Fwd ({bench_label})"]]
+        ana_cmds = S.institutional_table_style(len(matches) + (2 if averages else 1))
 
         for i, a in enumerate(matches, start=1):
             ana_data.append([
@@ -557,27 +558,34 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
                 ana_cmds.append(('BACKGROUND', (4, i), (4, i), bg))
                 ana_cmds.append(('TEXTCOLOR', (4, i), (4, i), tc))
 
-        avg_row = [
-            'AVERAGE', averages['avg_sim_str'], averages['avg_dur_str'],
-            averages['most_common_next'], averages['avg_fwd_str'],
-        ]
-        ana_data.append(avg_row)
-        last_idx = len(ana_data) - 1
-        ana_cmds += S.summary_row_style(last_idx)
-        avg_val = averages['avg_fwd_val']
-        if not pd.isna(avg_val):
-            if avg_val > 5:
-                ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), S.GREEN_STRONG))
-            elif avg_val > 0:
-                ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), colors.HexColor('#28a745')))
-            elif avg_val < -5:
-                ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), S.RED_STRONG))
-            elif avg_val < 0:
-                ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), colors.HexColor('#dc3545')))
+        if averages:
+            avg_row = [
+                'AVERAGE', averages.get('avg_sim_str', 'N/A'), averages.get('avg_dur_str', 'N/A'),
+                averages.get('most_common_next', 'N/A'), averages.get('avg_fwd_str', 'N/A'),
+            ]
+            ana_data.append(avg_row)
+            last_idx = len(ana_data) - 1
+            ana_cmds += S.summary_row_style(last_idx)
+            avg_val = averages.get('avg_fwd_val')
+            if not pd.isna(avg_val):
+                if avg_val > 5:
+                    ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), S.GREEN_STRONG))
+                    ana_cmds.append(('TEXTCOLOR', (4, last_idx), (4, last_idx), colors.white))
+                elif avg_val > 0:
+                    ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), S.GREEN_MED_BG))
+                    ana_cmds.append(('TEXTCOLOR', (4, last_idx), (4, last_idx), S.CHARCOAL))
+                elif avg_val < -5:
+                    ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), S.RED_STRONG))
+                    ana_cmds.append(('TEXTCOLOR', (4, last_idx), (4, last_idx), colors.white))
+                else:
+                    ana_cmds.append(('BACKGROUND', (4, last_idx), (4, last_idx), S.RED_MED_BG))
+                    ana_cmds.append(('TEXTCOLOR', (4, last_idx), (4, last_idx), S.CHARCOAL))
 
-        ana_t = Table(ana_data, colWidths=[1.5 * inch, 1.25 * inch, 1.5 * inch, 1.5 * inch, 1.5 * inch])
+        ana_t = Table(ana_data, colWidths=[1.4 * inch, 1.1 * inch, 1.4 * inch, 1.4 * inch, 1.7 * inch])
         ana_t.setStyle(TableStyle(ana_cmds))
         el.append(ana_t)
+    else:
+        el.append(Paragraph('<i>No historical analogue data available for current macro regime.</i>', S.BODY))
     el.append(S.small_spacer())
 
     # 9. Cross-Market Context

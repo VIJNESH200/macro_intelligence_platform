@@ -16,10 +16,27 @@ def extract_report_data(df, config: dict, plot_elements: dict,
     Returns a dict with date, indicator metadata, health/momentum values,
     quadrant, distance, direction, and multi-horizon market data.
     """
-    idx = int(current_frame)
-    if idx >= len(df):
-        idx = len(df) - 1
+    if df.empty or len(df) == 0:
+        return {
+            'date': 'N/A',
+            'indicator': config.get('name', 'N/A'),
+            'source': f"{config.get('source', 'N/A')}, Yahoo Finance",
+            'window': f"{config.get('window', 'N/A')} Months",
+            'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'center': config.get('center', 100),
+            'health_val': 100,
+            'momentum_val': 100,
+            'quadrant': 'Unknown',
+            'distance': 0,
+            'direction': 'Neutral',
+            'macro_contrib': {},
+            'macro_shifts': [],
+            'research_narrative': [],
+            'market_data': [],
+            'market_horizon': 'N/A'
+        }
 
+    idx = min(max(0, int(current_frame)), len(df) - 1)
     curr_row = df.iloc[idx]
 
     # Safely get center
