@@ -54,6 +54,12 @@ Publication-quality macroeconomic strategy reports modelled on Goldman Sachs, JP
 - 💻 **Desktop App**: Click **"Export PDF"** in the Matplotlib GUI, or run `python -m research.pdf` to generate locally in `exports/`.
 - 🔗 **API**: `GET /api/report?market=INDIA&idx=latest` returns the PDF as a file download.
 
+### Visual Preview (Pages 1 & 2)
+
+| Page 1: Cover & Executive Summary | Page 2: Macroeconomic Positioning & Dashboard |
+| :---: | :---: |
+| ![PDF Strategy Report Page 1](docs/assets/pdf_report_preview.png) | ![PDF Strategy Report Page 2](docs/assets/pdf_report_page2.png) |
+
 ### Report Contents (7 Pages)
 
 | Page | Section | Contents |

@@ -292,8 +292,9 @@ def build_pdf_report(data, analysis, insights, market_insights, narrative,
     # =====================================================================
     el.append(S.section_heading(2, 'Macroeconomic Positioning'))
     img = Image(chart_path)
+    aspect = img.imageHeight / float(img.imageWidth)
     img.drawWidth = cw * inch
-    img.drawHeight = 2.4 * inch
+    img.drawHeight = (cw * inch) * aspect
     el.append(img)
     el.append(Paragraph(
         f'<i>Business cycle quadrant chart &mdash; {_clean(data.get("indicator", ""))} '
