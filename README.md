@@ -46,7 +46,7 @@ An open-source, quantitative business cycle forecasting platform. It traces econ
 
 ## 📄 One-Click Institutional PDF Reports
 
-Publication-quality macroeconomic strategy reports modelled on Goldman Sachs, JPMorgan, and BlackRock institutional research. Generated instantly from live analytics — no manual formatting required.
+Publication-quality macroeconomic strategy reports modelled on institutional-grade research formatting. Generated instantly from live analytics — no manual formatting required.
 
 ### How to Generate
 
