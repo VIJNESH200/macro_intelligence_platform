@@ -52,11 +52,7 @@ Publication-quality macroeconomic strategy reports modelled on Goldman Sachs, JP
 
 - 🌐 **Live Web App**: Click the **"Report"** button in the top navigation bar at [macro-intelligence-platform-three.vercel.app](https://macro-intelligence-platform-three.vercel.app/). The PDF streams directly to your browser.
 - 💻 **Desktop App**: Click **"Export PDF"** in the Matplotlib GUI, or run `python -m research.pdf` to generate locally in `exports/`.
-### Visual Preview
-
-| Page 1: Cover & Executive Summary | Page 2: Positioning & Dashboard |
-| :---: | :---: |
-| ![PDF Strategy Report Page 1](docs/assets/pdf_page1.png) | ![PDF Strategy Report Page 2](docs/assets/pdf_page2.png) |
+- 🔗 **API**: `GET /api/report?market=INDIA&idx=latest` returns the PDF as a file download.
 
 ### Report Contents (7 Pages)
 
