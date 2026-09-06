@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ForecastResult",
+  "type": "object",
+  "required": [
+    "as_of",
+    "current_regime",
+    "forecasts",
+    "conviction",
+    "model_version",
+    "data_health"
+  ],
+  "properties": {
+    "as_of": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date of the observation point (YYYY-MM-DD)"
+    },
+    "current_regime": {
+      "type": "string",
+      "enum": ["Expansion", "Slowdown", "Contraction", "Recovery"],
+      "description": "Current macroeconomic quadrant"
+    },
+    "forecasts": {
+      "type": "object",
+      "required": ["6m"],
+      "additionalProperties": {
+        "type": "object",
+        "required": ["x", "y", "quadrant", "conviction"],
+        "properties": {
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "quadrant": { "type": "string" },
+          "conviction": { "type": "number" }
+        }
+      }
+    },
+    "signal_contributions": { "type": "object" },
+    "conviction": {
+      "type": "number",
+      "description": "Headline 6-month forecast conviction percentage"
+    },
+    "model_version": {
+      "type": "string",
+      "description": "Platform model version string"
+    },
+    "data_health": {
+      "type": "object",
+      "description": "Per-series provenance, source, and freshness metadata"
+    },
+    "projected_path": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": { "type": "number" }
+      }
+    },
+    "confidence_band": { "type": "object" },
+    "residual_std": { "type": "object" }
+  }
+}
